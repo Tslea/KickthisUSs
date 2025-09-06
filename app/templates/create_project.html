@@ -1,0 +1,591 @@
+{# app/templates/create_project.html #}
+{% extends 'base.html' %}
+
+{% block title %}Crea Nuovo Progetto - KickthisUSs{% endblock %}
+
+{% block content %}
+<main class="px-4 sm:px-8 md:px-16 lg:px-24 xl:px-40 flex flex-1 justify-center py-8">
+    <div class="layout-content-container flex flex-col w-full max-w-3xl">
+
+        <nav aria-label="Breadcrumb" class="mb-6">
+            <ol class="flex items-center gap-2 text-sm">
+                <li><a class="text-gray-500 hover:text-mclaren-orange font-medium leading-normal transition-colors" href="{{ url_for('projects.home') }}">Home</a></li>
+                <li><span class="text-gray-400 font-medium leading-normal">/</span></li>
+                <li><span class="text-gray-700 font-medium leading-normal">Crea Nuovo Progetto</span></li>
+            </ol>
+        </nav>
+
+        <div class="bg-white p-6 md:p-8 rounded-xl shadow-lg border border-gray-200">
+            <div class="mb-6 text-center md:text-left">
+                <h1 class="text-gray-900 tracking-tight text-3xl font-bold leading-tight">
+                    Lancia la Tua Prossima Grande Idea
+                </h1>
+                <p class="text-gray-600 text-base mt-2">
+                    Descrivi il tuo concept. La nostra IA ti aiuterà a definire meglio il progetto, il nome e i primi task per partire col piede giusto.
+                </p>
+            </div>
+
+            <!-- --- NUOVO: BOTTONI SELEZIONE RAPIDA TIPO --- -->
+            <div class="mb-6">
+                <p class="text-sm font-semibold text-gray-700 mb-3">Cosa vuoi creare?</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Bottone Progetto Commerciale -->
+                                        <!-- Bottone Startup -->
+                    <button type="button" id="commercial-btn" onclick="selectProjectType('commercial')" 
+                            class="group relative p-6 rounded-xl border-2 border-gray-200 hover:border-green-400 transition-all duration-200 text-left bg-white hover:bg-green-50 hover:shadow-lg transform hover:scale-105 cursor-pointer focus:outline-none focus:ring-4 focus:ring-green-200">
+                        <div class="flex items-start space-x-4">
+                            <div class="flex-shrink-0">
+                                <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center group-hover:bg-green-200 transition-colors">
+                                    <span class="text-2xl">☀️</span>
+                                </div>
+                            </div>
+                            <div class="flex-1">
+                                <h3 class="text-lg font-bold text-gray-900 group-hover:text-green-800">Startup</h3>
+                                <p class="text-sm text-gray-600 mt-1">Idea business con equity e possibilità di investimenti dalla community</p>
+                                <div class="mt-2 text-xs text-green-600 font-medium">• Distribuzione equity • Investimenti • Guadagni condivisi</div>
+                            </div>
+                        </div>
+                        <div id="commercial-selected" class="hidden absolute top-2 right-2">
+                            <div class="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
+                                <span class="text-white text-sm">✓</span>
+                            </div>
+                        </div>
+                    </button>
+
+                    <!-- Bottone Ricerca Scientifica -->
+                    <button type="button" id="scientific-btn" onclick="selectProjectType('scientific')" 
+                            class="group relative p-6 rounded-xl border-2 border-gray-200 hover:border-blue-400 transition-all duration-200 text-left bg-white hover:bg-blue-50 hover:shadow-lg transform hover:scale-105 cursor-pointer focus:outline-none focus:ring-4 focus:ring-blue-200">
+                        <div class="flex items-start space-x-4">
+                            <div class="flex-shrink-0">
+                                <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center group-hover:bg-blue-200 transition-colors">
+                                    <span class="text-2xl">🔬</span>
+                                </div>
+                            </div>
+                            <div class="flex-1">
+                                <h3 class="text-lg font-bold text-gray-900 group-hover:text-blue-800">Ricerca Scientifica</h3>
+                                <p class="text-sm text-gray-600 mt-1">Ricerca per il progresso della conoscenza, condivisa liberamente</p>
+                                <div class="mt-2 text-xs text-blue-600 font-medium">• Open Science • Nessuna equity • Contributi liberi</div>
+                            </div>
+                        </div>
+                        <div id="scientific-selected" class="hidden absolute top-2 right-2">
+                            <div class="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
+                                <span class="text-white text-sm">✓</span>
+                            </div>
+                        </div>
+                    </button>
+                </div>
+            </div>
+
+            <hr class="my-6">
+
+            <!-- --- STATO SELEZIONE --- -->
+            <div id="selection-status" class="hidden mb-6 p-4 rounded-lg border-l-4">
+                <div class="flex items-center">
+                    <span id="status-icon" class="text-2xl mr-3"></span>
+                    <div>
+                        <p id="status-title" class="font-semibold text-lg"></p>
+                        <p id="status-description" class="text-sm text-gray-600"></p>
+                    </div>
+                </div>
+            </div>
+
+            <form id="create-project-form" method="POST" novalidate>
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                
+                <!-- --- TIPO PROGETTO (Hidden - gestito dai bottoni sopra) --- -->
+                <div class="hidden">
+                    <select id="project_type" name="project_type" required onchange="toggleEquityField()">
+                        <option value="" disabled selected>-- Seleziona tipo progetto --</option>
+                        <option value="commercial">☀️ Startup</option>
+                        <option value="scientific">🔬 Ricerca Scientifica</option>
+                    </select>
+                </div>
+                
+                <div class="space-y-6">
+                    <div>
+                        <label for="pitch" class="block text-sm font-semibold leading-6 text-gray-900 mb-1">
+                            La Tua Idea / Pitch Iniziale <span class="text-red-500">*</span>
+                        </label>
+                        <textarea id="pitch" name="pitch" rows="5" required
+                                  class="form-textarea block w-full rounded-lg border-gray-300 shadow-sm focus:border-mclaren-orange focus:ring focus:ring-mclaren-orange focus:ring-opacity-50 text-base"
+                                  placeholder="Descrivi l'obiettivo principale, il problema che risolve, per chi è pensato... Più dettagli fornisci, migliore sarà l'analisi dell'IA."></textarea>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="category" class="block text-sm font-semibold leading-6 text-gray-900 mb-1">
+                                Categoria Principale <span class="text-red-500">*</span>
+                            </label>
+                            <select id="category" name="category" required
+                                    class="form-select block w-full rounded-lg border-gray-300 shadow-sm focus:border-mclaren-orange focus:ring focus:ring-mclaren-orange focus:ring-opacity-50 text-base">
+                                <option value="" disabled selected>-- Seleziona una categoria --</option>
+                                {% if allowed_categories and allowed_categories is mapping %}
+                                    {% for cat_key, cat_display in allowed_categories.items() %}
+                                    <option value="{{ cat_key }}">{{ cat_display }}</option>
+                                    {% endfor %}
+                                {% endif %}
+                            </select>
+                        </div>
+
+                        <div id="equity-field">
+                            <label for="creator_equity" class="block text-sm font-semibold leading-6 text-gray-900 mb-1">
+                                Tua Equity Iniziale (%) <span class="text-red-500">*</span>
+                            </label>
+                            <input type="number" id="creator_equity" name="creator_equity" step="0.1" min="0" max="100" value="5.0" required
+                                   class="form-input block w-full rounded-lg border-gray-300 shadow-sm focus:border-mclaren-orange focus:ring focus:ring-mclaren-orange focus:ring-opacity-50 text-base" />
+                            <p class="mt-1 text-xs text-gray-500">Equity per te come creatore (0-100%). Es: 5.0</p>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="flex items-center mb-2">
+                            <input type="checkbox" id="private" name="private" class="form-checkbox h-5 w-5 text-mclaren-orange rounded focus:ring-mclaren-orange">
+                            <label for="private" class="ml-2 block text-sm font-semibold text-gray-900">
+                                Progetto Privato
+                            </label>
+                        </div>
+                        <p class="text-xs text-gray-500">I progetti privati sono visibili solo a te e ai collaboratori che inviti. Potrai renderlo pubblico in seguito.</p>
+                    </div>
+
+                    <div>
+                        <label for="cover_image_url" class="block text-sm font-semibold leading-6 text-gray-900 mb-1">
+                            URL Immagine di Copertina o Carica un'immagine
+                        </label>
+                        <input type="url" id="cover_image_url" name="cover_image_url"
+                               class="form-input block w-full rounded-lg border-gray-300 shadow-sm focus:border-mclaren-orange focus:ring focus:ring-mclaren-orange focus:ring-opacity-50 text-base"
+                               placeholder="https://esempio.com/immagine.jpg" />
+                    </div>
+
+                    <div>
+                        <div id="drop-area" class="mt-3 border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:border-mclaren-orange transition-colors">
+                            <div id="drop-message" class="flex flex-col items-center">
+                                <span class="material-icons text-3xl text-gray-400 mb-2">cloud_upload</span>
+                                <p class="text-sm text-gray-500">Trascina un'immagine qui o <span class="text-mclaren-orange">clicca per caricare</span></p>
+                                <p class="text-xs text-gray-400 mt-1">Formati supportati: PNG, JPG, JPEG, GIF</p>
+                            </div>
+                            <div id="preview-container" class="mt-4 hidden">
+                                <img id="preview-image" src="" alt="Anteprima immagine" class="max-h-32 mx-auto rounded-lg shadow-md">
+                                <p class="text-sm text-gray-500 mt-2">Caricamento completato!</p>
+                            </div>
+                            <input id="file-input" type="file" class="hidden" accept=".jpg,.jpeg,.png,.gif,.webp">
+                        </div>
+                        <div id="upload-progress" class="mt-2 hidden">
+                            <div class="h-1 w-full bg-gray-200 rounded-full overflow-hidden">
+                                <div id="progress-bar" class="h-full bg-mclaren-orange" style="width: 0%"></div>
+                            </div>
+                            <p id="progress-text" class="text-xs text-gray-500 mt-1">Caricamento: 0%</p>
+                        </div>
+                        <p id="upload-error" class="hidden text-xs text-red-500 mt-1"></p>
+                    </div>
+                </div>
+
+                <div id="form-feedback" class="mt-6" style="display: none;"></div>
+
+                <div class="mt-8 pt-6 border-t border-gray-200 flex flex-col sm:flex-row justify-end gap-3">
+                    <a href="{{ url_for('projects.home') }}"
+                       class="flex items-center justify-center rounded-lg h-11 px-5 py-2.5 text-sm font-semibold text-gray-700 bg-white border border-gray-300 shadow-sm hover:bg-gray-50 transition-colors">
+                       Annulla
+                    </a>
+                    <button type="submit"
+                            class="flex items-center justify-center rounded-lg h-11 px-5 py-2.5 text-sm font-semibold text-white bg-mclaren-orange hover:bg-mclaren-orange-darker shadow-sm transition-colors">
+                        <span class="material-icons text-lg mr-2">auto_awesome</span>
+                        Crea Progetto e Suggerisci Task
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</main>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const createForm = document.getElementById('create-project-form');
+    if (createForm) {
+        const feedbackDiv = document.getElementById('form-feedback');
+        const submitButton = createForm.querySelector('button[type="submit"]');
+        const originalButtonHtml = submitButton.innerHTML;
+
+        // Elementi per il drag and drop
+        const dropArea = document.getElementById('drop-area');
+        const fileInput = document.getElementById('file-input');
+        const coverImageUrlInput = document.getElementById('cover_image_url');
+        const previewContainer = document.getElementById('preview-container');
+        const previewImage = document.getElementById('preview-image');
+        const dropMessage = document.getElementById('drop-message');
+        const progressContainer = document.getElementById('upload-progress');
+        const progressBar = document.getElementById('progress-bar');
+        const progressText = document.getElementById('progress-text');
+        const uploadError = document.getElementById('upload-error');
+        
+        // Gestione del drag and drop
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropArea.addEventListener(eventName, preventDefaults, false);
+        });
+        
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropArea.addEventListener(eventName, highlight, false);
+        });
+        
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropArea.addEventListener(eventName, unhighlight, false);
+        });
+        
+        function highlight() {
+            dropArea.classList.add('border-mclaren-orange', 'bg-orange-50');
+        }
+        
+        function unhighlight() {
+            dropArea.classList.remove('border-mclaren-orange', 'bg-orange-50');
+        }
+        
+        // Gestione del drop
+        dropArea.addEventListener('drop', handleDrop, false);
+        
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            handleFiles(files);
+        }
+        
+        // Gestione del click
+        dropArea.addEventListener('click', () => {
+            fileInput.click();
+        });
+        
+        fileInput.addEventListener('change', function() {
+            handleFiles(this.files);
+        });
+        
+        function handleFiles(files) {
+            if (files.length > 0) {
+                const file = files[0];
+                if (isValidImageFile(file)) {
+                    uploadFile(file);
+                    showPreview(file);
+                } else {
+                    showError('Formato file non supportato. Usa PNG, JPG, JPEG o GIF.');
+                }
+            }
+        }
+        
+        function isValidImageFile(file) {
+            const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+            return validTypes.includes(file.type);
+        }
+        
+        function showPreview(file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                previewImage.src = e.target.result;
+                previewContainer.classList.remove('hidden');
+                dropMessage.classList.add('hidden');
+            }
+            reader.readAsDataURL(file);
+        }
+        
+        function uploadFile(file) {
+            const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+            const xhr = new XMLHttpRequest();
+            const formData = new FormData();
+            
+            formData.append('file', file);
+            
+            xhr.open('POST', '/api/upload-image', true);
+            xhr.setRequestHeader('X-CSRF-Token', csrfToken);
+            
+            // Mostra il progress bar
+            progressContainer.classList.remove('hidden');
+            uploadError.classList.add('hidden');
+            
+            xhr.upload.addEventListener("progress", function(e) {
+                const percentComplete = Math.round((e.loaded * 100) / e.total);
+                progressBar.style.width = percentComplete + '%';
+                progressText.textContent = `Caricamento: ${percentComplete}%`;
+            });
+            
+            xhr.onload = function() {
+                if (xhr.status === 200) {
+                    const response = JSON.parse(xhr.responseText);
+                    if (response.success) {
+                        // Imposta l'URL dell'immagine caricata nel campo input
+                        coverImageUrlInput.value = response.file.url;
+                        progressText.textContent = 'Caricamento completato!';
+                    } else {
+                        showError(response.error || 'Errore durante il caricamento');
+                    }
+                } else {
+                    showError('Errore durante il caricamento');
+                }
+            };
+            
+            xhr.onerror = function() {
+                showError('Errore di rete durante il caricamento');
+            };
+            
+            xhr.send(formData);
+        }
+        
+        function showError(message) {
+            uploadError.textContent = message;
+            uploadError.classList.remove('hidden');
+            progressContainer.classList.add('hidden');
+        }
+
+        function showGeneralFeedback(message, type = 'danger') {
+            feedbackDiv.innerHTML = `<div class="p-4 mb-4 text-sm rounded-lg ${type === 'success' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}" role="alert">${message}</div>`;
+            feedbackDiv.style.display = 'block';
+        }
+
+        createForm.addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            // Validazione custom per tipo progetto
+            const projectType = document.getElementById('project_type').value;
+            if (!projectType) {
+                showGeneralFeedback('Per favore seleziona il tipo di progetto (Commerciale o Ricerca Scientifica)', 'danger');
+                // Scorri verso l'alto per mostrare i bottoni di selezione
+                document.getElementById('commercial-btn').scrollIntoView({ behavior: 'smooth' });
+                return;
+            }
+
+            if (!createForm.checkValidity()) {
+                createForm.reportValidity();
+                return;
+            }
+
+            const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+            if (!csrfToken) {
+                showGeneralFeedback('Impossibile verificare la richiesta. Ricarica la pagina e riprova.', 'danger');
+                return;
+            }
+
+            const formData = new FormData(this);
+            const data = Object.fromEntries(formData.entries());
+            
+            // Gestione condizionale equity
+            if (data.project_type === 'commercial') {
+                data.creator_equity = parseFloat(data.creator_equity);
+            } else {
+                // Per ricerche scientifiche, non inviare equity
+                delete data.creator_equity;
+            }
+            
+            data.private = formData.has('private'); // Converti il checkbox in un booleano
+
+            submitButton.disabled = true;
+            submitButton.innerHTML = '<span class="material-icons animate-spin mr-2">sync</span> Creazione in corso...';
+            const apiUrl = "{{ url_for('api_projects.create_project_api') }}";
+
+            fetch(apiUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-Token': csrfToken
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(err => { throw new Error(err.error || 'Errore del server'); });
+                }
+                return response.json();
+            })
+            .then(resData => {
+                if (resData && resData.project_id) {
+                    window.location.href = "{{ url_for('projects.project_detail', project_id=0) }}".replace('0', resData.project_id);
+                } else {
+                    throw new Error("Risposta API non valida: ID progetto mancante.");
+                }
+            })
+            .catch(error => {
+                console.error('Errore creazione progetto:', error);
+                showGeneralFeedback(error.message, 'danger');
+                submitButton.disabled = false;
+                submitButton.innerHTML = originalButtonHtml;
+            });
+        });
+    }
+});
+
+// --- NUOVO: GESTIONE BOTTONI SELEZIONE RAPIDA ---
+function selectProjectType(type) {
+    console.log('selectProjectType called with type:', type); // Debug
+    
+    // Aggiorna il dropdown nascosto
+    const projectTypeSelect = document.getElementById('project_type');
+    if (projectTypeSelect) {
+        projectTypeSelect.value = type;
+        console.log('Project type select updated to:', type);
+    } else {
+        console.error('Element project_type not found!');
+    }
+    
+    // Aggiorna i bottoni visualmente
+    const commercialBtn = document.getElementById('commercial-btn');
+    const scientificBtn = document.getElementById('scientific-btn');
+    const commercialSelected = document.getElementById('commercial-selected');
+    const scientificSelected = document.getElementById('scientific-selected');
+    
+    // Reset tutti i bottoni
+    commercialBtn.classList.remove('border-green-400', 'bg-green-50');
+    commercialBtn.classList.add('border-gray-200', 'bg-white');
+    scientificBtn.classList.remove('border-blue-400', 'bg-blue-50');
+    scientificBtn.classList.add('border-gray-200', 'bg-white');
+    commercialSelected.classList.add('hidden');
+    scientificSelected.classList.add('hidden');
+    
+    // Aggiorna lo stato visivo
+    const selectionStatus = document.getElementById('selection-status');
+    const statusIcon = document.getElementById('status-icon');
+    const statusTitle = document.getElementById('status-title');
+    const statusDescription = document.getElementById('status-description');
+    
+    // Attiva il bottone selezionato e aggiorna stato
+    if (type === 'commercial') {
+        commercialBtn.classList.remove('border-gray-200', 'bg-white');
+        commercialBtn.classList.add('border-green-400', 'bg-green-50');
+        commercialSelected.classList.remove('hidden');
+        
+        // Stato per startup
+        selectionStatus.className = 'mb-6 p-4 rounded-lg border-l-4 border-green-400 bg-green-50';
+        statusIcon.textContent = '☀️';
+        statusTitle.textContent = 'Startup Selezionata';
+        statusTitle.className = 'font-semibold text-lg text-green-800';
+        statusDescription.textContent = 'Include equity, investimenti e distribuzione guadagni';
+        selectionStatus.classList.remove('hidden');
+        
+    } else if (type === 'scientific') {
+        scientificBtn.classList.remove('border-gray-200', 'bg-white');
+        scientificBtn.classList.add('border-blue-400', 'bg-blue-50');
+        scientificSelected.classList.remove('hidden');
+        
+        // Stato per ricerca scientifica
+        selectionStatus.className = 'mb-6 p-4 rounded-lg border-l-4 border-blue-400 bg-blue-50';
+        statusIcon.textContent = '🔬';
+        statusTitle.textContent = 'Ricerca Scientifica Selezionata';
+        statusTitle.className = 'font-semibold text-lg text-blue-800';
+        statusDescription.textContent = 'Open science, nessuna equity, contributi liberi per il progresso della conoscenza';
+        selectionStatus.classList.remove('hidden');
+    }
+    
+    // Chiama la funzione esistente per gestire i campi del form
+    console.log('About to call toggleEquityField with type:', type);
+    toggleEquityField();
+}
+
+// --- NUOVO: GESTIONE TIPO PROGETTO ---
+function toggleEquityField() {
+    const projectType = document.getElementById('project_type').value;
+    const equityField = document.getElementById('equity-field');
+    const equityInput = document.getElementById('creator_equity');
+    
+    console.log('toggleEquityField called with projectType:', projectType); // Debug
+    
+    if (!equityField) {
+        console.error('Elemento equity-field non trovato!');
+        return;
+    }
+    
+    if (projectType === 'scientific') {
+        // Ricerca scientifica: nascondi equity con transizione fluida
+        console.log('Nascondendo campo equity per ricerca scientifica');
+        equityField.style.transition = 'opacity 0.3s ease, max-height 0.3s ease';
+        equityField.style.opacity = '0';
+        equityField.style.maxHeight = '0';
+        equityField.style.overflow = 'hidden';
+        equityField.style.marginBottom = '0';
+        equityField.style.paddingTop = '0';
+        equityField.style.paddingBottom = '0';
+        
+        setTimeout(() => {
+            equityField.style.display = 'none';
+        }, 300);
+        
+        if (equityInput) {
+            equityInput.value = '';
+            equityInput.required = false;
+        }
+        
+    } else if (projectType === 'commercial') {
+        // Startup: mostra equity con transizione fluida
+        console.log('Mostrando campo equity per startup');
+        equityField.style.display = 'block';
+        equityField.style.opacity = '0';
+        equityField.style.maxHeight = '200px';
+        equityField.style.overflow = 'visible';
+        equityField.style.marginBottom = '';
+        equityField.style.paddingTop = '';
+        equityField.style.paddingBottom = '';
+        
+        setTimeout(() => {
+            equityField.style.transition = 'opacity 0.3s ease';
+            equityField.style.opacity = '1';
+        }, 50);
+        
+        if (equityInput) {
+            equityInput.required = true;
+            if (!equityInput.value) {
+                equityInput.value = '5.0';
+            }
+        }
+        
+    } else {
+        // Nessuna selezione: nascondi equity
+        console.log('Nessun tipo selezionato, nascondo equity');
+        if (equityField) {
+            equityField.style.display = 'none';
+        }
+        if (equityInput) {
+            equityInput.required = false;
+        }
+    }
+    
+    // Aggiorna anche il placeholder del titolo se necessario
+    const titleInput = document.getElementById('title');
+    if (titleInput && projectType) {
+        if (projectType === 'commercial') {
+            titleInput.placeholder = 'Es: "App per delivery sostenibile" o "Piattaforma di e-commerce innovativa"';
+        } else if (projectType === 'scientific') {
+            titleInput.placeholder = 'Es: "Studio sull\'efficienza energetica" o "Ricerca su algoritmi di ML"';
+        }
+    }
+}
+
+// Inizializza al caricamento della pagina
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('=== CREATE PROJECT PAGE LOADED ===');
+    
+    // Test degli elementi
+    const projectTypeSelect = document.getElementById('project_type');
+    const equityField = document.getElementById('equity-field');
+    const commercialBtn = document.getElementById('commercial-btn');
+    const scientificBtn = document.getElementById('scientific-btn');
+    
+    console.log('Elements found:');
+    console.log('- project_type select:', projectTypeSelect ? 'YES' : 'NO');
+    console.log('- equity-field:', equityField ? 'YES' : 'NO');
+    console.log('- commercial-btn:', commercialBtn ? 'YES' : 'NO');
+    console.log('- scientific-btn:', scientificBtn ? 'YES' : 'NO');
+    
+    // Assicurati che la funzione sia chiamata dopo che tutti gli elementi sono caricati
+    setTimeout(toggleEquityField, 100);
+    
+    // Aggiungi listener per il cambio del tipo progetto
+    if (projectTypeSelect) {
+        projectTypeSelect.addEventListener('change', toggleEquityField);
+        console.log('Event listener added to project_type select');
+    } else {
+        console.error('project_type select not found!');
+    }
+});
+</script>
+{% endblock %}

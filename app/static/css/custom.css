@@ -1,0 +1,366 @@
+/* app/static/css/custom.css */
+
+:root {
+  /* Palette di colori primaria */
+  --color-primary-50: #FFF3E6;
+  --color-primary-100: #FFE0C2;
+  --color-primary-200: #FFC999;
+  --color-primary-300: #FFB170;
+  --color-primary-400: #FF9A47;
+  --color-primary-500: #FF8100;
+  --color-primary-600: #E07000;
+  --color-primary-700: #B85C00;
+  --color-primary-800: #8F4700;
+  --color-primary-900: #663300;
+
+  /* Palette di colori secondaria/accent */
+  --color-accent-50: #E6F6FF;
+  --color-accent-100: #B8E7FF;
+  --color-accent-200: #8AD8FF;
+  --color-accent-300: #5CC8FF;
+  --color-accent-400: #2EB9FF;
+  --color-accent-500: #00AAFF;
+  --color-accent-600: #0088CC;
+  --color-accent-700: #006699;
+  --color-accent-800: #004466;
+  --color-accent-900: #002233;
+
+  /* Grigi neutri */
+  --color-gray-50: #F9FAFB;
+  --color-gray-100: #F3F4F6;
+  --color-gray-200: #E5E7EB;
+  --color-gray-300: #D1D5DB;
+  --color-gray-400: #9CA3AF;
+  --color-gray-500: #6B7280;
+  --color-gray-600: #4B5563;
+  --color-gray-700: #374151;
+  --color-gray-800: #1F2937;
+  --color-gray-900: #111827;
+
+  /* Altre variabili */
+  --shadow-card: 0 4px 20px -5px rgba(0, 0, 0, 0.1);
+  --shadow-card-hover: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+  --shadow-button: 0 2px 4px rgba(0, 0, 0, 0.05);
+  --border-radius-default: 0.5rem;
+  --border-radius-lg: 0.75rem;
+  --border-radius-xl: 1rem;
+}
+
+/* Stile base dei form (può essere usato come fallback) */
+.form-container {
+  background-color: white;
+  padding: 2rem;
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-card);
+  border: 1px solid var(--color-gray-200);
+}
+
+.form-header {
+  margin-bottom: 1.5rem;
+}
+
+.form-header h2 {
+  color: var(--color-gray-900);
+  font-weight: 700;
+  font-size: 1.5rem;
+  line-height: 2rem;
+}
+
+.form-header p {
+  color: var(--color-gray-500);
+  margin-top: 0.5rem;
+}
+
+.form-section {
+  margin-bottom: 1.5rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--color-gray-100);
+}
+
+.form-section:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.form-section-title {
+  color: var(--color-gray-900);
+  font-weight: 600;
+  font-size: 1.125rem;
+  margin-bottom: 1rem;
+}
+
+.form-group {
+  margin-bottom: 1.25rem;
+}
+
+.form-group:last-child {
+  margin-bottom: 0;
+}
+
+.form-label {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: var(--color-gray-700);
+  font-weight: 500;
+  font-size: 0.875rem;
+}
+
+.form-label-required::after {
+  content: '*';
+  color: #EF4444;
+  margin-left: 0.25rem;
+}
+
+.form-input,
+.form-select,
+.form-textarea {
+  width: 100%;
+  padding: 0.625rem 0.875rem;
+  border: 1px solid var(--color-gray-300);
+  border-radius: var(--border-radius-default);
+  font-size: 0.875rem;
+  color: var(--color-gray-700);
+  transition: all 0.15s ease;
+}
+
+.form-input:focus,
+.form-select:focus,
+.form-textarea:focus {
+  outline: none;
+  border-color: var(--color-primary-500);
+  box-shadow: 0 0 0 2px rgba(255, 129, 0, 0.2);
+}
+
+.form-textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+.form-help-text {
+  display: block;
+  margin-top: 0.375rem;
+  font-size: 0.75rem;
+  color: var(--color-gray-500);
+}
+
+.form-error {
+  display: block;
+  margin-top: 0.375rem;
+  font-size: 0.75rem;
+  color: #EF4444;
+}
+
+.form-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+.form-button-primary {
+  background-color: var(--color-primary-500);
+  color: white;
+  font-weight: 600;
+  padding: 0.625rem 1.25rem;
+  border-radius: var(--border-radius-default);
+  transition: background-color 0.2s;
+}
+
+.form-button-primary:hover {
+  background-color: var(--color-primary-600);
+}
+
+.form-button-secondary {
+  background-color: white;
+  color: var(--color-gray-700);
+  border: 1px solid var(--color-gray-300);
+  font-weight: 500;
+  padding: 0.625rem 1.25rem;
+  border-radius: var(--border-radius-default);
+  transition: all 0.2s;
+}
+
+.form-button-secondary:hover {
+  background-color: var(--color-gray-100);
+  border-color: var(--color-gray-400);
+}
+
+/* Checkbox personalizzato */
+.form-checkbox-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.form-checkbox {
+  width: 1rem;
+  height: 1rem;
+  border-radius: 0.25rem;
+  accent-color: var(--color-primary-500);
+}
+
+.form-checkbox-label {
+  font-size: 0.875rem;
+  color: var(--color-gray-700);
+}
+
+/* Radio buttons */
+.form-radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.form-radio-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.form-radio {
+  width: 1rem;
+  height: 1rem;
+  accent-color: var(--color-primary-500);
+}
+
+.form-radio-label {
+  font-size: 0.875rem;
+  color: var(--color-gray-700);
+}
+
+/* Stile per campi disabilitati */
+.form-input:disabled,
+.form-select:disabled,
+.form-textarea:disabled {
+  background-color: var(--color-gray-100);
+  cursor: not-allowed;
+}
+
+/* File input personalizzato */
+.form-file-wrapper {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  border: 2px dashed var(--color-gray-300);
+  border-radius: var(--border-radius-default);
+  background-color: var(--color-gray-50);
+  transition: all 0.2s;
+}
+
+.form-file-wrapper:hover {
+  border-color: var(--color-primary-400);
+  background-color: var(--color-primary-50);
+}
+
+.form-file-icon {
+  font-size: 2rem;
+  color: var(--color-gray-400);
+  margin-bottom: 0.75rem;
+}
+
+.form-file-text {
+  font-size: 0.875rem;
+  color: var(--color-gray-500);
+  margin-bottom: 0.5rem;
+  text-align: center;
+}
+
+.form-file-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--color-white);
+  color: var(--color-primary-600);
+  border: 1px solid var(--color-primary-400);
+  padding: 0.375rem 0.75rem;
+  border-radius: var(--border-radius-default);
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 0.15s ease;
+}
+
+.form-file-button:hover {
+  background-color: var(--color-primary-50);
+}
+
+.form-file-input {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+/* Stato drag attivo */
+.form-file-wrapper.drag-active {
+  border-color: var(--color-primary-500);
+  background-color: var(--color-primary-50);
+}
+
+/* Preview file */
+.form-file-preview {
+  display: flex;
+  align-items: center;
+  padding: 0.5rem;
+  margin-top: 1rem;
+  border: 1px solid var(--color-gray-200);
+  border-radius: var(--border-radius-default);
+  background-color: white;
+}
+
+.form-file-preview-icon {
+  font-size: 1.5rem;
+  color: var(--color-primary-500);
+  margin-right: 0.75rem;
+}
+
+.form-file-preview-info {
+  flex: 1;
+}
+
+.form-file-preview-name {
+  font-size: 0.875rem;
+  color: var(--color-gray-900);
+  font-weight: 500;
+}
+
+.form-file-preview-size {
+  font-size: 0.75rem;
+  color: var(--color-gray-500);
+}
+
+.form-file-preview-remove {
+  color: var(--color-gray-500);
+  cursor: pointer;
+  padding: 0.25rem;
+  transition: color 0.2s;
+}
+
+.form-file-preview-remove:hover {
+  color: #EF4444;
+}
+
+/* Animazioni */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes slideUp {
+  from { transform: translateY(10px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.animate-slideUp {
+  animation: slideUp 0.3s ease-out;
+}

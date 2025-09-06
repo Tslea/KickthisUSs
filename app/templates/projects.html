@@ -1,0 +1,499 @@
+{% extends "base.html" %}
+
+{% block title %}Esplora Progetti - KickthisUSs{% endblock %}
+
+{% block head_extra %}
+<style>
+  /* Tailwind non ha una classe diretta per line-clamp più linee senza un plugin,
+     ma il design Stitch lo usa. Se Tailwind base non lo supporta, potresti
+     aver bisogno del plugin @tailwindcss/line-clamp o usare un trucco CSS.
+     Per ora, il template lo include, ma il risultato visivo dipenderà dalla config di Tailwind. */
+  .line-clamp-2 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+  }
+  
+  .hero-gradient {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  }
+  
+  .project-card {
+    transition: all 0.3s ease;
+  }
+  
+  .project-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+  }
+  
+  .filter-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+  
+  .gradient-text {
+    background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="bg-gradient-to-br from-slate-50 via-white to-slate-50 min-h-screen">
+    {# Enhanced Hero Section #}
+    <section class="hero-gradient text-white py-20 relative overflow-hidden">
+        {# Animated background elements #}
+        <div class="absolute inset-0">
+            <div class="absolute top-20 left-20 w-64 h-64 bg-white/10 rounded-full blur-3xl animate-pulse"></div>
+            <div class="absolute bottom-20 right-20 w-80 h-80 bg-orange-500/20 rounded-full blur-3xl animate-pulse" style="animation-delay: 1s;"></div>
+        </div>
+        
+        <div class="container mx-auto px-6 relative z-10">
+            <div class="max-w-4xl mx-auto text-center">
+                <h1 class="text-5xl md:text-6xl font-black mb-6 leading-tight">
+                    Esplora i <span class="gradient-text">Progetti</span>
+                </h1>
+                <p class="text-xl md:text-2xl text-gray-200 mb-8 leading-relaxed">
+                    Scopri progetti innovativi e trova opportunità per collaborare con team di talento.
+                </p>
+                
+                <div class="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8">
+                    <div class="flex items-center gap-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full">
+                        <span class="material-icons text-white">trending_up</span>
+                        <span class="text-white font-medium">{{ pagination.total if pagination else '0' }} progetti disponibili</span>
+                    </div>
+                    
+                    {% if current_user.is_authenticated %}
+                    <a href="{{ url_for('projects.create_project_form') }}" class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-bold rounded-2xl hover:from-orange-600 hover:to-orange-700 transition-all transform hover:scale-105 shadow-lg">
+                        <span class="material-icons mr-2">add_circle</span>
+                        Crea Nuovo Progetto
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </section>
+
+    {# Enhanced Filters Section #}
+    <section class="py-8 relative">
+        <div class="container mx-auto px-6">
+            <div class="filter-card p-8 rounded-3xl shadow-xl border border-gray-100 -mt-16 relative z-10">
+                <h2 class="text-2xl font-bold text-gray-900 mb-6 text-center">
+                    Trova il Progetto Perfetto per Te
+                </h2>
+            <form method="GET" action="{{ url_for('projects.projects_list') }}" class="space-y-4">
+                <div class="flex items-center justify-between pb-3 border-b border-gray-100">
+                    <h3 class="text-lg font-semibold text-gray-900">Filtri</h3>
+                    {% if current_category or request.args.get('project_type') %}
+                    <a href="{{ url_for('projects.projects_list') }}" class="text-sm text-primary-600 hover:text-primary-700 flex items-center">
+                        <span class="material-icons text-sm mr-1">refresh</span>
+                        Reset
+                    </a>
+                    {% endif %}
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <!-- Nuovo filtro: Tipo di Progetto -->
+                    <div>
+                        <label for="projectTypeFilter" class="block text-sm font-medium text-gray-700 mb-1">Tipo</label>
+                        <div class="relative">
+                            <select class="block w-full rounded-lg border-gray-200 shadow-sm focus:border-orange-500 focus:ring focus:ring-orange-500 focus:ring-opacity-50 pr-10" 
+                                    id="projectTypeFilter" name="project_type" onchange="this.form.submit()">
+                                <option value="" {% if not request.args.get('project_type') %}selected{% endif %}>Tutti i Tipi</option>
+                                <option value="commercial" {% if request.args.get('project_type') == 'commercial' %}selected{% endif %}>☀️ Startup</option>
+                                <option value="scientific" {% if request.args.get('project_type') == 'scientific' %}selected{% endif %}>🔬 Ricerche Scientifiche</option>
+                            </select>
+                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2">
+                                <span class="material-icons text-gray-400">expand_more</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label for="categoryFilter" class="block text-sm font-medium text-gray-700 mb-1">Categoria</label>
+                        <div class="relative">
+                            <select class="block w-full rounded-lg border-gray-200 shadow-sm focus:border-orange-500 focus:ring focus:ring-orange-500 focus:ring-opacity-50 pr-10" 
+                                    id="categoryFilter" name="category" onchange="this.form.submit()">
+                                <option value="" {% if not current_category %}selected{% endif %}>Tutte le Categorie</option>
+                                {% if allowed_categories and allowed_categories is mapping %}
+                                    {% for cat_value, cat_display in allowed_categories.items() %}
+                                    <option value="{{ cat_value }}" {% if current_category == cat_value %}selected{% endif %}>{{ cat_display }}</option>
+                                    {% endfor %}
+                                {% endif %}
+                            </select>
+                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2">
+                                <span class="material-icons text-gray-400">expand_more</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label for="statusFilter" class="block text-sm font-medium text-gray-700 mb-1">Stato</label>
+                        <div class="relative">
+                            <select class="block w-full rounded-lg border-gray-200 shadow-sm focus:border-orange-500 focus:ring focus:ring-orange-500 focus:ring-opacity-50 pr-10" id="statusFilter" name="status">
+                                <option value="" selected>Tutti gli Stati</option>
+                                <option value="active">Attivi</option>
+                                <option value="completed">Completati</option>
+                                <option value="seeking">In cerca di collaboratori</option>
+                            </select>
+                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2">
+                                <span class="material-icons text-gray-400">expand_more</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label for="sortBy" class="block text-sm font-medium text-gray-700 mb-1">Ordina per</label>
+                        <div class="relative">
+                            <select class="block w-full rounded-lg border-gray-200 shadow-sm focus:border-orange-500 focus:ring focus:ring-orange-500 focus:ring-opacity-50 pr-10" id="sortBy" name="sort">
+                                <option value="newest">Più recenti</option>
+                                <option value="popular">Più popolari</option>
+                                <option value="tasks">Più task</option>
+                            </select>
+                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2">
+                                <span class="material-icons text-gray-400">expand_more</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="pt-3 border-t border-gray-100 flex justify-end">
+                    <button type="submit" class="inline-flex items-center px-4 py-2 rounded-lg bg-orange-500 text-white hover:bg-orange-600 shadow-sm transition-all duration-200 font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500">
+                        <span class="material-icons text-sm mr-1">filter_list</span>
+                        Applica Filtri
+                    </button>
+                </div>
+            </form>
+            
+            {# Sezione informativa sui tipi di progetto #}
+            {% if request.args.get('project_type') %}
+            <div class="mt-6 p-4 rounded-lg border-l-4 {% if request.args.get('project_type') == 'commercial' %}border-green-400 bg-green-50{% else %}border-blue-400 bg-blue-50{% endif %}">
+                {% if request.args.get('project_type') == 'commercial' %}
+                <div class="flex items-start">
+                    <span class="text-2xl mr-3">☀️</span>
+                    <div>
+                        <h4 class="font-semibold text-green-800 mb-1">Progetti Startup</h4>
+                        <p class="text-sm text-green-700">Progetti orientati al business con distribuzione di equity, investimenti dalla community e condivisione dei guadagni.</p>
+                    </div>
+                </div>
+                {% elif request.args.get('project_type') == 'scientific' %}
+                <div class="flex items-start">
+                    <span class="text-2xl mr-3">🔬</span>
+                    <div>
+                        <h4 class="font-semibold text-blue-800 mb-1">Ricerche Scientifiche</h4>
+                        <p class="text-sm text-blue-700">Progetti di ricerca orientati al progresso della conoscenza, con risultati condivisi liberamente secondo i principi dell'Open Science.</p>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+        </div>
+    </section>
+
+    {# Progetti Section #}
+    <section class="py-12 bg-gradient-to-br from-gray-50 to-blue-50">
+        <div class="container mx-auto px-6">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold text-gray-900 mb-4">
+                    Esplora i Progetti
+                </h2>
+                <p class="text-gray-600 text-lg max-w-2xl mx-auto">
+                    Scopri opportunità uniche e unisciti a progetti innovativi che stanno trasformando il mondo digitale.
+                </p>
+            </div>
+
+            {# Griglia Progetti con design moderno #}
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+                {% if projects %}
+                {% for project_item in projects %}
+                    {% set project = project_item[0] if project_item is iterable and not project_item is mapping else project_item %}
+                    <div class="group relative">
+                        {# Enhanced Project Card #}
+                        <div class="bg-white rounded-2xl shadow-lg hover:shadow-2xl overflow-hidden border border-gray-100 transition-all duration-300 transform hover:-translate-y-2 hover:scale-105 group-hover:border-orange-300">
+                            <a href="{{ url_for('projects.project_detail', project_id=project.id) }}" class="block relative">
+                                {% if project.cover_image_url %}
+                                    <div class="w-full bg-center bg-no-repeat aspect-video bg-cover relative" 
+                                         style='background-image: url("{{ project.cover_image_url }}");'>
+                                        <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent"></div>
+                                        <div class="absolute inset-0 bg-orange-600/0 group-hover:bg-orange-600/10 transition-all duration-300"></div>
+                                    </div>
+                                {% else %}
+                                    <div class="w-full bg-center bg-no-repeat aspect-video flex items-center justify-center bg-gradient-to-br from-orange-50 to-purple-50 relative">
+                                        <div class="w-16 h-16 text-orange-300 opacity-60">
+                                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" class="w-full h-full">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                            </svg>
+                                        </div>
+                                        <div class="absolute inset-0 bg-gradient-to-t from-white/20 to-transparent"></div>
+                                    </div>
+                                {% endif %}
+
+                                {% if project.private %}
+                                <div class="absolute top-3 left-3">
+                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 gap-1 shadow-sm">
+                                        <span class="material-icons text-xs">lock</span>
+                                        Privato
+                                    </span>
+                                </div>
+                                {% endif %}
+                                
+                                {# Badge per tipo di progetto #}
+                                <div class="absolute top-3 right-3">
+                                    {% if project.is_scientific %}
+                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 gap-1 shadow-sm">
+                                        <span class="text-xs">🔬</span>
+                                        Ricerca
+                                    </span>
+                                    {% else %}
+                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 gap-1 shadow-sm">
+                                        <span class="text-xs">☀️</span>
+                                        Startup
+                                    </span>
+                                    {% endif %}
+                                </div>
+                                
+                                {# Hover overlay #}
+                                <div class="absolute inset-0 bg-gradient-to-t from-orange-600/0 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                            </a>
+
+                            <div class="p-6 flex flex-col flex-grow space-y-4">
+                                <div class="flex justify-between items-start">
+                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gradient-to-r from-orange-100 to-purple-100 text-orange-800 border border-orange-200">
+                                        {{ allowed_categories.get(project.category, project.category|title) }}
+                                    </span>
+                                    <div class="flex -space-x-2">
+                                        {% if project.collaborators %}
+                                            {% for collaborator in project.collaborators[:3] %}
+                                            <div class="w-8 h-8 rounded-full bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center text-blue-700 text-xs font-bold border-2 border-white shadow-sm" title="{{ collaborator.user.username }}">
+                                                {{ collaborator.user.username[0] | upper }}
+                                            </div>
+                                            {% endfor %}
+                                            {% if project.collaborators.count() > 3 %}
+                                            <div class="w-8 h-8 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center text-gray-700 text-xs font-bold border-2 border-white shadow-sm">
+                                                +{{ project.collaborators.count() - 3 }}
+                                            </div>
+                                            {% endif %}
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+                                <h3 class="text-gray-900 text-xl font-bold leading-snug group-hover:text-orange-600 transition-colors duration-300">
+                                    <a href="{{ url_for('projects.project_detail', project_id=project.id) }}">{{ project.name | truncate_text(50) }}</a>
+                                </h3>
+                                
+                                <p class="text-gray-600 text-sm leading-relaxed line-clamp-3 flex-grow">
+                                    {{ project.pitch | truncate_text(120) }}
+                                </p>
+
+                                <div class="mt-auto space-y-4">
+                                    <div class="flex justify-between items-center pt-3 border-t border-gray-100">
+                                        <div class="flex items-center gap-4">
+                                            <div class="flex items-center gap-1 text-gray-500 hover:text-orange-600 transition-colors" title="{{ project.like_count }} Likes">
+                                                <span class="material-icons text-sm">favorite</span>
+                                                <span class="text-xs font-medium">{{ project.like_count | default(0) }}</span>
+                                            </div>
+                                            <div class="flex items-center gap-1 text-gray-500 hover:text-orange-600 transition-colors" title="Task">
+                                                <span class="material-icons text-sm">task_alt</span>
+                                                <span class="text-xs font-medium">{{ project.tasks.count() if project.tasks else '0' }}</span>
+                                            </div>
+                                            {% if current_user.is_authenticated and not project.private %}
+                                                {% if project.id in user_votes %}
+                                                    <button class="text-xs bg-gray-400 text-white px-2 py-1 rounded-full font-semibold cursor-not-allowed flex items-center gap-1">
+                                                        <span>✓</span>
+                                                        <span>Votato</span>
+                                                    </button>
+                                                {% else %}
+                                                    <button onclick="voteProject({{ project.id }}, this)" 
+                                                            class="text-xs bg-gradient-to-r from-green-500 to-blue-600 hover:from-green-600 hover:to-blue-700 text-white px-2 py-1 rounded-full font-semibold transition duration-300 flex items-center gap-1">
+                                                        <span>🗳️</span>
+                                                        <span>Vota</span>
+                                                    </button>
+                                                {% endif %}
+                                            {% endif %}
+                                        </div>
+                                        
+                                        <div class="text-xs text-gray-500">
+                                            {% if project.created_at %}
+                                            <time datetime="{{ project.created_at.isoformat() }}">
+                                                {{ project.created_at.strftime('%d %b %Y') }}
+                                            </time>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+
+                                    <a href="{{ url_for('projects.project_detail', project_id=project.id) }}" 
+                                       class="inline-flex w-full items-center justify-center px-6 py-3 rounded-xl bg-gradient-to-r from-orange-500 to-purple-600 text-white hover:from-orange-600 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all duration-300 gap-2 text-sm font-semibold group">
+                                        <span>Esplora Progetto</span>
+                                        <span class="material-icons text-sm group-hover:translate-x-1 transition-transform">arrow_forward</span>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                {# Empty State #}
+                <div class="col-span-full flex flex-col items-center justify-center py-16 px-4">
+                    <div class="text-center max-w-lg">
+                        <div class="w-24 h-24 mx-auto mb-6 bg-gradient-to-br from-orange-100 to-purple-100 rounded-full flex items-center justify-center">
+                            <span class="material-icons text-4xl text-orange-400">search_off</span>
+                        </div>
+                        <h3 class="text-2xl font-bold text-gray-900 mb-3">Nessun progetto trovato</h3>
+                        <p class="text-gray-600 mb-8 leading-relaxed">
+                            Non ci sono progetti che corrispondono ai criteri di ricerca selezionati. 
+                            Prova a modificare i filtri o a esplorare tutte le categorie.
+                        </p>
+                        <a href="{{ url_for('projects.projects_list') }}" 
+                           class="inline-flex items-center px-6 py-3 rounded-xl bg-gradient-to-r from-orange-500 to-purple-600 text-white hover:from-orange-600 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all duration-300 gap-2 font-semibold">
+                            <span class="material-icons text-sm">refresh</span>
+                            Reimposta filtri
+                        </a>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+        </div>
+    </section>
+
+    {# Modern Pagination #}
+    {% if pagination and pagination.pages > 1 %}
+    <section class="py-8 bg-white">
+        <div class="container mx-auto px-6">
+            <div class="flex flex-col items-center">
+                <nav aria-label="Navigazione pagine progetti" class="mb-6">
+                    <ul class="flex items-center gap-2">
+                        {# Previous Button #}
+                        <li>
+                            {% if pagination.has_prev %}
+                            <a href="{{ url_for('projects.projects_list', page=pagination.prev_num, **request.args) }}" 
+                               class="flex h-12 w-12 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-500 hover:bg-orange-50 hover:text-orange-600 hover:border-orange-300 transition-all duration-200 shadow-sm hover:shadow-md">
+                                <span class="sr-only">Pagina precedente</span>
+                                <span class="material-icons">keyboard_arrow_left</span>
+                            </a>
+                            {% else %}
+                            <span class="flex h-12 w-12 items-center justify-center rounded-xl border border-gray-100 bg-gray-50 text-gray-300 cursor-not-allowed">
+                                <span class="material-icons">keyboard_arrow_left</span>
+                            </span>
+                            {% endif %}
+                        </li>
+                        
+                        {# Page Numbers #}
+                        {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=1) %}
+                            {% if page_num %}
+                                <li>
+                                    {% if page_num == pagination.page %}
+                                        <span class="flex h-12 w-12 items-center justify-center rounded-xl border border-orange-500 bg-gradient-to-r from-orange-500 to-purple-600 text-white font-bold shadow-lg">
+                                            {{ page_num }}
+                                        </span>
+                                    {% else %}
+                                        <a class="flex h-12 w-12 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-700 hover:bg-orange-50 hover:text-orange-600 hover:border-orange-300 transition-all duration-200 shadow-sm hover:shadow-md font-medium" 
+                                           href="{{ url_for('projects.projects_list', page=page_num, **request.args) }}">
+                                            {{ page_num }}
+                                        </a>
+                                    {% endif %}
+                                </li>
+                            {% elif loop.index == pagination.left_current + pagination.left_edge + 1 or loop.index == pagination.page + pagination.right_current + 1 %}
+                                <li>
+                                    <span class="flex h-12 w-12 items-center justify-center text-gray-400 font-bold">...</span>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {# Next Button #}
+                        <li>
+                            {% if pagination.has_next %}
+                            <a href="{{ url_for('projects.projects_list', page=pagination.next_num, **request.args) }}"
+                               class="flex h-12 w-12 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-500 hover:bg-orange-50 hover:text-orange-600 hover:border-orange-300 transition-all duration-200 shadow-sm hover:shadow-md">
+                                <span class="sr-only">Pagina successiva</span>
+                                <span class="material-icons">keyboard_arrow_right</span>
+                            </a>
+                            {% else %}
+                            <span class="flex h-12 w-12 items-center justify-center rounded-xl border border-gray-100 bg-gray-50 text-gray-300 cursor-not-allowed">
+                                <span class="material-icons">keyboard_arrow_right</span>
+                            </span>
+                            {% endif %}
+                        </li>
+                    </ul>
+                </nav>
+                
+                <div class="text-sm text-gray-600 bg-gray-50 px-4 py-2 rounded-full border border-gray-200">
+                    <span>Pagina <strong class="text-orange-600">{{ pagination.page }}</strong> di <strong class="text-orange-600">{{ pagination.pages }}</strong></span>
+                    <span class="mx-2 text-gray-400">•</span>
+                    <span><strong class="text-orange-600">{{ pagination.total }}</strong> progetti totali</span>
+                </div>
+            </div>
+        </div>
+    </section>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+// Funzione per votare un progetto
+function voteProject(projectId, buttonElement) {
+    // Disabilita il pulsante per evitare doppi click
+    buttonElement.disabled = true;
+    const originalHTML = buttonElement.innerHTML;
+    buttonElement.innerHTML = '<span>⏳</span><span>Votando...</span>';
+    
+    fetch(`/vote_project/${projectId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token() }}'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            buttonElement.innerHTML = '<span>✓</span><span>Votato!</span>';
+            buttonElement.className = 'text-xs bg-gray-400 text-white px-2 py-1 rounded-full font-semibold cursor-not-allowed flex items-center gap-1';
+            showNotification('success', data.message);
+        } else {
+            buttonElement.disabled = false;
+            buttonElement.innerHTML = originalHTML;
+            showNotification('error', data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        buttonElement.disabled = false;
+        buttonElement.innerHTML = originalHTML;
+        showNotification('error', 'Errore durante la votazione');
+    });
+}
+
+function showNotification(type, message) {
+    // Crea una notifica temporanea
+    const notification = document.createElement('div');
+    notification.className = `fixed top-4 right-4 z-50 px-6 py-4 rounded-lg text-white font-semibold ${
+        type === 'success' ? 'bg-green-500' : 'bg-red-500'
+    } transform transition-all duration-300`;
+    notification.textContent = message;
+    
+    document.body.appendChild(notification);
+    
+    // Animazione di entrata
+    setTimeout(() => {
+        notification.style.transform = 'translateX(0)';
+    }, 100);
+    
+    // Rimuovi la notifica dopo 4 secondi
+    setTimeout(() => {
+        notification.style.transform = 'translateX(100%)';
+        setTimeout(() => {
+            notification.remove();
+        }, 300);
+    }, 4000);
+}
+</script>
+{% endblock %}

@@ -1,0 +1,365 @@
+{# app/templates/edit_project.html #}
+{% extends 'base.html' %}
+
+{% block title %}Modifica Progetto - {{ project.name }}{% endblock %}
+
+{% block content %}
+<main class="px-4 sm:px-8 md:px-16 lg:px-24 xl:px-40 flex flex-1 justify-center py-8">
+    <div class="layout-content-container flex flex-col w-full max-w-3xl">
+
+        <nav aria-label="Breadcrumb" class="mb-6">
+            <ol class="flex items-center gap-2 text-sm">
+                <li><a class="text-gray-500 hover:text-mclaren-orange font-medium leading-normal transition-colors" href="{{ url_for('projects.home') }}">Home</a></li>
+                <li><span class="text-gray-400 font-medium leading-normal">/</span></li>
+                <li><a class="text-gray-500 hover:text-mclaren-orange font-medium leading-normal transition-colors" href="{{ url_for('projects.project_detail', project_id=project.id) }}">{{ project.name }}</a></li>
+                <li><span class="text-gray-400 font-medium leading-normal">/</span></li>
+                <li><span class="text-gray-700 font-medium leading-normal">Modifica Progetto</span></li>
+            </ol>
+        </nav>
+
+        <div class="bg-white p-6 md:p-8 rounded-xl shadow-lg border border-gray-200">
+            <div class="mb-6 text-center md:text-left">
+                <h1 class="text-gray-900 tracking-tight text-3xl font-bold leading-tight">
+                    Modifica il Tuo Progetto
+                </h1>
+                <p class="text-gray-600 text-base mt-2">
+                    Aggiorna le informazioni del tuo progetto e perfeziona la tua visione.
+                </p>
+            </div>
+
+            <hr class="my-6">
+
+            <form id="edit-project-form" method="POST" action="{{ url_for('projects.update_project', project_id=project.id) }}" novalidate>
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                <div class="space-y-6">
+                    <div>
+                        <label for="name" class="block text-sm font-semibold leading-6 text-gray-900 mb-1">
+                            Nome del Progetto <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text" id="name" name="name" value="{{ project.name }}" required
+                               class="form-input block w-full rounded-lg border-gray-300 shadow-sm focus:border-mclaren-orange focus:ring focus:ring-mclaren-orange focus:ring-opacity-50 text-base" />
+                    </div>
+
+                    <div>
+                        <label for="pitch" class="block text-sm font-semibold leading-6 text-gray-900 mb-1">
+                            Pitch / Descrizione Breve <span class="text-red-500">*</span>
+                        </label>
+                        <textarea id="pitch" name="pitch" rows="3" required
+                                  class="form-textarea block w-full rounded-lg border-gray-300 shadow-sm focus:border-mclaren-orange focus:ring focus:ring-mclaren-orange focus:ring-opacity-50 text-base">{{ project.pitch }}</textarea>
+                    </div>
+
+                    <div>
+                        <label for="description" class="block text-sm font-semibold leading-6 text-gray-900 mb-1">
+                            Descrizione Completa <span class="text-red-500">*</span>
+                        </label>
+                        <textarea id="description" name="description" rows="5" required
+                                  class="form-textarea block w-full rounded-lg border-gray-300 shadow-sm focus:border-mclaren-orange focus:ring focus:ring-mclaren-orange focus:ring-opacity-50 text-base">{{ project.description }}</textarea>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="category" class="block text-sm font-semibold leading-6 text-gray-900 mb-1">
+                                Categoria Principale <span class="text-red-500">*</span>
+                            </label>
+                            <select id="category" name="category" required
+                                    class="form-select block w-full rounded-lg border-gray-300 shadow-sm focus:border-mclaren-orange focus:ring focus:ring-mclaren-orange focus:ring-opacity-50 text-base">
+                                {% if allowed_categories and allowed_categories is mapping %}
+                                    {% for cat_key, cat_display in allowed_categories.items() %}
+                                    <option value="{{ cat_key }}" {% if project.category == cat_key %}selected{% endif %}>{{ cat_display }}</option>
+                                    {% endfor %}
+                                {% endif %}
+                            </select>
+                        </div>
+
+                        <div>
+                            <label for="repository_url" class="block text-sm font-semibold leading-6 text-gray-900 mb-1">
+                                URL Repository (Opzionale)
+                            </label>
+                            <input type="url" id="repository_url" name="repository_url" value="{{ project.repository_url or '' }}"
+                                   class="form-input block w-full rounded-lg border-gray-300 shadow-sm focus:border-mclaren-orange focus:ring focus:ring-mclaren-orange focus:ring-opacity-50 text-base"
+                                   placeholder="https://github.com/nome-utente/repository" />
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="flex items-center mb-2">
+                            <input type="checkbox" id="private" name="private" class="form-checkbox h-5 w-5 text-mclaren-orange rounded focus:ring-mclaren-orange" {% if project.private %}checked{% endif %}>
+                            <label for="private" class="ml-2 block text-sm font-semibold text-gray-900">
+                                Progetto Privato
+                            </label>
+                        </div>
+                        <p class="text-xs text-gray-500">I progetti privati sono visibili solo a te e ai collaboratori che inviti. Potrai renderlo pubblico in seguito.</p>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold leading-6 text-gray-900 mb-1">
+                            Immagine di Copertina
+                        </label>
+                        <!-- Campo nascosto per l'URL dell'immagine -->
+                        <input type="hidden" id="cover_image_url" name="cover_image_url" value="{{ project.cover_image_url or '' }}" />
+                        <!-- Campo nascosto per indicare se rimuovere l'immagine -->
+                        <input type="hidden" id="remove_cover_image" name="remove_cover_image" value="false" />
+                        
+                        <div id="drop-area" class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:border-mclaren-orange transition-colors bg-gray-50">
+                            <div id="drop-message" class="flex flex-col items-center {% if project.cover_image_url %}hidden{% endif %}">
+                                <span class="material-icons text-3xl text-gray-400 mb-2">cloud_upload</span>
+                                <p class="text-sm text-gray-500">Trascina un'immagine qui o <span class="text-mclaren-orange">clicca per caricare</span></p>
+                                <p class="text-xs text-gray-400 mt-1">Formati supportati: PNG, JPG, JPEG, GIF</p>
+                            </div>
+                            <div id="preview-container" class="mt-4 {% if not project.cover_image_url %}hidden{% endif %}">
+                                <img id="preview-image" src="{{ project.cover_image_url or '' }}" alt="Anteprima immagine" class="max-h-40 mx-auto rounded-lg shadow-md object-cover">
+                                <p class="text-sm text-gray-500 mt-2">{% if project.cover_image_url %}Immagine attuale{% else %}Caricamento completato!{% endif %}</p>
+                                <button type="button" id="remove-image" class="mt-2 inline-flex items-center px-3 py-1 bg-red-50 text-sm text-red-600 rounded-lg hover:bg-red-100 hover:text-red-800">
+                                    <span class="material-icons text-sm mr-1">delete</span>
+                                    Rimuovi immagine
+                                </button>
+                            </div>
+                            <input id="file-input" type="file" class="hidden" accept=".jpg,.jpeg,.png,.gif,.webp">
+                        </div>
+                        <div id="upload-progress" class="mt-2 hidden">
+                            <div class="h-1 w-full bg-gray-200 rounded-full overflow-hidden">
+                                <div id="progress-bar" class="h-full bg-mclaren-orange" style="width: 0%"></div>
+                            </div>
+                            <p id="progress-text" class="text-xs text-gray-500 mt-1">Caricamento: 0%</p>
+                        </div>
+                        <p id="upload-error" class="hidden text-xs text-red-500 mt-1"></p>
+                    </div>
+                </div>
+
+                <div id="form-feedback" class="mt-6" style="display: none;"></div>
+
+                <div class="mt-8 pt-6 border-t border-gray-200 flex flex-col sm:flex-row justify-end gap-3">
+                    <a href="{{ url_for('projects.project_detail', project_id=project.id) }}"
+                       class="flex items-center justify-center rounded-lg h-11 px-5 py-2.5 text-sm font-semibold text-gray-700 bg-white border border-gray-300 shadow-sm hover:bg-gray-50 transition-colors">
+                       Annulla
+                    </a>
+                    <button type="submit"
+                            class="flex items-center justify-center rounded-lg h-11 px-5 py-2.5 text-sm font-semibold text-white bg-mclaren-orange hover:bg-mclaren-orange-darker shadow-sm transition-colors">
+                        Salva Modifiche
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</main>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const editForm = document.getElementById('edit-project-form');
+    if (editForm) {
+        const feedbackDiv = document.getElementById('form-feedback');
+        const submitButton = editForm.querySelector('button[type="submit"]');
+        const originalButtonHtml = submitButton.innerHTML;
+
+        // Elementi per il drag and drop
+        const dropArea = document.getElementById('drop-area');
+        const fileInput = document.getElementById('file-input');
+        const coverImageUrlInput = document.getElementById('cover_image_url');
+        const previewContainer = document.getElementById('preview-container');
+        const previewImage = document.getElementById('preview-image');
+        const dropMessage = document.getElementById('drop-message');
+        const progressContainer = document.getElementById('upload-progress');
+        const progressBar = document.getElementById('progress-bar');
+        const progressText = document.getElementById('progress-text');
+        const uploadError = document.getElementById('upload-error');
+        
+        // Gestione del drag and drop
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropArea.addEventListener(eventName, preventDefaults, false);
+        });
+        
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropArea.addEventListener(eventName, highlight, false);
+        });
+        
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropArea.addEventListener(eventName, unhighlight, false);
+        });
+        
+        function highlight() {
+            dropArea.classList.add('border-mclaren-orange', 'bg-orange-50');
+        }
+        
+        function unhighlight() {
+            dropArea.classList.remove('border-mclaren-orange', 'bg-orange-50');
+        }
+        
+        // Gestione del drop
+        dropArea.addEventListener('drop', handleDrop, false);
+        
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            handleFiles(files);
+        }
+        
+        // Gestione del click
+        dropArea.addEventListener('click', () => {
+            fileInput.click();
+        });
+        
+        fileInput.addEventListener('change', function() {
+            handleFiles(this.files);
+        });
+        
+        function handleFiles(files) {
+            if (files.length > 0) {
+                const file = files[0];
+                if (isValidImageFile(file)) {
+                    uploadFile(file);
+                    showPreview(file);
+                } else {
+                    showError('Formato file non supportato. Usa PNG, JPG, JPEG o GIF.');
+                }
+            }
+        }
+        
+        function isValidImageFile(file) {
+            const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+            return validTypes.includes(file.type);
+        }
+        
+        function showPreview(file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                previewImage.src = e.target.result;
+                previewContainer.classList.remove('hidden');
+                dropMessage.classList.add('hidden');
+            }
+            reader.readAsDataURL(file);
+        }
+        
+        function uploadFile(file) {
+            const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+            const xhr = new XMLHttpRequest();
+            const formData = new FormData();
+            
+            formData.append('file', file);
+            
+            xhr.open('POST', '/api/upload-image', true);
+            xhr.setRequestHeader('X-CSRF-Token', csrfToken);
+            
+            // Mostra il progress bar
+            progressContainer.classList.remove('hidden');
+            uploadError.classList.add('hidden');
+            
+            xhr.upload.addEventListener("progress", function(e) {
+                const percentComplete = Math.round((e.loaded * 100) / e.total);
+                progressBar.style.width = percentComplete + '%';
+                progressText.textContent = `Caricamento: ${percentComplete}%`;
+            });
+            
+            xhr.onload = function() {
+                if (xhr.status === 200) {
+                    const response = JSON.parse(xhr.responseText);
+                    if (response.success) {
+                        // Imposta l'URL dell'immagine caricata nel campo input
+                        coverImageUrlInput.value = response.file.url;
+                        progressText.textContent = 'Caricamento completato!';
+                    } else {
+                        showError(response.error || 'Errore durante il caricamento');
+                    }
+                } else {
+                    showError('Errore durante il caricamento');
+                }
+            };
+            
+            xhr.onerror = function() {
+                showError('Errore di rete durante il caricamento');
+            };
+            
+            xhr.send(formData);
+        }
+        
+        function showError(message) {
+            uploadError.textContent = message;
+            uploadError.classList.remove('hidden');
+            progressContainer.classList.add('hidden');
+        }
+
+        function showGeneralFeedback(message, type = 'danger') {
+            feedbackDiv.innerHTML = `<div class="p-4 mb-4 text-sm rounded-lg ${type === 'success' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}" role="alert">${message}</div>`;
+            feedbackDiv.style.display = 'block';
+        }
+
+        // Gestione del pulsante "Rimuovi immagine"
+        const removeImageBtn = document.getElementById('remove-image');
+        const removeImageField = document.getElementById('remove_cover_image');
+        
+        if (removeImageBtn) {
+            removeImageBtn.addEventListener('click', function() {
+                // Imposta il campo nascosto per la rimozione dell'immagine a true
+                removeImageField.value = "true";
+                
+                // Svuota il campo URL dell'immagine
+                coverImageUrlInput.value = "";
+                
+                // Nascondi l'anteprima e mostra il messaggio di drag and drop
+                previewContainer.classList.add('hidden');
+                dropMessage.classList.remove('hidden');
+                
+                // Reset dell'immagine di anteprima
+                previewImage.src = '';
+            });
+        }
+
+        // Gestione del submit del form
+        editForm.addEventListener('submit', function(event) {
+            event.preventDefault();
+            
+            if (!editForm.checkValidity()) {
+                editForm.reportValidity();
+                return;
+            }
+            
+            submitButton.disabled = true;
+            submitButton.innerHTML = '<span class="material-icons animate-spin mr-2">sync</span> Salvataggio in corso...';
+            
+            const formData = new FormData(this);
+            const data = Object.fromEntries(formData.entries());
+            data.private = formData.has('private');
+            
+            // Ottieni il CSRF token dal meta tag
+            const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+            
+            fetch(editForm.action, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-Token': csrfToken
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(err => { throw new Error(err.error || 'Errore del server'); });
+                }
+                return response.json();
+            })
+            .then(resData => {
+                if (resData && resData.success) {
+                    window.location.href = resData.redirect_url || "{{ url_for('projects.project_detail', project_id=project.id) }}";
+                } else {
+                    throw new Error("Risposta API non valida.");
+                }
+            })
+            .catch(error => {
+                console.error('Errore aggiornamento progetto:', error);
+                showGeneralFeedback(error.message, 'danger');
+                submitButton.disabled = false;
+                submitButton.innerHTML = originalButtonHtml;
+            });
+        });
+    }
+});
+</script>
+{% endblock %}

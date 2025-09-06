@@ -1,0 +1,842 @@
+{% extends "base.html" %}
+
+{% block title %}{{ project.name }}{% endblock %}
+
+{% block content %}
+<main class="bg-slate-50 flex-1 py-8">
+    <div class="p-4 md:p-8">
+        <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+            {# Colonna Sinistra - Dettagli e Task #}
+            <div class="lg:col-span-2 space-y-8">
+
+                {# Banner Progetto Privato #}
+                {% if project.private %}
+                <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r-lg">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <span class="material-icons text-yellow-500">lock</span>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm text-yellow-700">
+                                Questo è un progetto privato. Solo tu e i collaboratori che inviti potete vederlo.
+                                {% if current_user.id == project.creator_id %}
+                                <a href="{{ url_for('invites.manage_project_invites', project_id=project.id) }}" class="font-semibold text-yellow-800 hover:underline">Gestisci Inviti</a>
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                {# Sezione Header Progetto #}
+                <section class="bg-white shadow-lg rounded-xl border border-gray-200 overflow-hidden">
+                    {% if project.cover_image_url %}
+                    <div class="w-full h-64 md:h-80 lg:h-96 relative">
+                        <img src="{{ project.cover_image_url }}" alt="{{ project.name }}" class="w-full h-full object-cover">
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                        <div class="absolute bottom-0 left-0 right-0 p-6 text-white">
+                            <div class="flex items-center gap-2 mb-2">
+                                <span class="inline-block bg-mclaren-orange/80 text-white text-xs font-semibold px-2.5 py-1 rounded-full">
+                                    {{ project.category | title }}
+                                </span>
+                                <!-- --- NUOVO: Badge Tipo Progetto per cover image --- -->
+                                {% if project.is_scientific %}
+                                <span class="inline-block bg-blue-600/80 text-white text-xs font-semibold px-2.5 py-1 rounded-full">
+                                    🔬 Ricerca Scientifica
+                                </span>
+                                {% else %}
+                                <span class="inline-block bg-green-600/80 text-white text-xs font-semibold px-2.5 py-1 rounded-full">
+                                    ☀️ Commerciale
+                                </span>
+                                {% endif %}
+                            </div>
+                            <h1 class="text-3xl sm:text-4xl font-bold text-white tracking-tight">{{ project.name }}</h1>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="p-6 md:p-8 {% if project.cover_image_url %}mt-2{% endif %}">
+                        <div class="flex flex-col md:flex-row justify-between items-start gap-4">
+                            <div class="w-full">
+                                {% if not project.cover_image_url %}
+                                <div class="flex items-center justify-between w-full mb-4">
+                                    <div class="flex items-center gap-2">
+                                        <!-- Badge Categoria -->
+                                        <span class="inline-block bg-mclaren-orange/10 text-mclaren-orange text-xs font-semibold px-2.5 py-0.5 rounded-full">
+                                            {{ project.category | title }}
+                                        </span>
+                                        <!-- --- NUOVO: Badge Tipo Progetto --- -->
+                                        {% if project.is_scientific %}
+                                        <span class="inline-block bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-0.5 rounded-full">
+                                            🔬 Ricerca Scientifica
+                                        </span>
+                                        {% else %}
+                                        <span class="inline-block bg-green-100 text-green-800 text-xs font-semibold px-2.5 py-0.5 rounded-full">
+                                            ☀️ Commerciale
+                                        </span>
+                                        {% endif %}
+                                    </div>
+                                    {% if current_user.id == project.creator_id %}
+                                    <a href="{{ url_for('projects.edit_project_form', project_id=project.id) }}" class="inline-flex items-center text-sm font-medium text-mclaren-orange hover:text-mclaren-orange-darker">
+                                        <span class="material-icons text-sm mr-1">edit</span>
+                                        Modifica Progetto
+                                    </a>
+                                    {% endif %}
+                                </div>
+                                <h1 class="text-gray-900 text-3xl sm:text-4xl font-bold tracking-tight mb-4">{{ project.name }}</h1>
+                                {% else %}
+                                <div class="flex justify-between items-center mb-4">
+                                    <div class="flex items-center gap-2 bg-mclaren-orange/20 px-4 py-2 rounded-lg">
+                                        <span class="material-icons text-mclaren-orange text-lg">calendar_month</span>
+                                        <span class="text-base font-medium text-mclaren-orange">{{ project.created_at | format_datetime('%d %B %Y') }}</span>
+                                    </div>
+                                    {% if current_user.id == project.creator_id %}
+                                    <a href="{{ url_for('projects.edit_project_form', project_id=project.id) }}" class="inline-flex items-center text-sm font-medium text-mclaren-orange hover:text-mclaren-orange-darker">
+                                        <span class="material-icons text-sm mr-1">edit</span>
+                                        Modifica Progetto
+                                    </a>
+                                    {% endif %}
+                                </div>
+                                {% endif %}
+                                
+                                {% if not project.cover_image_url %}
+                                <div class="flex items-center gap-4 mt-3 mb-4">
+                                    <div class="flex items-center gap-2 bg-mclaren-orange/20 px-4 py-2 rounded-lg">
+                                        <span class="material-icons text-mclaren-orange text-lg">calendar_month</span>
+                                        <span class="text-base font-medium text-mclaren-orange">Creato il {{ project.created_at | format_datetime('%d %B %Y') }}</span>
+                                    </div>
+                                </div>
+                                {% endif %}
+                                
+                                {% if project.rewritten_pitch %}
+                                <div class="bg-gray-50 p-4 rounded-lg border border-gray-100 mb-4">
+                                    <div class="flex items-center gap-2 mb-2">
+                                        <span class="text-xs bg-blue-100 text-blue-800 px-2.5 py-1 rounded-full inline-flex items-center">
+                                            <span class="material-icons text-xs align-middle mr-1">auto_awesome</span>
+                                            Migliorato con AI
+                                        </span>
+                                    </div>
+                                    <p class="text-gray-700 text-lg leading-relaxed">
+                                        {{ project.rewritten_pitch | nl2br }}
+                                    </p>
+                                </div>
+                                {% else %}
+                                <div class="bg-gray-50 p-4 rounded-lg border border-gray-100 mb-4">
+                                    <p class="text-gray-700 text-lg leading-relaxed">
+                                        {{ project.pitch }}
+                                    </p>
+                                    {% if current_user.id == project.creator_id %}
+                                    <div class="mt-2">
+                                        <a href="{{ url_for('projects.edit_project_form', project_id=project.id) }}" class="inline-flex items-center text-sm font-medium text-blue-600 hover:text-blue-800">
+                                            <span class="material-icons text-sm mr-1">auto_awesome</span>
+                                            Migliora descrizione con AI
+                                        </a>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                {% endif %}
+                                
+                                <div class="flex items-center justify-between">
+                                    <p class="text-sm text-gray-700">
+                                        Creato da:
+                                        <a href="{{ url_for('users.user_profile', username=project.creator.username) }}" class="font-bold hover:underline">{{ project.creator.username }}</a>
+                                    </p>
+                                    
+                                    <div class="flex items-center space-x-3">
+                                        {% if current_user.is_authenticated and not project.private %}
+                                            {% if user_has_voted_this_month %}
+                                                <button class="inline-flex items-center px-3 py-2 text-sm font-semibold bg-gray-400 text-white rounded-lg cursor-not-allowed space-x-2">
+                                                    <span>✓</span>
+                                                    <span>Già Votato</span>
+                                                </button>
+                                            {% else %}
+                                                <button onclick="voteProject({{ project.id }}, this)" 
+                                                        class="inline-flex items-center px-3 py-2 text-sm font-semibold bg-gradient-to-r from-green-500 to-blue-600 hover:from-green-600 hover:to-blue-700 text-white rounded-lg transition duration-300 space-x-2">
+                                                    <span>🗳️</span>
+                                                    <span>Vota Progetto</span>
+                                                </button>
+                                            {% endif %}
+                                        {% endif %}
+                                        
+                                        {% if not project.cover_image_url and current_user.id == project.creator_id %}
+                                        <a href="{{ url_for('projects.edit_project_form', project_id=project.id) }}" class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-mclaren-orange hover:bg-mclaren-orange-darker rounded-lg transition-colors">
+                                            <span class="material-icons text-sm mr-1">add_photo_alternate</span>
+                                            Aggiungi immagine di copertina
+                                        </a>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                {# --- SEZIONE TASK COMPLETATI --- #}
+                {% if completed_tasks %}
+                <section class="bg-gradient-to-br from-green-50 to-cyan-50 p-6 md:p-8 rounded-xl shadow-lg border border-green-200">
+                    <h2 class="text-2xl font-bold text-green-800 mb-4 flex items-center gap-3">
+                        <span class="material-icons text-3xl">verified</span>
+                        Hall of Fame: Task Completati
+                    </h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {% for task in completed_tasks %}
+                            {% include 'partials/_task_card_tailwind.html' with context %}
+                        {% endfor %}
+                    </div>
+                </section>
+                {% endif %}
+
+                {# --- SEZIONE ROADMAP DEI TASK --- #}
+                <section class="mt-8">
+                    <div class="flex flex-wrap justify-between items-center mb-6 gap-4">
+                        <h2 class="text-2xl font-bold text-gray-800">Roadmap dei Task</h2>
+                        {% if current_user.is_authenticated and current_user.id == project.creator_id %}
+                            <div class="flex items-center gap-2">
+                                {% if project.private %}
+                                <a href="{{ url_for('invites.manage_project_invites', project_id=project.id) }}" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-semibold text-sm flex items-center gap-2 shadow-sm">
+                                    <span class="material-icons text-base">people</span>
+                                    Gestisci Inviti
+                                </a>
+                                {% endif %}
+                                <button id="suggest-ai-task-btn" data-project-id="{{ project.id }}" class="bg-purple-500 text-white px-4 py-2 rounded-lg hover:bg-purple-600 transition-colors font-semibold text-sm flex items-center gap-2 shadow-sm">
+                                    <span class="material-icons text-base">auto_awesome</span>
+                                    Suggerisci Task (AI)
+                                </button>
+                                <a href="{{ url_for('tasks.add_task_form', project_id=project.id) }}" class="bg-mclaren-orange text-white px-4 py-2 rounded-lg hover:bg-mclaren-orange-darker transition-colors font-semibold text-sm flex items-center gap-2 shadow-sm">
+                                    <span class="material-icons text-base">add</span>
+                                    Aggiungi Task Manuale
+                                </a>
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Strumenti di Collaborazione -->
+                    <div class="bg-white p-6 rounded-xl shadow-lg border border-gray-200">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4">Strumenti di Collaborazione</h3>
+                        <div class="grid grid-cols-1 gap-4">
+                            <a href="{{ url_for('wiki.wiki_index', project_id=project.id) }}" 
+                               class="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                                <div class="flex items-center gap-3 mb-2">
+                                    <span class="material-icons text-blue-600 text-xl">menu_book</span>
+                                    <h4 class="font-semibold text-blue-800">Wiki del Progetto</h4>
+                                </div>
+                                <p class="text-sm text-blue-600">Documentazione, guide e conoscenza condivisa</p>
+                            </a>
+                            <!-- 🤖 AI PROJECT GUIDE LINK -->
+                            <a href="{{ url_for('projects.project_ai_guide', project_id=project.id) }}" 
+                               class="bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                                <div class="flex items-center gap-3 mb-2">
+                                    <span class="material-icons text-purple-600 text-xl">psychology</span>
+                                    <h4 class="font-semibold text-purple-800">🤖 Guide AI</h4>
+                                    {% if project.ai_mvp_guide or project.ai_feasibility_analysis %}
+                                    <span class="inline-block bg-green-100 text-green-800 text-xs font-semibold px-2 py-1 rounded-full">Disponibili</span>
+                                    {% else %}
+                                    <span class="inline-block bg-yellow-100 text-yellow-800 text-xs font-semibold px-2 py-1 rounded-full">Da generare</span>
+                                    {% endif %}
+                                </div>
+                                <p class="text-sm text-purple-600">Guida MVP e analisi di fattibilità generate dall'AI</p>
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Configurazione Repository GitHub -->
+                    {% if current_user.id == project.creator_id %}
+                    <div class="bg-white p-6 rounded-xl shadow-lg border border-gray-200">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                            <span class="material-icons text-gray-700">settings</span>
+                            Configurazione Sviluppo
+                        </h3>
+                        
+                        <div class="bg-gray-50 rounded-lg p-4">
+                            <div class="flex items-center gap-3 mb-3">
+                                <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 0C4.477 0 0 4.484 0 10.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0110 4.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.203 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.942.359.31.678.921.678 1.856 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0020 10.017C20 4.484 15.522 0 10 0z" clip-rule="evenodd"></path>
+                                </svg>
+                                <h4 class="font-semibold text-gray-800">Repository GitHub</h4>
+                            </div>
+                            
+                            <div id="github-config-section">
+                                {% if project.github_url %}
+                                <div class="flex items-center justify-between bg-green-50 border border-green-200 rounded-lg p-3 mb-3">
+                                    <div class="flex items-center gap-2">
+                                        <span class="material-icons text-green-600 text-sm">check_circle</span>
+                                        <span class="text-sm text-green-700 font-medium">Repository configurato</span>
+                                    </div>
+                                    <a href="{{ project.github_url }}" target="_blank" rel="noopener noreferrer" 
+                                       class="text-sm text-green-700 hover:text-green-800 underline flex items-center gap-1">
+                                        Visualizza
+                                        <span class="material-icons text-sm">open_in_new</span>
+                                    </a>
+                                </div>
+                                <div class="text-xs text-gray-600 break-all mb-3">{{ project.github_url }}</div>
+                                <button onclick="editGithubUrl()" class="text-sm bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md transition-colors">
+                                    Modifica URL
+                                </button>
+                                {% else %}
+                                <div class="text-sm text-gray-600 mb-3">
+                                    Configura il repository GitHub per abilitare il flusso di sviluppo software con Pull Request.
+                                </div>
+                                <button onclick="addGithubUrl()" class="bg-mclaren-orange hover:bg-mclaren-orange-darker text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                                    + Aggiungi Repository GitHub
+                                </button>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <div id="task-phases-container" class="space-y-8">
+                        {% if not has_active_tasks %}
+                             <div id="no-tasks-placeholder" class="text-center bg-white p-8 rounded-xl shadow-lg border border-gray-200">
+                                <span class="material-icons text-5xl text-gray-400 mb-2">assignment</span>
+                                <h3 class="text-lg font-bold text-gray-800">La roadmap è ancora vuota!</h3>
+                                <p class="text-gray-500 mt-1">Questo progetto non ha ancora task definiti.</p>
+                            </div>
+                        {% else %}
+                            {% for phase_key, phase_name in ALLOWED_TASK_PHASES.items() %}
+                                {% set tasks_in_phase = tasks_by_phase.get(phase_key, []) %}
+                                {% if tasks_in_phase %}
+                                <div id="phase-{{ phase_key }}">
+                                    <h3 class="font-bold text-xl text-gray-700 mb-4 pb-2 border-b-2 border-mclaren-orange">{{ phase_name }}</h3>
+                                    <div id="phase-grid-{{ phase_key }}" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        {% for task in tasks_in_phase %}
+                                            {% set is_creator = current_user.is_authenticated and current_user.id == project.creator_id %}
+                                            {% set is_collaborator = current_user.is_authenticated and current_user in project.collaborators %}
+                                            {% set can_see_suggested = is_creator or is_collaborator %}
+                                            {% if task.status != 'suggested' or can_see_suggested %}
+                                                {% include 'partials/_task_card_tailwind.html' with context %}
+                                            {% endif %}
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                {% endif %}
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                </section>
+            </div>
+
+            {# Colonna Destra - Equity e Collaboratori #}
+            <div class="lg:col-span-1 space-y-8">
+                <!-- --- Sezione Equity (solo per progetti commerciali) --- -->
+                {% if project.is_commercial %}
+                <div class="bg-white p-6 rounded-xl shadow-lg border border-gray-200">
+                    <h3 class="text-lg font-bold text-gray-800 mb-4">Distribuzione Equity</h3>
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center text-sm">
+                            <span class="text-gray-600">Equity del Creatore:</span>
+                            <span class="font-bold text-green-600">{{ "%.2f"|format(creator_equity) }}%</span>
+                        </div>
+                        <div class="flex justify-between items-center text-sm">
+                            <span class="text-gray-600">Equity Distribuita:</span>
+                            <span class="font-bold text-blue-600">{{ "%.2f"|format(distributed_equity) }}%</span>
+                        </div>
+                        <div class="flex justify-between items-center text-sm text-red-700">
+                            <span class="text-gray-600">Piattaforma (KickthisUSs):</span>
+                            <span class="font-bold">{{ "%.2f"|format(platform_fee) }}%</span>
+                        </div>
+                        <div class="flex justify-between items-center text-sm mt-2 pt-2 border-t">
+                            <span class="text-gray-600 font-bold">Equity Disponibile:</span>
+                            <span class="font-bold text-gray-800">{{ "%.2f"|format(remaining_equity) }}%</span>
+                        </div>
+                        <div class="mt-4 pt-4 border-t">
+                            <div class="flex justify-between items-center font-bold text-base">
+                                <span>Totale Progetto:</span>
+                                <span>100%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <!-- --- Info per Ricerche Scientifiche --- -->
+                <div class="bg-blue-50 p-6 rounded-xl shadow-lg border border-blue-200">
+                    <h3 class="text-lg font-bold text-blue-800 mb-4">🔬 Ricerca Scientifica</h3>
+                    <div class="space-y-3 text-sm text-blue-700">
+                        <p>Questa è una ricerca condivisa per il progresso della conoscenza scientifica.</p>
+                        <div class="bg-blue-100 p-3 rounded-lg">
+                            <p class="font-semibold">✨ Contributi Liberi</p>
+                            <p class="text-xs mt-1">Non prevede equity o investimenti commerciali. Tutti i contributi sono per il bene comune.</p>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <div class="bg-white p-6 rounded-xl shadow-lg border border-gray-200">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-bold text-gray-800">Collaboratori ({{ collaborators|length }})</h3>
+                        {% if current_user.id == project.creator_id %}
+                            <a href="{{ url_for('invites.manage_project_invites', project_id=project.id) }}" class="inline-flex items-center text-sm font-medium text-mclaren-orange hover:text-mclaren-orange-darker">
+                                <span class="material-icons text-sm mr-1">person_add</span>
+                                Invita
+                            </a>
+                        {% endif %}
+                    </div>
+                    <ul class="space-y-4">
+                        {% for collaborator in collaborators %}
+                        <li class="flex items-center space-x-4">
+                            <a href="{{ url_for('users.user_profile', username=collaborator.user.username) }}">
+                                <img src="https://source.unsplash.com/random/40x40?avatar,person,{{ collaborator.user.id }}" alt="Avatar di {{ collaborator.user.username }}" class="w-10 h-10 rounded-full">
+                            </a>
+                            <div class="flex-grow">
+                                <a href="{{ url_for('users.user_profile', username=collaborator.user.username) }}" class="font-semibold text-gray-800 hover:text-mclaren-orange">{{ collaborator.user.username }}</a>
+                                <p class="text-xs text-gray-500 capitalize">{{ collaborator.role }}</p>
+                            </div>
+                            {% if collaborator.role != 'creator' %}
+                                <span class="text-sm font-semibold text-mclaren-orange">{{ "%.2f"|format(collaborator.equity_share) }}%</span>
+                            {% endif %}
+                        </li>
+                        {% else %}
+                        <li class="text-center text-sm text-gray-500 py-4">Nessun collaboratore ancora.</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</main>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    const PHASE_NAMES = JSON.parse('{{ ALLOWED_TASK_PHASES | tojson | safe }}');
+
+    // --- Activate Task Logic ---
+    document.body.addEventListener('click', function(e) {
+        // Cerca il pulsante anche se si clicca sull'icona interna
+        const button = e.target.closest('.activate-task-btn');
+        if (button) {
+            const taskId = button.dataset.taskId;
+            button.disabled = true;
+            button.innerHTML = `<svg class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>`;
+
+            fetch(`/api/task/${taskId}/activate`, {
+                method: 'POST',
+                headers: { 
+                    'X-CSRF-Token': csrfToken, 
+                    'Accept': 'application/json' 
+                },
+            })
+            .then(res => res.json().then(data => ({ok: res.ok, data})))
+            .then(({ok, data}) => {
+                if (ok && data.success) {
+                    const task = data.task;
+                    const taskHtml = data.html;
+                    document.getElementById(`suggested-task-${taskId}`)?.remove();
+
+                    document.getElementById('no-tasks-placeholder')?.remove();
+
+                    let phaseContainer = document.getElementById(`phase-${task.phase}`);
+                    let phaseGrid = document.getElementById(`phase-grid-${task.phase}`);
+
+                    if (!phaseContainer) {
+                        const taskPhasesContainer = document.getElementById('task-phases-container');
+                        taskPhasesContainer.insertAdjacentHTML('beforeend', `
+                            <div id="phase-${task.phase}">
+                                <h3 class="font-bold text-xl text-gray-700 mb-4 pb-2 border-b-2 border-mclaren-orange">${PHASE_NAMES[task.phase] || task.phase}</h3>
+                                <div id="phase-grid-${task.phase}" class="grid grid-cols-1 md:grid-cols-2 gap-6"></div>
+                            </div>
+                        `);
+                        phaseGrid = document.getElementById(`phase-grid-${task.phase}`);
+                    }
+                    
+                    if (phaseGrid) {
+                        phaseGrid.insertAdjacentHTML('beforeend', taskHtml);
+                    }
+                    
+                    const suggestedTasksGrid = document.getElementById('suggested-tasks-grid');
+                    if (!suggestedTasksGrid || suggestedTasksGrid.children.length === 0) {
+                        document.getElementById('suggested-tasks-section')?.remove();
+                    }
+                } else {
+                    throw new Error(data.error || 'Errore sconosciuto durante l_attivazione');
+                }
+            })
+            .catch(err => {
+                console.error("Activation error:", err);
+                alert(err.message);
+                button.disabled = false;
+                button.textContent = 'Attiva';
+            });
+        }
+    });
+    
+    // --- Suggest AI Tasks Logic ---
+    const suggestBtn = document.getElementById('suggest-ai-task-btn');
+    if (suggestBtn) {
+        suggestBtn.addEventListener('click', function() {
+            const button = this;
+            const originalHTML = button.innerHTML;
+            button.disabled = true;
+            button.innerHTML = `<svg class="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg> Elaborazione...`;
+
+            const projectId = button.dataset.projectId;
+            
+            fetch(`/api/projects/${projectId}/suggest-tasks`, {
+                method: 'POST',
+                headers: { 'X-CSRF-Token': csrfToken, 'Accept': 'application/json' },
+            })
+            .then(res => res.json().then(data => ({ok: res.ok, data})))
+            .then(({ok, data}) => {
+                console.log('Response:', {ok, data}); // Debug log
+                if (ok) {
+                    if (data.tasks && data.tasks.length > 0) {
+                        alert(`${data.tasks.length} nuovi task generati dall'IA sono stati aggiunti al progetto!`);
+                        // Ricarica la pagina per mostrare i nuovi task nelle sezioni delle fasi
+                        location.reload();
+                    } else {
+                        // L'IA non ha suggerito nuovi task, ma non è un errore
+                        alert(data.message || 'L\'IA non ha suggerito nuovi task questa volta. Prova più tardi o aggiungi più dettagli al progetto.');
+                    }
+                } else {
+                    throw new Error(data.error || 'Errore durante la comunicazione con il server.');
+                }
+            })
+            .catch(err => {
+                console.error("Suggestion error:", err);
+                alert(err.message);
+            })
+            .finally(() => {
+                button.disabled = false;
+                button.innerHTML = originalHTML;
+            });
+        });
+    }
+
+    // --- Edit Suggested Tasks Logic ---
+    // Handler per modificare task suggeriti
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.edit-suggested-task-btn')) {
+            const button = e.target.closest('.edit-suggested-task-btn');
+            const taskId = button.dataset.taskId;
+            
+            console.log('Edit button clicked for task:', taskId); // Debug log
+            
+            // Carica i dati del task
+            fetch(`/api/task/${taskId}/details`, {
+                method: 'GET',
+                headers: {
+                    'X-CSRF-Token': csrfToken,
+                    'Accept': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(task => {
+                if (task.error) {
+                    alert('Errore: ' + task.error);
+                    return;
+                }
+                
+                console.log('Task data loaded:', task); // Debug log
+                
+                // Popola il modal con i dati del task
+                document.getElementById('edit-task-id').value = task.id;
+                document.getElementById('edit-task-title').value = task.title;
+                document.getElementById('edit-task-description').value = task.description;
+                document.getElementById('edit-task-type').value = task.task_type;
+                document.getElementById('edit-task-phase').value = task.phase;
+                document.getElementById('edit-task-difficulty').value = task.difficulty;
+                document.getElementById('edit-task-equity').value = task.equity_reward;
+                
+                // Gestisci i campi di validazione
+                const validationFields = document.getElementById('validation-fields');
+                if (task.task_type === 'validation') {
+                    document.getElementById('edit-task-hypothesis').value = task.hypothesis || '';
+                    document.getElementById('edit-task-test-method').value = task.test_method || '';
+                    validationFields.style.display = 'block';
+                } else {
+                    validationFields.style.display = 'none';
+                }
+                
+                // Mostra il modal
+                document.getElementById('edit-task-modal').style.display = 'flex';
+            })
+            .catch(error => {
+                console.error('Error loading task details:', error);
+                alert('Errore durante il caricamento dei dati del task');
+            });
+        }
+    });
+
+    // Gestione chiusura modal
+    document.getElementById('close-edit-modal').addEventListener('click', function() {
+        document.getElementById('edit-task-modal').style.display = 'none';
+    });
+    
+    document.getElementById('cancel-edit-task').addEventListener('click', function() {
+        document.getElementById('edit-task-modal').style.display = 'none';
+    });
+
+    // Mostra/nascondi campi di validazione
+    document.getElementById('edit-task-type').addEventListener('change', function() {
+        const validationFields = document.getElementById('validation-fields');
+        if (this.value === 'validation') {
+            validationFields.style.display = 'block';
+        } else {
+            validationFields.style.display = 'none';
+        }
+    });
+
+    // Gestione del form di modifica
+    document.getElementById('edit-task-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const taskId = document.getElementById('edit-task-id').value;
+        const formData = new FormData();
+        
+        formData.append('title', document.getElementById('edit-task-title').value);
+        formData.append('description', document.getElementById('edit-task-description').value);
+        formData.append('task_type', document.getElementById('edit-task-type').value);
+        formData.append('phase', document.getElementById('edit-task-phase').value);
+        formData.append('difficulty', document.getElementById('edit-task-difficulty').value);
+        formData.append('equity_reward', document.getElementById('edit-task-equity').value);
+        formData.append('csrf_token', csrfToken);
+        
+        // Aggiungi campi di validazione se necessario
+        if (document.getElementById('edit-task-type').value === 'validation') {
+            formData.append('hypothesis', document.getElementById('edit-task-hypothesis').value);
+            formData.append('test_method', document.getElementById('edit-task-test-method').value);
+        }
+        
+        fetch(`/api/task/${taskId}/update-and-activate`, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRF-Token': csrfToken
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById('edit-task-modal').style.display = 'none';
+                location.reload();
+            } else {
+                alert('Errore: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error updating task:', error);
+            alert('Errore durante l\'aggiornamento del task');
+        });
+    });
+
+    // Funzioni per gestire GitHub URL
+    window.addGithubUrl = function() {
+        const url = prompt('Inserisci l\'URL del repository GitHub:', 'https://github.com/username/repository');
+        if (url && url.trim()) {
+            updateGithubUrl(url.trim());
+        }
+    };
+
+    window.editGithubUrl = function() {
+        const currentUrl = document.querySelector('#github-config-section .text-xs.text-gray-600').textContent;
+        const newUrl = prompt('Modifica l\'URL del repository GitHub:', currentUrl);
+        if (newUrl && newUrl.trim() && newUrl.trim() !== currentUrl) {
+            updateGithubUrl(newUrl.trim());
+        }
+    };
+
+    function updateGithubUrl(url) {
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+        fetch(`{{ url_for('projects.update_github_url', project_id=project.id) }}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify({ github_url: url })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload(); // Ricarica la pagina per mostrare i cambiamenti
+            } else {
+                alert('Errore: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Errore:', error);
+            alert('Errore durante l\'aggiornamento dell\'URL GitHub');
+        });
+    }
+});
+</script>
+
+{# Modal per modificare task suggeriti #}
+<div id="edit-task-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50" style="display: none;">
+    <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div class="p-6 border-b border-gray-200">
+            <div class="flex justify-between items-center">
+                <h3 class="text-xl font-bold text-gray-900">Modifica Task Suggerito</h3>
+                <button id="close-edit-modal" class="text-gray-500 hover:text-gray-700">
+                    <span class="material-icons">close</span>
+                </button>
+            </div>
+        </div>
+        
+        <form id="edit-task-form" class="p-6 space-y-6">
+            <input type="hidden" id="edit-task-id" name="task_id">
+            
+            <div>
+                <label for="edit-task-title" class="block text-sm font-medium text-gray-700 mb-2">Titolo del Task</label>
+                <input type="text" id="edit-task-title" name="title" required 
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+            </div>
+            
+            <div>
+                <label for="edit-task-description" class="block text-sm font-medium text-gray-700 mb-2">Descrizione</label>
+                <textarea id="edit-task-description" name="description" rows="4" required
+                          class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"></textarea>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label for="edit-task-type" class="block text-sm font-medium text-gray-700 mb-2">Tipo di Task</label>
+                    <select id="edit-task-type" name="task_type" required
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <option value="proposal">Proposta</option>
+                        <option value="implementation">Implementazione</option>
+                        <option value="validation">Validazione</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label for="edit-task-phase" class="block text-sm font-medium text-gray-700 mb-2">Fase</label>
+                    <select id="edit-task-phase" name="phase" required
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <option value="Planning">Planning</option>
+                        <option value="Research">Research</option>
+                        <option value="Design">Design</option>
+                        <option value="Development">Development</option>
+                        <option value="Testing">Testing</option>
+                        <option value="Marketing">Marketing</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label for="edit-task-difficulty" class="block text-sm font-medium text-gray-700 mb-2">Difficoltà</label>
+                    <select id="edit-task-difficulty" name="difficulty" required
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <option value="Very Easy">Molto Facile</option>
+                        <option value="Easy">Facile</option>
+                        <option value="Medium">Medio</option>
+                        <option value="Hard">Difficile</option>
+                        <option value="Very Hard">Molto Difficile</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label for="edit-task-equity" class="block text-sm font-medium text-gray-700 mb-2">Equity Reward (%)</label>
+                    <input type="number" id="edit-task-equity" name="equity_reward" min="0.5" max="10" step="0.1" required
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                </div>
+            </div>
+            
+            <div id="validation-fields" style="display: none;">
+                <div class="space-y-4 p-4 bg-purple-50 rounded-lg border border-purple-200">
+                    <h4 class="font-medium text-purple-800">Campi per Task di Validazione</h4>
+                    
+                    <div>
+                        <label for="edit-task-hypothesis" class="block text-sm font-medium text-gray-700 mb-2">Ipotesi</label>
+                        <textarea id="edit-task-hypothesis" name="hypothesis" rows="2"
+                                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                  placeholder="Crediamo che..."></textarea>
+                    </div>
+                    
+                    <div>
+                        <label for="edit-task-test-method" class="block text-sm font-medium text-gray-700 mb-2">Metodo di Test</label>
+                        <textarea id="edit-task-test-method" name="test_method" rows="2"
+                                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                  placeholder="Come testaremo questa ipotesi..."></textarea>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flex justify-end gap-3 pt-4 border-t border-gray-200">
+                <button type="button" id="cancel-edit-task" class="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors">
+                    Annulla
+                </button>
+                <button type="submit" class="px-6 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg font-medium transition-colors">
+                    Salva e Attiva
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+// Funzione per votare un progetto
+function voteProject(projectId, buttonElement) {
+    console.log('Tentativo di voto per progetto:', projectId);
+    
+    // Disabilita il pulsante per evitare doppi click
+    buttonElement.disabled = true;
+    const originalHTML = buttonElement.innerHTML;
+    buttonElement.innerHTML = '<span>⏳</span><span>Votando...</span>';
+    
+    fetch(`/vote_project/${projectId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token() }}'
+        }
+    })
+    .then(response => {
+        console.log('Risposta ricevuta:', response.status);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('Dati ricevuti:', data);
+        if (data.success) {
+            buttonElement.innerHTML = '<span>✓</span><span>Votato!</span>';
+            buttonElement.className = 'inline-flex items-center px-3 py-2 text-sm font-semibold bg-gray-400 text-white rounded-lg cursor-not-allowed space-x-2';
+            showNotification('success', data.message);
+        } else {
+            buttonElement.disabled = false;
+            buttonElement.innerHTML = originalHTML;
+            showNotification('error', data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Errore durante la votazione:', error);
+        buttonElement.disabled = false;
+        buttonElement.innerHTML = originalHTML;
+        showNotification('error', 'Errore durante la votazione: ' + error.message);
+    });
+}
+
+function showNotification(type, message) {
+    // Crea una notifica temporanea
+    const notification = document.createElement('div');
+    notification.className = `fixed top-4 right-4 z-50 px-6 py-4 rounded-lg text-white font-semibold ${
+        type === 'success' ? 'bg-green-500' : 'bg-red-500'
+    } transform transition-all duration-300`;
+    notification.textContent = message;
+    
+    document.body.appendChild(notification);
+    
+    // Animazione di entrata
+    setTimeout(() => {
+        notification.style.transform = 'translateX(0)';
+    }, 100);
+    
+    // Rimuovi la notifica dopo 4 secondi
+    setTimeout(() => {
+        notification.style.transform = 'translateX(100%)';
+        setTimeout(() => {
+            notification.remove();
+        }, 300);
+    }, 4000);
+}
+</script>
+</script>
+{% endblock %}

@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block title %}{{ wiki_page.title }} - Wiki{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <!-- Header -->
+    <div class="flex justify-between items-center mb-8">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900">{{ wiki_page.title }}</h1>
+            <p class="text-gray-600 mt-2">
+                Creata da {{ wiki_page.creator.username }} il {{ wiki_page.created_at.strftime('%d/%m/%Y') }}
+                {% if wiki_page.updated_at != wiki_page.created_at %}
+                • Aggiornata il {{ wiki_page.updated_at.strftime('%d/%m/%Y') }}
+                {% endif %}
+            </p>
+        </div>
+        <div class="flex space-x-4">
+            <a href="{{ url_for('wiki.wiki_index', project_id=project.id) }}" 
+               class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition-colors">
+                ← Wiki
+            </a>
+            <a href="{{ url_for('wiki.wiki_page_history', project_id=project.id, slug=wiki_page.slug) }}" 
+               class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition-colors">
+                Cronologia
+            </a>
+            <a href="{{ url_for('wiki.edit_wiki_page', project_id=project.id, slug=wiki_page.slug) }}" 
+               class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors">
+                Modifica
+            </a>
+        </div>
+    </div>
+
+    <!-- Contenuto della pagina -->
+    <div class="max-w-4xl mx-auto">
+        <div class="bg-white rounded-lg shadow-md p-8">
+            <div class="prose prose-lg max-w-none">
+                {{ wiki_page.content | safe | nl2br }}
+            </div>
+        </div>
+    </div>
+
+    <!-- Cronologia recente -->
+    {% if recent_revisions %}
+    <div class="max-w-4xl mx-auto mt-8">
+        <h2 class="text-xl font-semibold text-gray-900 mb-4">Modifiche Recenti</h2>
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <div class="space-y-4">
+                {% for revision in recent_revisions[:5] %}
+                <div class="flex items-center justify-between py-2 border-b border-gray-200 last:border-b-0">
+                    <div>
+                        <span class="font-medium text-gray-900">{{ revision.editor.username }}</span>
+                        {% if revision.edit_summary %}
+                        <span class="text-gray-600">• {{ revision.edit_summary }}</span>
+                        {% endif %}
+                    </div>
+                    <div class="text-sm text-gray-500">
+                        {{ revision.created_at.strftime('%d/%m/%Y %H:%M') }}
+                    </div>
+                </div>
+                {% endfor %}
+                {% if recent_revisions|length > 5 %}
+                <div class="text-center pt-4">
+                    <a href="{{ url_for('wiki.wiki_page_history', project_id=project.id, slug=wiki_page.slug) }}" 
+                       class="text-blue-600 hover:text-blue-800">
+                        Vedi tutte le modifiche
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

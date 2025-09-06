@@ -1,0 +1,215 @@
+{# app/templates/add_task.html #}
+{% extends "base.html" %}
+
+{% block title %}Aggiungi Nuovo Task a {{ project.name | truncate(30) }}{% endblock %}
+
+{# Macro personalizzata per rendering dei campi del form #}
+{% macro render_field_tailwind(field, label=None, placeholder=None, description=None, required=false) %}
+<div class="mb-5">
+    <label for="{{ field.id }}" class="block text-sm font-semibold leading-6 text-gray-800 mb-1.5">
+        {{ label or field.label.text }}
+        {% if required %}<span class="text-red-500">*</span>{% endif %}
+    </label>
+    
+    {% if description %}
+    <p class="text-xs text-gray-500 mb-1.5">{{ description }}</p>
+    {% endif %}
+    
+    {% if field.type == 'TextAreaField' %}
+        {{ field(class="form-textarea block w-full rounded-lg border-gray-200 shadow-sm focus:border-mclaren-orange focus:ring focus:ring-mclaren-orange focus:ring-opacity-50 text-base", placeholder=placeholder, **kwargs) }}
+    {% elif field.type == 'SelectField' %}
+        {{ field(class="form-select block w-full rounded-lg border-gray-200 shadow-sm focus:border-mclaren-orange focus:ring focus:ring-mclaren-orange focus:ring-opacity-50 text-base", **kwargs) }}
+    {% else %}
+        {{ field(class="form-input block w-full rounded-lg border-gray-200 shadow-sm focus:border-mclaren-orange focus:ring focus:ring-mclaren-orange focus:ring-opacity-50 text-base", placeholder=placeholder, **kwargs) }}
+    {% endif %}
+    
+    {% if field.errors %}
+    <div class="mt-1">
+        {% for error in field.errors %}
+        <p class="text-xs text-red-600">{{ error }}</p>
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+{% endmacro %}
+
+{% block content %}
+<main class="px-4 sm:px-8 md:px-16 lg:px-24 xl:px-40 flex flex-1 justify-center py-8">
+    <div class="layout-content-container flex flex-col w-full max-w-3xl">
+
+        {# Breadcrumb #}
+        <nav aria-label="Breadcrumb" class="mb-6">
+            <ol class="flex items-center gap-2 text-sm text-gray-500">
+                <li><a class="hover:text-mclaren-orange font-medium transition-colors" href="{{ url_for('projects.home') }}">Home</a></li>
+                <li><span class="font-medium">/</span></li>
+                <li><a class="hover:text-mclaren-orange font-medium transition-colors" href="{{ url_for('projects.projects_list') }}">Progetti</a></li>
+                <li><span class="font-medium">/</span></li>
+                <li><a class="hover:text-mclaren-orange font-medium transition-colors" href="{{ url_for('projects.project_detail', project_id=project.id) }}">{{ project.name | truncate(30) }}</a></li>
+                <li><span class="font-medium">/</span></li>
+                <li><span class="text-gray-700 font-medium">Aggiungi Task</span></li>
+            </ol>
+        </nav>
+
+        <div class="bg-white p-6 md:p-8 rounded-xl shadow-lg border border-gray-200">
+            <div class="mb-8 text-center md:text-left">
+                <div class="flex items-center justify-center md:justify-start gap-3 mb-3">
+                    <span class="material-icons text-3xl text-mclaren-orange">assignment_add</span>
+                    <h1 class="text-gray-900 tracking-tight text-3xl font-bold leading-tight">
+                        Aggiungi un Nuovo Task
+                    </h1>
+                </div>
+                <p class="text-gray-600 text-base">
+                    Definisci un nuovo task per il progetto "{{ project.name }}". Un buon task ha un titolo chiaro, obiettivi specifici e una difficoltà appropriata.
+                </p>
+            </div>
+
+            <form method="POST" action="{{ url_for('tasks.add_task_form', project_id=project.id) }}" id="add-task-form-manual" novalidate class="space-y-8">
+                {{ form.hidden_tag() }}
+
+                <div class="p-5 rounded-lg bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100">
+                    <h2 class="text-lg font-semibold text-blue-800 mb-3 flex items-center">
+                        <span class="material-icons text-blue-600 mr-2">info</span>
+                        Informazioni di Base
+                    </h2>
+                    
+                    {{ render_field_tailwind(form.title, 
+                        label="Titolo del Task", 
+                        placeholder="Es: Implementare autenticazione con OAuth", 
+                        description="Un titolo chiaro e descrittivo del lavoro da svolgere",
+                        required=true) 
+                    }}
+                    
+                    {{ render_field_tailwind(form.description, 
+                        label="Descrizione Dettagliata", 
+                        placeholder="Descrivi i requisiti, obiettivi e dettagli tecnici del task...", 
+                        description="Fornisci informazioni dettagliate su come completare il task e quali sono i risultati attesi",
+                        required=true) 
+                    }}
+                </div>
+
+                <div class="p-5 rounded-lg bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-100">
+                    <h2 class="text-lg font-semibold text-purple-800 mb-3 flex items-center">
+                        <span class="material-icons text-purple-600 mr-2">category</span>
+                        Classificazione e Difficoltà
+                    </h2>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {{ render_field_tailwind(form.task_type, 
+                            label="Tipo di Task",
+                            description="Scegli la categoria che meglio rappresenta questo task") 
+                        }}
+                        
+                        {{ render_field_tailwind(form.phase, 
+                            label="Fase di Sviluppo",
+                            description="In quale fase del processo di sviluppo si trova questo task") 
+                        }}
+                    </div>
+                </div>
+
+                <div class="p-5 rounded-lg bg-gradient-to-r from-green-50 to-emerald-50 border border-green-100">
+                    <h2 class="text-lg font-semibold text-green-800 mb-3 flex items-center">
+                        <span class="material-icons text-green-600 mr-2">workspace_premium</span>
+                        Ricompense e Difficoltà
+                    </h2>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {{ render_field_tailwind(form.difficulty, 
+                            label="Livello di Difficoltà",
+                            description="Quanto è complesso questo task") 
+                        }}
+                        
+                        {{ render_field_tailwind(form.equity_reward, 
+                            label="Ricompensa in Equity",
+                            placeholder="Es: 1.5", 
+                            description="Percentuale di equity assegnata a chi completa questo task con successo") 
+                        }}
+                    </div>
+                    
+                    <!-- Task Privato Checkbox -->
+                    <div class="mb-5">
+                        <div class="flex items-center">
+                            {{ form.is_private(class="rounded border-gray-300 text-mclaren-orange focus:ring-mclaren-orange focus:ring-2") }}
+                            <label for="{{ form.is_private.id }}" class="ml-2 block text-sm font-medium text-gray-700">
+                                {{ form.is_private.label.text }}
+                            </label>
+                        </div>
+                        {% if form.is_private.description %}
+                        <p class="text-xs text-gray-500 mt-1 ml-6">{{ form.is_private.description }}</p>
+                        {% endif %}
+                        {% if form.is_private.errors %}
+                            <div class="mt-1 ml-6">
+                                {% for error in form.is_private.errors %}
+                                <p class="text-xs text-red-600">{{ error }}</p>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Campi specifici per esperimenti di validazione -->
+                <div id="validation-fields" class="p-5 rounded-lg bg-gradient-to-r from-purple-50 to-violet-50 border border-purple-100" style="display: none;">
+                    <h2 class="text-lg font-semibold text-purple-800 mb-3 flex items-center">
+                        <span class="material-icons text-purple-600 mr-2">science</span>
+                        Esperimento di Validazione
+                    </h2>
+                    
+                    <div class="space-y-4">
+                        {{ render_field_tailwind(form.hypothesis, 
+                            label="Ipotesi da Testare",
+                            placeholder="Es: Crediamo che i nostri utenti siano disposti a pagare 5€/mese per la funzionalità X",
+                            description="Descrivi chiaramente l'ipotesi che vuoi testare") 
+                        }}
+                        
+                        {{ render_field_tailwind(form.test_method, 
+                            label="Metodo di Test",
+                            placeholder="Es: Creare una landing page e lanciare una campagna pubblicitaria da 50€",
+                            description="Spiega come intendi testare l'ipotesi") 
+                        }}
+                        
+                        {{ render_field_tailwind(form.results, 
+                            label="Risultati (opzionale)",
+                            placeholder="Es: Ipotesi invalidata, il tasso di conversione è stato troppo basso",
+                            description="Compila questo campo dopo aver eseguito l'esperimento") 
+                        }}
+                    </div>
+                </div>
+
+                <div class="pt-4 border-t border-gray-200">
+                    <div class="flex justify-end space-x-4">
+                        <a href="{{ url_for('projects.project_detail', project_id=project.id) }}" 
+                           class="px-5 py-2.5 rounded-lg border border-gray-300 text-gray-700 font-medium hover:bg-gray-50 transition-colors flex items-center gap-1">
+                            <span class="material-icons text-sm">arrow_back</span>
+                            Annulla
+                        </a>
+                        <button type="submit" class="px-5 py-2.5 bg-mclaren-orange text-white rounded-lg font-medium hover:bg-mclaren-orange-darker transition-colors flex items-center gap-2">
+                            <span class="material-icons text-sm">add_circle</span>
+                            {{ form.submit.label.text }}
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</main>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const taskTypeSelect = document.getElementById('task_type');
+    const validationFields = document.getElementById('validation-fields');
+    
+    function toggleValidationFields() {
+        if (taskTypeSelect.value === 'validation') {
+            validationFields.style.display = 'block';
+        } else {
+            validationFields.style.display = 'none';
+        }
+    }
+    
+    // Inizializza la visibilità dei campi
+    toggleValidationFields();
+    
+    // Ascolta i cambiamenti nel tipo di task
+    taskTypeSelect.addEventListener('change', toggleValidationFields);
+});
+</script>
+{% endblock %}

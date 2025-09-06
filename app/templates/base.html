@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="it" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>{% block title %}KickthisUSs{% endblock %}</title>
+
+    {# Font e Icone usati nel progetto #}
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+    {# --- IL LINK FONDAMENTALE AL CSS DI TAILWIND --- #}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/output.css') }}">
+    
+    {# --- CSS PERSONALIZZATO AGGIUNTIVO --- #}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}">
+
+    {% block head_extra %}{% endblock %}
+</head>
+<body class="bg-gray-50 flex flex-col min-h-screen antialiased">
+
+    {# Header moderno con navbar migliorata #}
+    <header class="bg-white/95 backdrop-blur-md shadow-sm sticky top-0 z-50 border-b border-gray-100">
+        <div class="container mx-auto px-4 sm:px-6">
+            <nav class="flex justify-between items-center py-4">
+                {# Logo con effetto gradient #}
+                <a href="{{ url_for('projects.home') }}" class="flex items-center">
+                    <span class="text-2xl font-extrabold bg-gradient-to-r from-primary-500 to-primary-600 bg-clip-text text-transparent">Kick</span>
+                    <span class="text-2xl font-extrabold bg-gradient-to-r from-accent-500 to-accent-600 bg-clip-text text-transparent">thisUSs</span>
+                </a>
+                
+                {# Hamburger menu per mobile #}
+                <button id="mobile-menu-button" class="md:hidden flex items-center p-2 rounded-lg hover:bg-gray-100">
+                    <span class="material-icons">menu</span>
+                </button>
+                
+                {# Link di navigazione desktop #}
+                <div class="hidden md:flex items-center space-x-6">
+                    <a href="{{ url_for('projects.home') }}" class="nav-item {{ 'nav-item-active' if request.path == url_for('projects.home') }}">Home</a>
+                    <a href="{{ url_for('projects.projects_list') }}" class="nav-item {{ 'nav-item-active' if request.path == url_for('projects.projects_list') }}">Progetti</a>
+                    <a href="{{ url_for('investments.investments_page') }}" class="nav-item {{ 'nav-item-active' if request.path == url_for('investments.investments_page') }}">Investimenti</a>
+                    {% if current_user.is_authenticated %}
+                    <a href="{{ url_for('projects.create_project_form') }}" class="btn-primary shadow-md transform transition hover:scale-105">
+                        <span class="material-icons text-sm mr-1">add_circle</span> Crea Progetto
+                    </a>
+                    {% endif %}
+                </div>
+
+                {# Sezione utente a destra #}
+                <div class="hidden md:flex items-center space-x-2">
+                    {% if current_user.is_authenticated %}
+                        <div class="relative group">
+                            <button class="flex items-center space-x-2 p-1.5 rounded-full hover:bg-gray-100">
+                                {% if current_user.profile_image_url %}
+                                    <img src="{{ url_for('static', filename=current_user.profile_image_url) }}" 
+                                         alt="Profilo" 
+                                         class="w-8 h-8 rounded-full object-cover border-2 border-gray-200">
+                                {% else %}
+                                    <div class="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center text-primary-600 font-semibold">
+                                        {{ current_user.username[0] | upper }}
+                                    </div>
+                                {% endif %}
+                                <span class="text-gray-700 font-medium">{{ current_user.username }}</span>
+                                <span class="material-icons text-gray-400 text-sm">expand_more</span>
+                            </button>
+                            <div class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg overflow-hidden border border-gray-100 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform origin-top-right group-hover:scale-100 scale-95">
+                                <a href="{{ url_for('users.user_profile', username=current_user.username) }}" class="block px-4 py-2 text-gray-700 hover:bg-gray-50 flex items-center">
+                                    <span class="material-icons text-gray-400 mr-2 text-sm">person</span>
+                                    Profilo
+                                </a>
+                                <a href="{{ url_for('auth.logout') }}" class="block px-4 py-2 text-gray-700 hover:bg-gray-50 flex items-center">
+                                    <span class="material-icons text-gray-400 mr-2 text-sm">logout</span>
+                                    Logout
+                                </a>
+                            </div>
+                        </div>
+                    {% else %}
+                        <a href="{{ url_for('auth.login') }}" class="nav-item px-3 py-1">Login</a>
+                        <a href="{{ url_for('auth.register') }}" class="btn-primary">Registrati</a>
+                    {% endif %}
+                </div>
+            </nav>
+            
+            {# Menu mobile (nascosto per default) #}
+            <div id="mobile-menu" class="md:hidden hidden bg-white border-t border-gray-100 py-3 animate-fade-in">
+                <div class="flex flex-col space-y-3 px-4">
+                    <a href="{{ url_for('projects.home') }}" class="py-2 nav-item {{ 'nav-item-active' if request.path == url_for('projects.home') }}">Home</a>
+                    <a href="{{ url_for('projects.projects_list') }}" class="py-2 nav-item {{ 'nav-item-active' if request.path == url_for('projects.projects_list') }}">Progetti</a>
+                    <a href="{{ url_for('investments.investments_page') }}" class="py-2 nav-item {{ 'nav-item-active' if request.path == url_for('investments.investments_page') }}">Investimenti</a>
+                    {% if current_user.is_authenticated %}
+                    <a href="{{ url_for('projects.create_project_form') }}" class="py-2 flex items-center nav-item">
+                        <span class="material-icons text-sm mr-1">add_circle</span> Crea Progetto
+                    </a>
+                    <a href="{{ url_for('users.user_profile', username=current_user.username) }}" class="py-2 flex items-center nav-item">
+                        <span class="material-icons text-sm mr-1">person</span> Profilo
+                    </a>
+                    <a href="{{ url_for('auth.logout') }}" class="py-2 flex items-center nav-item text-red-500">
+                        <span class="material-icons text-sm mr-1">logout</span> Logout
+                    </a>
+                    {% else %}
+                    <a href="{{ url_for('auth.login') }}" class="py-2 nav-item">Login</a>
+                    <a href="{{ url_for('auth.register') }}" class="py-2 nav-item text-primary-500 font-semibold">Registrati</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </header>
+
+    {# Banner verifica email per utenti non verificati #}
+    {% if current_user.is_authenticated and not current_user.email_verified %}
+    <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4">
+        <div class="flex items-center justify-between max-w-7xl mx-auto">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <svg class="h-5 w-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                    </svg>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm text-yellow-700">
+                        <strong>⚠️ Email non verificata:</strong> Verifica la tua email per accedere a tutte le funzionalità. Controlla la tua casella di posta!
+                    </p>
+                </div>
+            </div>
+            <div class="flex-shrink-0">
+                <a href="{{ url_for('auth.resend_verification') }}" class="text-sm font-medium text-yellow-700 hover:text-yellow-600 underline">
+                    Invia di nuovo
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    {# Aggiungi JavaScript per il menu mobile #}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+            
+            mobileMenuButton.addEventListener('click', function() {
+                mobileMenu.classList.toggle('hidden');
+                // Cambia l'icona del menu
+                const menuIcon = mobileMenuButton.querySelector('.material-icons');
+                if (mobileMenu.classList.contains('hidden')) {
+                    menuIcon.textContent = 'menu';
+                } else {
+                    menuIcon.textContent = 'close';
+                }
+            });
+        });
+    </script>
+
+    {# Il blocco principale dove verrà inserito il contenuto delle altre pagine #}
+    <main class="flex-grow">
+        {# Qui verranno mostrati i messaggi flash, es. "Login effettuato con successo" #}
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+            <div class="container mx-auto px-6 mt-4">
+                {% for category, message in messages %}
+                    <div class="p-4 rounded-md 
+                        {% if category == 'success' %} bg-green-100 text-green-700 
+                        {% elif category == 'danger' %} bg-red-100 text-red-700
+                        {% else %} bg-blue-100 text-blue-700 {% endif %}" 
+                        role="alert">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    {# Footer moderno #}
+    <footer class="bg-gray-900 text-white mt-auto border-t border-gray-800">
+        <div class="container mx-auto px-6 py-12">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div class="md:col-span-2 space-y-4">
+                    <div class="flex items-center">
+                        <span class="text-2xl font-extrabold bg-gradient-to-r from-primary-400 to-primary-500 bg-clip-text text-transparent">Kick</span>
+                        <span class="text-2xl font-extrabold bg-gradient-to-r from-accent-400 to-accent-500 bg-clip-text text-transparent">thisUSs</span>
+                    </div>
+                    <p class="text-gray-400 max-w-md">
+                        KickthisUSs - la piattaforma dove le idee innovative incontrano i talenti per realizzarle. 
+                        Unisciti a un progetto, contribuisci con le tue abilità e guadagna una vera quota del successo.
+                    </p>
+                </div>
+                
+                <div class="space-y-4">
+                    <h3 class="text-lg font-bold text-white">Link Utili</h3>
+                    <ul class="space-y-2">
+                        <li><a href="{{ url_for('projects.home') }}" class="text-gray-400 hover:text-white transition-colors">Home</a></li>
+                        <li><a href="{{ url_for('projects.projects_list') }}" class="text-gray-400 hover:text-white transition-colors">Esplora Progetti</a></li>
+                        <li><a href="{{ url_for('general.how_it_works') }}" class="text-gray-400 hover:text-white transition-colors">Come Funziona</a></li>
+                    </ul>
+                </div>
+                
+                <div class="space-y-4">
+                    <h3 class="text-lg font-bold text-white">Legale</h3>
+                    <ul class="space-y-2">
+                        <li><a href="{{ url_for('general.terms_of_service') }}" class="text-gray-400 hover:text-white transition-colors">Termini di Servizio</a></li>
+                        <li><a href="{{ url_for('general.privacy_policy') }}" class="text-gray-400 hover:text-white transition-colors">Privacy Policy</a></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="border-t border-gray-800 mt-8 pt-8 flex flex-col md:flex-row justify-between items-center">
+                <p class="text-gray-500 text-sm">&copy; {% block current_year %}{{ current_year }}{% endblock %} KickthisUSs. Tutti i diritti riservati (ma il codice è open!).</p>
+                <p class="text-gray-500 text-sm mt-2 md:mt-0">Made with <span class="text-primary-500">❤</span> in Italy</p>
+            </div>
+        </div>
+    </footer>
+
+    {# Scripts di base #}
+    <script src="{{ url_for('static', filename='js/animations.js') }}"></script>
+    
+    {% block scripts %}{% endblock %}
+</body>
+</html>

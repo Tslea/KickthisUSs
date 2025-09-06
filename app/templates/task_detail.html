@@ -1,0 +1,448 @@
+{% extends "base.html" %}
+
+{% block title %}{{ task.title | truncate(50) }}{% endblock %}
+
+{% block content %}
+<!-- Token CSRF per API calls -->
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+
+<main class="bg-slate-50 flex-1 py-8">
+    <div class="max-w-4xl mx-auto px-4">
+
+        {# Breadcrumb di navigazione #}
+        <nav aria-label="Breadcrumb" class="mb-6 text-sm">
+            <ol class="flex items-center gap-2 text-gray-500">
+                <li><a href="{{ url_for('projects.home') }}" class="hover:text-mclaren-orange">Home</a></li>
+                <li><span>/</span></li>
+                <li><a href="{{ url_for('projects.project_detail', project_id=project.id) }}" class="hover:text-mclaren-orange">{{ project.name | truncate(25) }}</a></li>
+                <li><span>/</span></li>
+                <li class="text-gray-700 font-medium">Task</li>
+            </ol>
+        </nav>
+
+        <div class="space-y-8">
+            {# Sezione Dettagli Principali del Task #}
+            <section class="bg-white p-6 md:p-8 rounded-xl shadow-lg border border-gray-200">
+                <div class="flex flex-col md:flex-row justify-between items-start gap-4">
+                    <div class="flex-1">
+                        <div class="flex items-center gap-x-4 mb-3 flex-wrap">
+                            <span class="text-xs font-semibold px-2 py-1 rounded-full capitalize
+                                {% if task.status == 'approved' or task.status == 'closed' %} bg-green-100 text-green-800
+                                {% elif task.status == 'open' %} bg-blue-100 text-blue-800
+                                {% elif task.status == 'in_progress' %} bg-sky-100 text-sky-800
+                                {% elif task.status == 'submitted' %} bg-yellow-100 text-yellow-800
+                                {% else %} bg-gray-100 text-gray-800 {% endif %}">
+                                Stato: {{ ALLOWED_TASK_STATUS.get(task.status, task.status) }}
+                            </span>
+                            {% if task.is_private %}
+                                <span class="text-xs font-semibold px-2 py-1 rounded-full bg-black text-white flex items-center gap-1 shadow-sm">
+                                    <span class="material-icons text-xs">lock</span>
+                                    Privato
+                                </span>
+                            {% endif %}
+                            <span class="flex items-center gap-1.5 text-xs font-semibold">
+                                {% if task.task_type == 'proposal' %}
+                                    <span class="material-icons text-base text-purple-500" title="Tipo: Proposta/Concept">emoji_objects</span>
+                                    <span>{{ ALLOWED_TASK_TYPES.get(task.task_type, 'Proposta') }}</span>
+                                {% elif task.task_type == 'validation' %}
+                                    <span class="material-icons text-base text-green-500" title="Tipo: Esperimento di Validazione">science</span>
+                                    <span>{{ ALLOWED_TASK_TYPES.get(task.task_type, 'Esperimento di Validazione') }}</span>
+                                {% else %}
+                                    <span class="material-icons text-base text-blue-500" title="Tipo: Implementazione">code</span>
+                                    <span>{{ ALLOWED_TASK_TYPES.get(task.task_type, 'Implementazione') }}</span>
+                                {% endif %}
+                            </span>
+                            <span class="text-xs font-semibold text-mclaren-orange">Equity: {{ "%.2f"|format(task.equity_reward) }}%</span>
+                        </div>
+                        <h1 class="text-2xl md:text-3xl font-bold text-gray-900">{{ task.title }}</h1>
+                    </div>
+                </div>
+                <hr class="my-6">
+                <div>
+                    <h2 class="text-lg font-semibold text-gray-800 mb-2">Descrizione del Task</h2>
+                    <div class="prose prose-slate max-w-none">
+                        {{ task.description | nl2br }}
+                    </div>
+                </div>
+
+                {% if task.task_type == 'validation' %}
+                <!-- Sezione specifica per esperimenti di validazione -->
+                <div class="mt-6 p-4 bg-gradient-to-r from-purple-50 to-violet-50 rounded-lg border border-purple-200">
+                    <h3 class="text-lg font-semibold text-purple-800 mb-4 flex items-center">
+                        <span class="material-icons text-purple-600 mr-2">science</span>
+                        Esperimento di Validazione
+                    </h3>
+                    
+                    <div class="space-y-4">
+                        {% if task.hypothesis %}
+                        <div>
+                            <h4 class="font-semibold text-purple-700 mb-2">Ipotesi da Testare</h4>
+                            <div class="bg-white p-3 rounded border border-purple-200">
+                                {{ task.hypothesis | nl2br }}
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if task.test_method %}
+                        <div>
+                            <h4 class="font-semibold text-purple-700 mb-2">Metodo di Test</h4>
+                            <div class="bg-white p-3 rounded border border-purple-200">
+                                {{ task.test_method | nl2br }}
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if task.results %}
+                        <div>
+                            <h4 class="font-semibold text-purple-700 mb-2">Risultati</h4>
+                            <div class="bg-white p-3 rounded border border-purple-200">
+                                {{ task.results | nl2br }}
+                            </div>
+                        </div>
+                        {% elif task.creator_id == current_user.id and task.status in ['open', 'in_progress'] %}
+                        <div>
+                            <h4 class="font-semibold text-purple-700 mb-2">Risultati</h4>
+                            <form method="POST" action="{{ url_for('tasks.update_task_results', task_id=task.id) }}">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                <textarea name="results" 
+                                          class="w-full p-3 border border-purple-200 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                                          rows="4" 
+                                          placeholder="Inserisci i risultati dell'esperimento..."></textarea>
+                                <button type="submit" 
+                                        class="mt-2 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition-colors">
+                                    Salva Risultati
+                                </button>
+                            </form>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+            </section>
+
+            {# Sezione per proporre una soluzione #}
+            {% if task.status in ['open', 'in_progress'] and not current_user.is_anonymous and can_submit_solution %}
+                <section id="propose-solution" class="text-center space-y-4">
+                    {# Pulsante GitHub per flusso software #}
+                    {% if project.github_url %}
+                        <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
+                            <a href="{{ project.github_url }}" target="_blank" rel="noopener noreferrer" 
+                               class="inline-flex items-center bg-gray-800 text-white px-6 py-3 rounded-lg hover:bg-gray-700 transition-colors font-bold text-base">
+                                <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 0C4.477 0 0 4.484 0 10.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0110 4.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.203 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.942.359.31.678.921.678 1.856 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0020 10.017C20 4.484 15.522 0 10 0z" clip-rule="evenodd"></path>
+                                </svg>
+                                Lavora sul Codice (GitHub)
+                            </a>
+                            <button type="button" class="ml-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-full text-sm font-bold cursor-pointer transition-colors flex items-center gap-1" onclick="showHelp('github_workflow')">
+                                <span class="material-icons text-sm">help</span>
+                                Aiuto GitHub
+                            </button>
+                            <span class="text-gray-500 text-sm">oppure</span>
+                        </div>
+                    {% endif %}
+                    
+                    <div class="flex flex-col sm:flex-row gap-3 items-center justify-center">
+                        <a href="{{ url_for('tasks.submit_solution_form', task_id=task.id) }}" class="inline-block bg-mclaren-orange text-white px-6 py-3 rounded-lg hover:bg-mclaren-orange-darker transition-colors font-bold text-base flex-shrink-0">
+                            <span class="material-icons text-lg inline-block align-middle mr-2">lightbulb</span>
+                            Proponi una Soluzione
+                        </a>
+                        <button type="button" class="bg-orange-600 hover:bg-orange-700 text-white px-3 py-1 rounded-full text-sm font-bold cursor-pointer transition-colors flex items-center gap-1" onclick="showHelp('solution_submission')">
+                            <span class="material-icons text-sm">help</span>
+                            Come sottomettere
+                        </button>
+                    </div>
+                </section>
+            {% elif not can_submit_solution %}
+                 <div class="bg-blue-100 border-l-4 border-blue-500 text-blue-700 p-4 rounded-md" role="alert">
+                    <p class="font-bold">Limite Raggiunto</p>
+                    <p>Hai già sottomesso il numero massimo di soluzioni consentite per questo task.</p>
+                </div>
+            {% endif %}
+
+            {# Sezione Soluzioni Già Proposte #}
+            <section id="solutions-section">
+                <h2 class="text-xl font-bold text-gray-800 mb-4">Soluzioni Proposte ({{ all_solutions|length }})</h2>
+                <div class="space-y-4">
+                    {% if all_solutions %}
+                        {% for solution in all_solutions %}
+                            <div class="solution-card bg-white p-5 rounded-lg border 
+                                {% if solution.is_approved %} border-green-500 border-2 shadow-xl 
+                                {% else %} border-gray-200 hover:shadow-md transition-shadow {% endif %}"
+                                data-solution-id="{{ solution.id }}">
+                                
+                                <div class="flex justify-between items-start gap-2">
+                                    <div class="flex items-center gap-3">
+                                        <a href="{{ url_for('users.user_profile', username=solution.submitter.username) }}">
+                                            <div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10" 
+                                                 style='background-image: url("https://source.unsplash.com/random/40x40?avatar,person,{{ solution.submitter.id }}");'>
+                                            </div>
+                                        </a>
+                                        <div>
+                                            <a href="{{ url_for('users.user_profile', username=solution.submitter.username) }}" class="font-bold text-gray-800 hover:text-mclaren-orange">{{ solution.submitter.username }}</a>
+                                            <p class="text-xs text-gray-500">{{ solution.created_at | humanize_datetime }}</p>
+                                        </div>
+                                    </div>
+                                    {% if solution.is_approved %}
+                                        <span class="flex items-center gap-1.5 bg-green-100 text-green-800 text-xs font-medium px-3 py-1 rounded-full">
+                                            <span class="material-icons text-sm">check_circle</span>
+                                            Approvata
+                                        </span>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="prose prose-sm max-w-none text-gray-700 mt-4">
+                                    {{ solution.solution_content | nl2br }}
+                                </div>
+
+                                {% if solution.file_path %}
+                                <div class="mt-4">
+                                    <a href="{{ url_for('static', filename=solution.file_path) }}" target="_blank" class="flex items-center gap-2 text-sm font-medium text-mclaren-orange hover:underline">
+                                        <span class="material-icons">attachment</span>
+                                        Vedi File Allegato
+                                    </a>
+                                </div>
+                                {% endif %}
+
+                                <div class="mt-4 pt-4 border-t border-gray-200 flex flex-wrap items-center justify-between gap-4">
+                                    <div class="flex items-center gap-x-4 gap-y-2 flex-wrap">
+                                        <div class="flex items-center gap-1 text-sm text-gray-600">
+                                            <span class="material-icons text-base text-mclaren-orange">how_to_vote</span>
+                                            <span class="font-semibold vote-count">{{ solution.votes.count() }}</span>
+                                            <span>voti</span>
+                                        </div>
+                                        {% if solution.ai_coherence_score is not none %}
+                                        <div class="flex items-center gap-2 text-sm" title="Punteggio Coerenza AI">
+                                            <span class="material-icons text-base text-sky-500">smart_toy</span>
+                                            {% set score = solution.ai_coherence_score * 100 %}
+                                            <span class="font-semibold 
+                                                {% if score >= 80 %} text-green-600
+                                                {% elif score >= 50 %} text-yellow-600
+                                                {% else %} text-red-600 {% endif %}">
+                                                {{ "%.0f"|format(score) }}%
+                                            </span>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <div class="flex items-center gap-2">
+                                        {% if not solution.is_approved and task.status != 'closed' and current_user.is_authenticated and current_user.id in project.collaborators|map(attribute='user_id')|list %}
+                                            {% if not current_user.votes.filter_by(task_id=task.id).first() %}
+                                                <button class="vote-button flex items-center gap-1.5 h-8 px-3 text-sm rounded-md bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium transition-colors">
+                                                    <span class="material-icons text-base">how_to_vote</span>
+                                                    Vota per questa soluzione
+                                                </button>
+                                            {% else %}
+                                                 <p class="text-sm text-gray-500 italic">Hai già votato</p>
+                                            {% endif %}
+                                        {% endif %}
+                                        
+                                        {% if current_user.is_authenticated and current_user.id == project.creator_id and not solution.is_approved and task.status != 'closed' %}
+                                        <button class="approve-button flex items-center gap-1.5 h-8 px-3 text-sm rounded-md bg-green-500 hover:bg-green-600 text-white font-semibold transition-colors">
+                                            <span class="material-icons text-base">check</span>
+                                            Approva Manualmente
+                                        </button>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="bg-white p-6 rounded-lg border border-dashed border-gray-300 text-center">
+                            <p class="text-gray-500">Nessuna soluzione proposta per questo task.</p>
+                            <p class="text-sm text-gray-400 mt-1">Sii il primo a contribuire!</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </section>
+        </div>
+    </div>
+</main>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const mainContent = document.querySelector('main');
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+    mainContent.addEventListener('click', function(event) {
+        
+        const voteButton = event.target.closest('.vote-button');
+        if (voteButton) {
+            const card = voteButton.closest('.solution-card');
+            const solutionId = card.dataset.solutionId;
+            
+            voteButton.disabled = true;
+            voteButton.innerHTML = '<span class="material-icons text-base">hourglass_top</span> Voto in corso...';
+            
+            fetch(`/api/solutions/${solutionId}/vote`, { 
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRFToken': csrfToken
+                }
+             })
+            .then(res => res.json().then(data => ({ok: res.ok, data})))
+            .then(({ok, data}) => {
+                if (ok) {
+                    alert(data.message || 'Voto registrato!');
+                    window.location.reload();
+                } else {
+                    throw new Error(data.error || 'Errore sconosciuto');
+                }
+            })
+            .catch(err => {
+                console.error('Errore nel voto:', err);
+                alert('Errore: ' + err.message);
+                voteButton.disabled = false;
+                voteButton.innerHTML = '<span class="material-icons text-base">how_to_vote</span> Vota per questa soluzione';
+            });
+        }
+        
+        const approveButton = event.target.closest('.approve-button');
+        if (approveButton) {
+            const card = approveButton.closest('.solution-card');
+            const solutionId = card.dataset.solutionId;
+            const projectId = {{ project.id }};
+
+            if (!confirm('Sei sicuro di voler approvare manualmente questa soluzione?')) {
+                return;
+            }
+
+            approveButton.disabled = true;
+            approveButton.textContent = 'Approvo...';
+            
+            fetch(`/api/projects/${projectId}/solutions/${solutionId}/approve`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrfToken
+                }
+            })
+            .then(res => {
+                if (!res.ok) return res.json().then(err => { throw new Error(err.error || 'Errore del server') });
+                return res.json();
+            })
+            .then(data => {
+                alert(data.message || 'Soluzione approvata con successo!');
+                window.location.reload();
+            })
+            .catch(err => {
+                console.error('Errore approvazione:', err);
+                alert('Errore: ' + err.message);
+                approveButton.disabled = false;
+                approveButton.textContent = 'Approva Manualmente';
+            });
+        }
+    });
+});
+
+// Funzioni per assistente AI - già presenti nel submit_solution.html
+// Aggiungi qui solo se necessarie per questa pagina
+function showHelp(context) {
+    const modal = document.getElementById('aiHelpModal');
+    if (!modal) {
+        // Crea modal se non esiste
+        createHelpModal();
+    }
+    
+    const content = document.getElementById('aiHelpContent');
+    document.getElementById('aiHelpModal').classList.remove('hidden');
+    
+    // Mostra loading
+    content.innerHTML = `
+        <div class="animate-pulse flex space-x-4">
+            <div class="rounded-full bg-gray-200 h-10 w-10"></div>
+            <div class="flex-1 space-y-2 py-1">
+                <div class="h-4 bg-gray-200 rounded w-3/4"></div>
+                <div class="h-4 bg-gray-200 rounded w-1/2"></div>
+            </div>
+        </div>
+    `;
+    
+    // Chiama API di aiuto
+    fetch('/api/help', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrf_token]').value
+        },
+        body: JSON.stringify({ context: context })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            content.innerHTML = `
+                <div class="flex items-start space-x-3">
+                    <div class="flex-shrink-0">
+                        <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                            <span class="material-icons text-blue-600">smart_toy</span>
+                        </div>
+                    </div>
+                    <div class="flex-1">
+                        <div class="prose prose-sm max-w-none">
+                            ${data.help_content.replace(/\n/g, '<br>')}
+                        </div>
+                    </div>
+                </div>
+            `;
+        } else {
+            content.innerHTML = `
+                <div class="flex items-center space-x-3 text-red-600">
+                    <span class="material-icons">error</span>
+                    <span>Errore nel caricamento dell'aiuto: ${data.error}</span>
+                </div>
+            `;
+        }
+    })
+    .catch(error => {
+        content.innerHTML = `
+            <div class="flex items-center space-x-3 text-red-600">
+                <span class="material-icons">error</span>
+                <span>Errore di connessione. Riprova più tardi.</span>
+            </div>
+        `;
+    });
+}
+
+function closeHelp() {
+    const modal = document.getElementById('aiHelpModal');
+    if (modal) {
+        modal.classList.add('hidden');
+    }
+}
+
+function createHelpModal() {
+    const modalHTML = `
+        <div id="aiHelpModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
+            <div class="bg-white rounded-lg max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+                <div class="flex justify-between items-center p-6 border-b">
+                    <h3 class="text-xl font-semibold text-gray-900">Co-Pilota KICKStorm</h3>
+                    <button onclick="closeHelp()" class="text-gray-400 hover:text-gray-600">
+                        <span class="material-icons">close</span>
+                    </button>
+                </div>
+                <div id="aiHelpContent" class="p-6">
+                    <div class="animate-pulse flex space-x-4">
+                        <div class="rounded-full bg-gray-200 h-10 w-10"></div>
+                        <div class="flex-1 space-y-2 py-1">
+                            <div class="h-4 bg-gray-200 rounded w-3/4"></div>
+                            <div class="h-4 bg-gray-200 rounded w-1/2"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+    
+    // Aggiungi listener per chiudere cliccando fuori
+    document.getElementById('aiHelpModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeHelp();
+        }
+    });
+}
+</script>
+{% endblock %}

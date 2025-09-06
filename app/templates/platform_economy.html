@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block title %}L'Economia di KickthisUSs{% endblock %}
+
+{% block content %}
+<main class="px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 flex flex-1 justify-center py-8">
+    <div class="layout-content-container flex flex-col w-full max-w-4xl space-y-8">
+
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900">L'Economia della Piattaforma</h1>
+            <p class="text-lg text-gray-600 mt-1">
+                Come funziona l'equity virtuale su KickthisUSs.
+            </p>
+        </div>
+
+        <div class="prose max-w-none bg-white p-8 rounded-xl shadow-lg border border-gray-200">
+            <h2>Cos'è l'Equity Virtuale?</h2>
+            <p>
+                Su KickthisUSs, l'"equity virtuale" rappresenta una quota di partecipazione in un progetto. Non è un titolo azionario reale né ha un valore legale o finanziario al di fuori della nostra piattaforma. È un modo per tracciare, riconoscere e premiare il contributo di ogni collaboratore allo sviluppo e al successo di un'idea.
+            </p>
+            
+            <h2>Come Funziona?</h2>
+            <p>
+                Ogni progetto parte con un 100% di equity virtuale. Il creatore del progetto decide quale percentuale tenere per sé e quale mettere a disposizione della community.
+            </p>
+            <ol>
+                <li><strong>Definizione dei Task:</strong> Il creatore scompone il lavoro necessario per realizzare il progetto in "task" (compiti).</li>
+                <li><strong>Assegnazione di Equity ai Task:</strong> A ogni task viene assegnata una ricompensa in equity (es. 1.5%, 0.5%, 3.0%), che riflette la sua importanza e difficoltà.</li>
+                <li><strong>Completamento e Approvazione:</strong> I collaboratori propongono soluzioni ai task. Quando una soluzione viene approvata dal creatore del progetto, l'equity associata a quel task viene trasferita al collaboratore che ha fornito la soluzione.</li>
+            </ol>
+            
+            <h2>A Cosa Serve?</h2>
+            <p>
+                L'equity virtuale ha diversi scopi fondamentali all'interno di KickthisUSs:
+            </p>
+            <ul>
+                <li><strong>Metriche di Contributo:</strong> Misura in modo trasparente l'impatto di ogni persona sul progetto.</li>
+                <li><strong>Gamification e Motivazione:</strong> Accumulare equity è un modo per "salire di livello" e costruire una reputazione solida sulla piattaforma.</li>
+                <li><strong>Potenziale Futuro:</strong> Se un progetto dovesse mai trasformarsi in un'azienda reale, la distribuzione dell'equity virtuale può servire come base (non vincolante) per discutere una reale capitalizzazione. Questo è a totale discrezione dei partecipanti e al di fuori delle garanzie offerte da KickthisUSs.</li>
+                <li><strong>Accesso a Opportunità:</strong> In futuro, l'equity accumulata potrebbe dare accesso a funzionalità esclusive o a opportunità di investimento.</li>
+            </ul>
+
+            <div class="bg-yellow-50 border border-yellow-300 text-yellow-800 rounded-lg p-4 mt-6">
+                <h4 class="font-bold">Disclaimer Importante</h4>
+                <p class="text-sm">
+                    KickthisUSs è una piattaforma per la collaborazione e lo sviluppo di idee. L'equity virtuale è uno strumento interno alla piattaforma e non deve essere considerato un investimento finanziario. Il suo valore è legato alla reputazione e al successo dei progetti all'interno della nostra community.
+                </p>
+            </div>
+        </div>
+
+    </div>
+</main>
+{% endblock %}

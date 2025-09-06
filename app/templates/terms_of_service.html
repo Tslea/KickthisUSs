@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+
+{% block title %}Termini di Servizio - KickthisUSs{% endblock %}
+
+{% block content %}
+<main class="flex-grow bg-gray-50">
+    <div class="container mx-auto px-6 py-12 max-w-4xl">
+        
+        {# Header #}
+        <div class="text-center mb-12">
+            <h1 class="text-4xl font-black text-gray-900 mb-4">Termini di Servizio</h1>
+            <p class="text-gray-600">Ultimo aggiornamento: 1 gennaio 2025</p>
+        </div>
+
+        {# Content #}
+        <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 md:p-12 max-w-none">
+            
+            <h2 class="text-2xl font-bold text-gray-900 mb-4">1. Accettazione dei Termini</h2>
+            <p class="text-gray-700 mb-6">
+                Accedendo e utilizzando KickthisUSs ("la Piattaforma"), accetti di essere vincolato da questi Termini di Servizio. 
+                Se non accetti questi termini, non utilizzare la Piattaforma.
+            </p>
+
+            <h2 class="text-2xl font-bold text-gray-900 mb-4">2. Descrizione del Servizio</h2>
+            <p class="text-gray-700 mb-6">
+                KickthisUSs è una piattaforma digitale che consente agli utenti di collaborare su progetti innovativi, 
+                completare task specifici e guadagnare equity virtuale basata sui contributi forniti.
+            </p>
+
+            <h2 class="text-2xl font-bold text-gray-900 mb-4">3. Registrazione e Account</h2>
+            <ul class="text-gray-700 mb-6 list-disc pl-6 space-y-2">
+                <li>Gli utenti devono fornire informazioni accurate e complete durante la registrazione</li>
+                <li>Ogni utente è responsabile della sicurezza del proprio account</li>
+                <li>È vietato creare account multipli o condividere le credenziali di accesso</li>
+                <li>Gli utenti devono avere almeno 18 anni per utilizzare la Piattaforma</li>
+            </ul>
+
+            <h2 class="text-2xl font-bold text-gray-900 mb-4">4. Progetti e Collaborazione</h2>
+            <ul class="text-gray-700 mb-6 list-disc pl-6 space-y-2">
+                <li>I creatori di progetti mantengono i diritti di proprietà intellettuale sui loro progetti</li>
+                <li>I collaboratori acquisiscono equity virtuale basata sui loro contributi approvati</li>
+                <li>Tutti i task e le soluzioni devono rispettare le linee guida della community</li>
+                <li>La validazione delle soluzioni avviene tramite voto della community del progetto</li>
+            </ul>
+
+            <h2 class="text-2xl font-bold text-gray-900 mb-4">5. Equity Virtuale</h2>
+            <p class="text-gray-700 mb-6">
+                L'equity virtuale rappresenta la quota di partecipazione simbolica in un progetto basata sui contributi. 
+                <strong>Importante:</strong> L'equity virtuale è un sistema di gamification e non costituisce 
+                partecipazioni azionarie reali o diritti legali su progetti o entità commerciali.
+            </p>
+
+            <h2 class="text-2xl font-bold text-gray-900 mb-4">6. Comportamento degli Utenti</h2>
+            <p class="text-gray-700 mb-4">Gli utenti si impegnano a:</p>
+            <ul class="text-gray-700 mb-6 list-disc pl-6 space-y-2">
+                <li>Utilizzare la Piattaforma in modo rispettoso e professionale</li>
+                <li>Non violare i diritti di proprietà intellettuale altrui</li>
+                <li>Non pubblicare contenuti offensivi, illegali o inappropriati</li>
+                <li>Rispettare la privacy e i dati degli altri utenti</li>
+            </ul>
+
+            <h2 class="text-2xl font-bold text-gray-900 mb-4">7. Limitazioni di Responsabilità</h2>
+            <p class="text-gray-700 mb-6">
+                KickthisUSs fornisce la Piattaforma "così com'è" senza garanzie di alcun tipo. 
+                Non siamo responsabili per eventuali danni derivanti dall'uso della Piattaforma 
+                o dalle interazioni tra utenti.
+            </p>
+
+            <h2 class="text-2xl font-bold text-gray-900 mb-4">8. Modifiche ai Termini</h2>
+            <p class="text-gray-700 mb-6">
+                Ci riserviamo il diritto di modificare questi Termini di Servizio in qualsiasi momento. 
+                Le modifiche entreranno in vigore immediatamente dopo la pubblicazione sulla Piattaforma.
+            </p>
+
+            <h2 class="text-2xl font-bold text-gray-900 mb-4">9. Contatti</h2>
+            <p class="text-gray-700 mb-6">
+                Per domande riguardo questi Termini di Servizio, contattaci tramite il sistema di supporto della Piattaforma.
+            </p>
+        </div>
+
+        {# Back to home #}
+        <div class="text-center mt-8">
+            <a href="{{ url_for('projects.home') }}" class="inline-flex items-center text-orange-600 hover:text-orange-700 font-semibold">
+                <span class="material-icons mr-2">arrow_back</span>
+                Torna alla Home
+            </a>
+        </div>
+    </div>
+</main>
+{% endblock %}

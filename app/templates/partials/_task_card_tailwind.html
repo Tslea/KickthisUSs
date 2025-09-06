@@ -1,0 +1,97 @@
+{# /app/templates/partials/_task_card_tailwind.html #}
+<div class="flex flex-col h-full bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden transition-all hover:shadow-xl hover:-translate-y-px relative">
+    
+    {# --- Bottone di Eliminazione --- #}
+    {% if current_user.is_authenticated and task.creator_id == current_user.id %}
+    <form action="{{ url_for('tasks.delete_task', task_id=task.id) }}" method="POST" onsubmit="return confirm('Sei sicuro di voler eliminare questo task? Questa azione è irreversibile.');" class="absolute top-2 right-2 z-10">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="p-1 rounded-full bg-white/50 hover:bg-red-100 text-gray-500 hover:text-red-600 transition-colors" aria-label="Elimina task">
+            <span class="material-icons text-lg">delete</span>
+        </button>
+    </form>
+    {% endif %}
+
+    <div class="p-5 flex flex-col flex-grow">
+        
+        <div class="flex justify-between items-start mb-2">
+            <div class="flex items-center gap-2">
+                <span class="text-xs font-semibold px-2 py-0.5 rounded-full capitalize
+                    {% if task.status == 'approved' %} bg-green-100 text-green-800
+                    {% elif task.status == 'open' %} bg-blue-100 text-blue-800
+                    {% elif task.status == 'in_progress' %} bg-sky-100 text-sky-800
+                    {% elif task.status == 'submitted' %} bg-yellow-100 text-yellow-800
+                    {% elif task.status == 'suggested' %} bg-purple-100 text-purple-800
+                    {% else %} bg-gray-100 text-gray-800 {% endif %}">
+                    {{ ALLOWED_TASK_STATUS.get(task.status, task.status) }}
+                </span>
+                {% if task.status == 'suggested' %}
+                    <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 text-white flex items-center gap-1">
+                        <span class="material-icons text-xs">auto_awesome</span>
+                        AI
+                    </span>
+                {% endif %}
+                {% if task.is_private %}
+                    <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-black text-white flex items-center gap-1 shadow-sm">
+                        <span class="material-icons text-xs">lock</span>
+                        Privato
+                    </span>
+                {% endif %}
+            </div>
+            <span class="text-xs font-bold text-mclaren-orange">{{ "%.2f"|format(task.equity_reward) }}%</span>
+        </div>
+        
+        <h3 class="text-base font-semibold text-gray-900 leading-snug mb-2 hover:text-mclaren-orange transition-colors">
+            <a href="{{ url_for('tasks.task_detail', task_id=task.id) }}">{{ task.title }}</a>
+        </h3>
+
+        <p class="text-sm text-gray-600 line-clamp-2 flex-grow">
+            {{ task.description | truncate(90) }}
+        </p>
+
+        <div class="mt-4 pt-3 border-t border-gray-200 text-xs text-gray-500 space-y-2">
+            <div class="flex items-center justify-between text-xs text-gray-500">
+                <span class="flex items-center gap-1.5">
+                    {% if task.task_type == 'proposal' %}
+                        <span class="material-icons text-base text-purple-500" title="Task di Proposta">emoji_objects</span>
+                        <span class="font-medium text-gray-700">{{ ALLOWED_TASK_TYPES.get(task.task_type, 'Proposta') }}</span>
+                    {% else %}
+                        <span class="material-icons text-base text-blue-500" title="Task di Implementazione">code</span>
+                        <span class="font-medium text-gray-700">{{ ALLOWED_TASK_TYPES.get(task.task_type, 'Implementazione') }}</span>
+                    {% endif %}
+                </span>
+            </div>
+            <div class="flex justify-between">
+                <span>Fase: <span class="font-medium text-gray-700">{{ ALLOWED_TASK_PHASES.get(task.phase, task.phase) }}</span></span>
+                <span>Difficoltà: <span class="font-medium text-gray-700">{{ ALLOWED_TASK_DIFFICULTIES.get(task.difficulty, task.difficulty) }}</span></span>
+            </div>
+             <div class="text-xs text-gray-400">
+                Creato da: <span class="font-medium text-gray-600">{{ task.creator.username if task.creator else 'N/A' }}</span>
+            </div>
+        </div>
+    </div>
+    
+    {# --- SEZIONE DEI PULSANTI DI AZIONE --- #}
+    <div class="bg-gray-50 px-5 py-3">
+        {% set is_creator = current_user.is_authenticated and project.creator_id == current_user.id %}
+        {% set is_collaborator = current_user.is_authenticated and current_user in project.collaborators %}
+        {% set can_manage_suggested = is_creator or is_collaborator %}
+        
+        {% if task.status == 'suggested' and can_manage_suggested %}
+            <div class="grid grid-cols-2 gap-2">
+                <button class="edit-suggested-task-btn flex items-center justify-center gap-1 rounded-lg h-9 px-3 bg-blue-500 text-white hover:bg-blue-600 text-sm font-semibold transition-colors shadow-sm" data-task-id="{{ task.id }}">
+                    <span class="material-icons text-base">edit</span>
+                    Modifica
+                </button>
+                <button class="activate-task-btn flex items-center justify-center gap-1 rounded-lg h-9 px-3 bg-green-500 text-white hover:bg-green-600 text-sm font-semibold transition-colors shadow-sm" data-task-id="{{ task.id }}">
+                    <span class="material-icons text-base">lightbulb</span>
+                    Attiva
+                </button>
+            </div>
+        {% else %}
+            <a href="{{ url_for('tasks.task_detail', task_id=task.id) }}" class="w-full flex items-center justify-center gap-2 rounded-lg h-9 px-4 bg-mclaren-orange text-white hover:bg-mclaren-orange-darker text-sm font-semibold transition-colors shadow-sm">
+                Vedi Dettagli
+                <span class="material-icons text-lg">arrow_forward</span>
+            </a>
+        {% endif %}
+    </div>
+</div>

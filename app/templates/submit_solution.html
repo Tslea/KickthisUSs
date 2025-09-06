@@ -1,0 +1,307 @@
+{% extends "base.html" %}
+{% from "partials/_form_helpers.html" import render_field %}
+
+{% block title %}Invia Soluzione per: {{ task.title }}{% endblock %}
+
+{% block content %}
+<main class="bg-slate-50 flex-1 py-8">
+    <div class="max-w-3xl mx-auto px-4">
+        <div class="bg-white p-6 md:p-8 rounded-xl shadow-lg border border-gray-200">
+            <h1 class="text-2xl md:text-3xl font-bold text-gray-900 mb-2">Invia la tua Soluzione</h1>
+            <p class="text-gray-600 mb-6">per il task: <a href="{{ url_for('tasks.task_detail', task_id=task.id) }}" class="text-mclaren-orange hover:underline font-semibold">{{ task.title }}</a></p>
+
+            <form action="{{ url_for('tasks.submit_solution_form', task_id=task.id) }}" method="POST" enctype="multipart/form-data" novalidate>
+                {{ form.hidden_tag() }} {# Aggiunge il token CSRF e altri campi nascosti #}
+                
+            <form action="{{ url_for('tasks.submit_solution_form', task_id=task.id) }}" method="POST" enctype="multipart/form-data" novalidate>
+                {{ form.hidden_tag() }} {# Aggiunge il token CSRF e altri campi nascosti #}
+                
+                <div class="space-y-6">
+                    {# Selezione Tipo Soluzione #}
+                    <div class="bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-lg p-6">
+                        <h3 class="text-lg font-semibold text-purple-800 mb-4 flex items-center">
+                            <span class="material-icons mr-2">category</span>
+                            Seleziona il tipo di soluzione
+                        </h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <label class="solution-type-option cursor-pointer" data-type="software">
+                                <input type="radio" name="solution_type" value="software" class="sr-only" {% if project.github_url %}checked{% endif %}>
+                                <div class="solution-type-card border-2 border-gray-200 rounded-lg p-4 hover:border-blue-500 hover:bg-blue-50 transition-all">
+                                    <div class="flex items-center gap-3 mb-2">
+                                        <svg class="w-6 h-6 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M10 0C4.477 0 0 4.484 0 10.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0110 4.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.203 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.942.359.31.678.921.678 1.856 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0020 10.017C20 4.484 15.522 0 10 0z" clip-rule="evenodd"></path>
+                                        </svg>
+                                        <h4 class="font-semibold text-blue-800">Sviluppo Software</h4>
+                                    </div>
+                                    <p class="text-sm text-blue-600">Contributi di codice tramite GitHub Pull Request</p>
+                                    {% if not project.github_url %}
+                                    <p class="text-xs text-orange-600 mt-2">⚠️ Repository GitHub non configurato</p>
+                                    {% endif %}
+                                </div>
+                            </label>
+                            
+                            <label class="solution-type-option cursor-pointer" data-type="hardware">
+                                <input type="radio" name="solution_type" value="hardware" class="sr-only" {% if not project.github_url %}checked{% endif %}>
+                                <div class="solution-type-card border-2 border-gray-200 rounded-lg p-4 hover:border-green-500 hover:bg-green-50 transition-all">
+                                    <div class="flex items-center gap-3 mb-2">
+                                        <span class="material-icons text-green-600 text-xl">upload_file</span>
+                                        <h4 class="font-semibold text-green-800">Progetto Hardware</h4>
+                                    </div>
+                                    <p class="text-sm text-green-600">Upload di file CAD, schemi, prototipi e documentazione</p>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    {# Flusso SOFTWARE - Campo Pull Request URL #}
+                    <div id="software-section" class="solution-section bg-blue-50 border border-blue-200 rounded-lg p-4" style="display: none;">
+                        <h3 class="text-lg font-semibold text-blue-800 mb-2 flex items-center">
+                            <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 0C4.477 0 0 4.484 0 10.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0110 4.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.203 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.942.359.31.678.921.678 1.856 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0020 10.017C20 4.484 15.522 0 10 0z" clip-rule="evenodd"></path>
+                            </svg>
+                            Flusso GitHub - Contributo Software
+                            <button type="button" class="ml-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-full text-sm font-bold cursor-pointer transition-colors flex items-center gap-1" onclick="showHelp('github_workflow')">
+                                <span class="material-icons text-sm">help</span>
+                                Aiuto
+                            </button>
+                        </h3>
+                        
+                        {% if project.github_url %}
+                        <p class="text-blue-700 text-sm mb-4">
+                            Repository: <a href="{{ project.github_url }}" target="_blank" class="underline">{{ project.github_url }}</a>
+                        </p>
+                        <div>
+                            <label for="pull_request_url" class="block text-sm font-medium text-gray-700 mb-1">URL del Pull Request</label>
+                            <input type="url" id="pull_request_url" name="pull_request_url" 
+                                   class="form-input block w-full rounded-md border-gray-300 shadow-sm focus:border-mclaren-orange focus:ring focus:ring-mclaren-orange focus:ring-opacity-50"
+                                   placeholder="https://github.com/owner/repo/pull/123">
+                            <p class="text-xs text-gray-500 mt-1">Esempio: https://github.com/owner/repo/pull/123</p>
+                        </div>
+                        {% else %}
+                        <div class="bg-orange-50 border border-orange-200 rounded-lg p-3">
+                            <p class="text-orange-700 text-sm">
+                                <span class="material-icons text-sm inline align-middle mr-1">warning</span>
+                                Il repository GitHub non è stato configurato per questo progetto. 
+                                Contatta il creatore del progetto per configurarlo.
+                            </p>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    {# Flusso HARDWARE - Upload File Multipli #}
+                    <div id="hardware-section" class="solution-section bg-green-50 border border-green-200 rounded-lg p-4" style="display: none;">
+                        <h3 class="text-lg font-semibold text-green-800 mb-2 flex items-center">
+                            <span class="material-icons mr-2">upload_file</span>
+                            Flusso Hardware - Upload File
+                            <button type="button" class="ml-2 bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-full text-sm font-bold cursor-pointer transition-colors flex items-center gap-1" onclick="showHelp('hardware_submission')">
+                                <span class="material-icons text-sm">help</span>
+                                Aiuto
+                            </button>
+                        </h3>
+                        <p class="text-green-700 text-sm mb-4">Per design, prototipi, documentazione tecnica:</p>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">File Sorgente (CAD, Schemi)</label>
+                                <input type="file" name="source_files" multiple accept=".step,.stp,.dwg,.sch,.brd,.kicad_pcb"
+                                       class="form-input block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-100 file:text-green-800 hover:file:bg-green-200">
+                                <p class="text-xs text-gray-500 mt-1">STEP, DWG, SCH, BRD, KiCad...</p>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">File per Prototipazione</label>
+                                <input type="file" name="prototype_files" multiple accept=".stl,.3mf,.gcode,.svg"
+                                       class="form-input block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-100 file:text-green-800 hover:file:bg-green-200">
+                                <p class="text-xs text-gray-500 mt-1">STL, 3MF, GCODE, SVG...</p>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Documentazione</label>
+                                <input type="file" name="documentation_files" multiple accept=".pdf,.docx,.md,.txt"
+                                       class="form-input block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-100 file:text-green-800 hover:file:bg-green-200">
+                                <p class="text-xs text-gray-500 mt-1">PDF, DOCX, Markdown...</p>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">File Visivi (Immagini/Video)</label>
+                                <input type="file" name="visual_files" multiple accept=".jpg,.jpeg,.png,.gif,.mp4,.mov"
+                                       class="form-input block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-100 file:text-green-800 hover:file:bg-green-200">
+                                <p class="text-xs text-gray-500 mt-1">JPG, PNG, MP4, MOV...</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Campo Descrizione Soluzione -->
+                    <div class="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-2">Descrizione della Soluzione</h3>
+                        {{ render_field(form.solution_content, label_visible=True) }}
+                    </div>
+
+                    {# Campo File Singolo (compatibilità) #}
+                    <div>
+                        <label for="solution_file" class="block text-sm font-medium text-gray-700 mb-1">Allega un File Aggiuntivo (Opzionale)</label>
+                        <p class="text-xs text-gray-500 mb-2">File singolo per compatibilità. Dimensione massima: 2MB.</p>
+                        {{ form.solution_file(class="form-input block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-mclaren-orange/10 file:text-mclaren-orange hover:file:bg-mclaren-orange/20") }}
+                        {% for error in form.solution_file.errors %}
+                            <span class="text-red-500 text-xs">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="mt-8 pt-6 border-t border-gray-200 text-right">
+                    <button type="submit" class="bg-mclaren-orange text-white px-6 py-3 rounded-lg hover:bg-mclaren-orange-darker transition-colors font-bold text-base flex-shrink-0 flex items-center gap-2">
+                        <span class="material-icons text-lg">lightbulb</span>
+                        {{ form.submit.label }}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</main>
+
+{# Modal per Assistente AI #}
+<div id="aiHelpModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-lg max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+        <div class="flex justify-between items-center p-6 border-b">
+            <h3 class="text-xl font-semibold text-gray-900">Co-Pilota KICKStorm</h3>
+            <button onclick="closeHelp()" class="text-gray-400 hover:text-gray-600">
+                <span class="material-icons">close</span>
+            </button>
+        </div>
+        <div id="aiHelpContent" class="p-6">
+            <div class="animate-pulse flex space-x-4">
+                <div class="rounded-full bg-gray-200 h-10 w-10"></div>
+                <div class="flex-1 space-y-2 py-1">
+                    <div class="h-4 bg-gray-200 rounded w-3/4"></div>
+                    <div class="h-4 bg-gray-200 rounded w-1/2"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function showHelp(context) {
+    const modal = document.getElementById('aiHelpModal');
+    const content = document.getElementById('aiHelpContent');
+    
+    modal.classList.remove('hidden');
+    
+    // Mostra loading
+    content.innerHTML = `
+        <div class="animate-pulse flex space-x-4">
+            <div class="rounded-full bg-gray-200 h-10 w-10"></div>
+            <div class="flex-1 space-y-2 py-1">
+                <div class="h-4 bg-gray-200 rounded w-3/4"></div>
+                <div class="h-4 bg-gray-200 rounded w-1/2"></div>
+            </div>
+        </div>
+    `;
+    
+    // Chiama API di aiuto
+    const csrfToken = document.querySelector('input[name="csrf_token"]').value;
+    fetch('/api/help', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
+        },
+        body: JSON.stringify({ context: context })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            content.innerHTML = `
+                <div class="flex items-start space-x-3">
+                    <div class="flex-shrink-0">
+                        <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                            <span class="material-icons text-blue-600">smart_toy</span>
+                        </div>
+                    </div>
+                    <div class="flex-1">
+                        <div class="prose prose-sm max-w-none">
+                            ${data.help_content.replace(/\n/g, '<br>')}
+                        </div>
+                    </div>
+                </div>
+            `;
+        } else {
+            content.innerHTML = `
+                <div class="flex items-center space-x-3 text-red-600">
+                    <span class="material-icons">error</span>
+                    <span>Errore nel caricamento dell'aiuto: ${data.error}</span>
+                </div>
+            `;
+        }
+    })
+    .catch(error => {
+        content.innerHTML = `
+            <div class="flex items-center space-x-3 text-red-600">
+                <span class="material-icons">error</span>
+                <span>Errore di connessione. Riprova più tardi.</span>
+            </div>
+        `;
+    });
+}
+
+function closeHelp() {
+    document.getElementById('aiHelpModal').classList.add('hidden');
+}
+
+// Chiudi modal cliccando fuori
+document.getElementById('aiHelpModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeHelp();
+    }
+});
+
+// Gestione selezione tipo soluzione
+document.addEventListener('DOMContentLoaded', function() {
+    const solutionTypeOptions = document.querySelectorAll('.solution-type-option');
+    const solutionSections = document.querySelectorAll('.solution-section');
+    
+    // Inizializza con la selezione di default
+    const defaultChecked = document.querySelector('input[name="solution_type"]:checked');
+    if (defaultChecked) {
+        showSolutionSection(defaultChecked.value);
+    }
+    
+    // Gestisce il click sulle opzioni
+    solutionTypeOptions.forEach(option => {
+        option.addEventListener('click', function() {
+            const radio = this.querySelector('input[type="radio"]');
+            const solutionType = radio.value;
+            
+            // Deseleziona tutti
+            solutionTypeOptions.forEach(opt => {
+                opt.querySelector('.solution-type-card').classList.remove('border-blue-500', 'bg-blue-50', 'border-green-500', 'bg-green-50');
+                opt.querySelector('.solution-type-card').classList.add('border-gray-200');
+            });
+            
+            // Seleziona l'opzione cliccata
+            radio.checked = true;
+            const card = this.querySelector('.solution-type-card');
+            card.classList.remove('border-gray-200');
+            
+            if (solutionType === 'software') {
+                card.classList.add('border-blue-500', 'bg-blue-50');
+            } else {
+                card.classList.add('border-green-500', 'bg-green-50');
+            }
+            
+            showSolutionSection(solutionType);
+        });
+    });
+    
+    function showSolutionSection(type) {
+        // Nascondi tutte le sezioni
+        solutionSections.forEach(section => {
+            section.style.display = 'none';
+        });
+        
+        // Mostra la sezione appropriata
+        const targetSection = document.getElementById(type + '-section');
+        if (targetSection) {
+            targetSection.style.display = 'block';
+        }
+    }
+});
+</script>
+{% endblock %}
