@@ -363,10 +363,82 @@ def submit_solution_form(task_id: int) -> Response | str:
         solution_content = form.solution_content.data
         file = form.solution_file.data
         
-        # Gestione Pull Request URL (flusso software)
-        pull_request_url = request.form.get('pull_request_url', '').strip()
+        # Ottieni content_type dal form
+        content_type = request.form.get('content_type', 'software')
         
-        # Gestione file hardware multipli
+        # Validazione content_type
+        from app.models import CONTENT_TYPES
+        if content_type not in CONTENT_TYPES:
+            flash('Tipo di contenuto non valido', 'danger')
+            return render_template('submit_solution.html', task=task, project=task.project, form=form)
+        
+        # ⭐ NUOVO: Ottieni modalità pubblicazione
+        publish_method = request.form.get('publish_method', 'auto')  # 'auto' o 'manual'
+        
+        # ⭐ NUOVO: Gestione AUTO-PR (codice incollato)
+        solution_code_auto = request.form.get('solution_code_auto', '').strip()
+        
+        pull_request_url = None
+        auto_pr_created = False
+        
+        if publish_method == 'auto' and solution_code_auto and task.project.github_repo_name:
+            # Modalità AUTO: Crea PR automatica dal codice incollato
+            try:
+                from services.github_auto_publisher import GitHubAutoPublisher, extract_code_from_textarea
+                
+                publisher = GitHubAutoPublisher()
+                
+                # Prepara content data
+                content_data = extract_code_from_textarea(solution_code_auto, content_type)
+                
+                # Prepara task info
+                task_info = {
+                    'task_id': task.id,
+                    'title': task.title,
+                    'description': task.description or ''
+                }
+                
+                # Prepara user info
+                user_info = {
+                    'username': current_user.username,
+                    'email': current_user.email,
+                    'github_username': getattr(current_user, 'github_username', None)
+                }
+                
+                # Crea PR automatica (costruisci URL dal repo_name)
+                repo_url = f"https://github.com/{task.project.github_repo_name}" if task.project.github_repo_name else None
+                result = publisher.publish_solution_auto(
+                    repo_url=repo_url,
+                    content_data=content_data,
+                    task_info=task_info,
+                    user_info=user_info
+                )
+                
+                if result['success']:
+                    pull_request_url = result['pr_url']
+                    auto_pr_created = True
+                    flash(f"✨ Pull Request creata automaticamente! {pull_request_url}", "success")
+                else:
+                    flash(f"Errore nella creazione automatica PR: {result.get('error', 'Unknown error')}", "danger")
+                    return render_template('submit_solution.html', task=task, project=task.project, form=form)
+                    
+            except Exception as e:
+                current_app.logger.error(f"Error in auto-PR creation: {e}", exc_info=True)
+                flash(f"Errore imprevisto durante la creazione automatica della PR: {str(e)}", "danger")
+                return render_template('submit_solution.html', task=task, project=task.project, form=form)
+        
+        elif publish_method == 'manual':
+            # Modalità MANUAL: URL PR inserito manualmente
+            pull_request_url = request.form.get('pull_request_url', '').strip()
+            
+            if not pull_request_url and content_type == 'software' and task.project.github_repo_name:
+                flash('Per contributi software, inserisci l\'URL della Pull Request o usa la modalità automatica.', 'warning')
+                return render_template('submit_solution.html', task=task, project=task.project, form=form)
+        
+        # Gestione file multipli per tutti i tipi
+        uploaded_files = request.files.getlist('files')
+        
+        # Gestione file hardware legacy (compatibilità)
         hardware_files = {
             'source_files': request.files.getlist('source_files'),
             'prototype_files': request.files.getlist('prototype_files'),
@@ -393,13 +465,14 @@ def submit_solution_form(task_id: int) -> Response | str:
             file.save(file_path)
             file_path = os.path.join(os.path.basename(upload_folder), filename)
 
-        # Crea la soluzione con i nuovi campi
+        # Crea la soluzione con content_type
         new_solution = Solution(
             task_id=task.id,
             submitted_by_user_id=current_user.id,
             solution_content=solution_content,
             pull_request_url=pull_request_url if pull_request_url else None,
-            file_path=file_path
+            file_path=file_path,
+            content_type=content_type  # NUOVO CAMPO
         )
         
         try:
@@ -426,13 +499,87 @@ def submit_solution_form(task_id: int) -> Response | str:
         
         db.session.commit()
         
-        # Messaggio di successo personalizzato
+        # ========== NUOVO: GITHUB SYNC (NON BLOCCANTE) ==========
+        # Sincronizza automaticamente con GitHub se abilitato GLOBALMENTE
+        # Se fallisce, NON influenza il salvataggio locale (già fatto)
+        try:
+            from app.services import GitHubSyncService
+            sync_service = GitHubSyncService()
+            
+            if sync_service.is_enabled():  # Check solo globale, non per progetto
+                files_to_sync = []
+                
+                # Sincronizza file soluzione principale se presente
+                if file_path and os.path.exists(os.path.join(current_app.instance_path, file_path)):
+                    with open(os.path.join(current_app.instance_path, file_path), 'rb') as f:
+                        files_to_sync.append({
+                            'path': f"solutions/task_{task.id}/{os.path.basename(file_path)}",
+                            'content': f.read(),
+                            'message': f"Solution for task #{task.id} by {current_user.username}"
+                        })
+                
+                # Sincronizza file multipli (hardware, documentation, etc.)
+                for sol_file in solution_files:
+                    full_path = os.path.join(upload_folder, sol_file.file_path)
+                    if os.path.exists(full_path):
+                        with open(full_path, 'rb') as f:
+                            category = sol_file.file_category or 'misc'
+                            files_to_sync.append({
+                                'path': f"solutions/task_{task.id}/{category}/{os.path.basename(sol_file.file_path)}",
+                                'content': f.read(),
+                                'message': f"Solution file ({category}) for task #{task.id}"
+                            })
+                
+                # Sincronizza content testuale (codice, documentazione)
+                if solution_content and content_type in ['software', 'documentation']:
+                    extension_map = {
+                        'software': 'py',  # Default, potrebbe essere migliorato
+                        'documentation': 'md'
+                    }
+                    ext = extension_map.get(content_type, 'txt')
+                    files_to_sync.append({
+                        'path': f"solutions/task_{task.id}/solution_{new_solution.id}.{ext}",
+                        'content': solution_content.encode('utf-8'),
+                        'message': f"Solution content for task #{task.id}"
+                    })
+                
+                # Esegui sincronizzazione (se fallisce, solo log - non errore per utente)
+                if files_to_sync:
+                    results = sync_service.sync_multiple_files(task.project, files_to_sync)
+                    if results['success'] > 0:
+                        current_app.logger.info(
+                            f"GitHub sync: {results['success']}/{len(files_to_sync)} files synced "
+                            f"for solution {new_solution.id}"
+                        )
+                    if results['failed'] > 0:
+                        current_app.logger.warning(
+                            f"GitHub sync: {results['failed']} files failed to sync: {results['errors']}"
+                        )
+        except ImportError:
+            # GitHub sync non disponibile - continua normalmente
+            pass
+        except Exception as e:
+            # Errore GitHub sync - log ma NON fallire (soluzione già salvata)
+            current_app.logger.warning(f"GitHub sync failed (non-critical) for solution {new_solution.id}: {e}")
+        # ========== FINE GITHUB SYNC ==========
+        
+        # Messaggio di successo personalizzato per tipo
+        content_type_labels = {
+            'software': '💻 Software',
+            'hardware': '🔧 Hardware',
+            'design': '🎨 Design',
+            'documentation': '📄 Documentazione',
+            'media': '🎬 Media',
+            'mixed': '🔀 Mista'
+        }
+        type_label = content_type_labels.get(content_type, 'Soluzione')
+        
         if pull_request_url:
-            flash("La tua soluzione GitHub è stata inviata con successo!", "success")
+            flash(f"La tua soluzione {type_label} è stata inviata via GitHub con successo!", "success")
         elif solution_files:
-            flash(f"La tua soluzione hardware è stata inviata con successo! ({len(solution_files)} file caricati)", "success")
+            flash(f"La tua soluzione {type_label} è stata inviata con successo! ({len(solution_files)} file caricati)", "success")
         else:
-            flash("La tua soluzione è stata inviata con successo!", "success")
+            flash(f"La tua soluzione {type_label} è stata inviata con successo!", "success")
             
         return redirect(url_for('tasks.task_detail', task_id=task.id))
     elif request.method == 'POST':

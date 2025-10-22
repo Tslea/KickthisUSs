@@ -69,7 +69,7 @@ def runner(app):
 def auth_user(app):
     """Utente autenticato per test."""
     with app.app_context():
-        user = UserFactory()
+        user = UserFactory(verify_email=True)
         # Memorizza l'ID prima che l'oggetto diventi detached
         user_id = user.id
         user._id = user_id  # Aggiungo un attributo per memorizzare l'ID

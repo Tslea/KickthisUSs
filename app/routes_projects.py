@@ -35,14 +35,19 @@ def home() -> Response | str:
     # Calcola le metriche reali
     projects_count = Project.query.filter_by(private=False).count()
     collaborators_count = Collaborator.query.count()
-    tasks_completed = Task.query.filter_by(status='completed').count()
+    
+    # Conta tutti i task di progetti pubblici (task pubblici o senza flag is_private)
+    public_tasks_count = Task.query.join(Project).filter(
+        Project.private == False,
+        db.or_(Task.is_private == False, Task.is_private == None)
+    ).count()
     
     return render_template('index.html', 
                          recent_projects=recent_projects,
                          user_votes=user_votes,
                          projects_count=projects_count,
                          collaborators_count=collaborators_count,
-                         tasks_completed=tasks_completed)
+                         public_tasks_count=public_tasks_count)
 
 @projects_bp.route('/projects')
 def projects_list() -> Response | str:
@@ -137,6 +142,16 @@ def create_project_form() -> Response | str:
         )
         db.session.add(new_project)
         db.session.commit()
+        
+        # 🎯 INITIALIZE CREATOR EQUITY (ProjectEquity system)
+        try:
+            from app.services.equity_service import EquityService
+            equity_service = EquityService()
+            equity_service.initialize_creator_equity(new_project)
+            current_app.logger.info(f'Initialized creator equity for project {new_project.id} - User {current_user.id}')
+        except Exception as e:
+            current_app.logger.error(f'Failed to initialize creator equity for project {new_project.id}: {str(e)}')
+            # Non bloccare la creazione del progetto, ma logga l'errore
         
         # 🤖 GENERAZIONE AUTOMATICA GUIDE AI
         try:
@@ -270,6 +285,23 @@ def create_project_form() -> Response | str:
             current_app.logger.error(f"Errore generazione guide AI: {str(e)}")
             flash('Progetto creato con successo!', 'success')
         
+        # ========== NUOVO: GITHUB SYNC SETUP (AUTOMATICO) ==========
+        # Se GitHub è abilitato globalmente, crea automaticamente il repository
+        try:
+            from app.services import GitHubSyncService
+            sync_service = GitHubSyncService()
+            
+            if sync_service.is_enabled():
+                # Setup repository automatico (nessuna checkbox, completamente trasparente)
+                repo_info = sync_service.setup_project_repository(new_project)
+                if repo_info:
+                    current_app.logger.info(f"GitHub repository auto-created for project {new_project.id}")
+                    # Nessun flash message - completamente silenzioso per l'utente
+        except Exception as e:
+            current_app.logger.warning(f"GitHub sync setup failed for project {new_project.id}: {e}")
+            # Nessun messaggio all'utente - il progetto funziona comunque
+        # ========== FINE GITHUB SYNC SETUP ==========
+        
         return redirect(url_for('projects.project_detail', project_id=new_project.id))
     return render_template('create_project.html',
                            allowed_categories=ALLOWED_PROJECT_CATEGORIES,
@@ -378,6 +410,118 @@ def project_detail(project_id: int) -> Response | str:
                            remaining_equity=remaining_equity,
                            ALLOWED_TASK_DIFFICULTIES=ALLOWED_TASK_DIFFICULTIES,
                            form=form)
+
+
+@projects_bp.route('/project/<int:project_id>/equity')
+@login_required
+def project_equity(project_id: int) -> Response | str:
+    """
+    Display project cap table (equity distribution).
+    Only visible to project creator and collaborators.
+    """
+    from .services.equity_service import EquityService
+    
+    project = Project.query.options(
+        joinedload(Project.creator)
+    ).get_or_404(project_id)
+    
+    # Check permissions: only creator and collaborators can view
+    is_creator = current_user.id == project.creator_id
+    is_collaborator = Collaborator.query.filter_by(
+        project_id=project.id,
+        user_id=current_user.id
+    ).first() is not None
+    
+    if not (is_creator or is_collaborator):
+        flash('⛔ Solo il creatore e i collaboratori possono vedere la distribuzione equity.', 'error')
+        abort(403)
+    
+    # Get cap table
+    equity_service = EquityService()
+    cap_table = equity_service.get_cap_table(project)
+    
+    # Get equity stats
+    total_distributed = project.get_total_equity_distributed()
+    available_equity = project.get_available_equity()
+    
+    # Validate equity distribution
+    validation_result = equity_service.validate_and_fix_equity(project)
+    
+    # Get equity configuration (query separately to avoid relationship issues)
+    from .models import EquityConfiguration
+    equity_config = EquityConfiguration.query.filter_by(project_id=project.id).first()
+    
+    return render_template('project_equity.html',
+                         project=project,
+                         cap_table=cap_table,
+                         total_distributed=total_distributed,
+                         available_equity=available_equity,
+                         validation_result=validation_result,
+                         equity_config=equity_config,
+                         is_creator=is_creator)
+
+
+@projects_bp.route('/project/<int:project_id>/equity/history')
+@login_required
+def project_equity_history(project_id: int) -> Response | str:
+    """
+    Display project equity history (audit log).
+    Only visible to project creator and collaborators.
+    """
+    from .models import EquityHistory
+    
+    project = Project.query.options(
+        joinedload(Project.creator)
+    ).get_or_404(project_id)
+    
+    # Check permissions: only creator and collaborators can view
+    is_creator = current_user.id == project.creator_id
+    is_collaborator = Collaborator.query.filter_by(
+        project_id=project.id,
+        user_id=current_user.id
+    ).first() is not None
+    
+    if not (is_creator or is_collaborator):
+        flash('⛔ Solo il creatore e i collaboratori possono vedere lo storico equity.', 'error')
+        abort(403)
+    
+    # Get equity history with pagination
+    page = request.args.get('page', 1, type=int)
+    per_page = 50
+    
+    history_query = EquityHistory.query.filter_by(
+        project_id=project.id
+    ).options(
+        joinedload(EquityHistory.user),
+        joinedload(EquityHistory.changed_by)
+    ).order_by(EquityHistory.created_at.desc())
+    
+    history_pagination = history_query.paginate(
+        page=page,
+        per_page=per_page,
+        error_out=False
+    )
+    
+    # Get summary stats
+    total_grants = EquityHistory.query.filter_by(
+        project_id=project.id,
+        action='grant'
+    ).count()
+    
+    total_equity_granted = db.session.query(
+        db.func.sum(EquityHistory.equity_change)
+    ).filter(
+        EquityHistory.project_id == project.id,
+        EquityHistory.action == 'grant'
+    ).scalar() or 0.0
+    
+    return render_template('project_equity_history.html',
+                         project=project,
+                         history_pagination=history_pagination,
+                         total_grants=total_grants,
+                         total_equity_granted=total_equity_granted,
+                         is_creator=is_creator)
+
 
 @projects_bp.route('/project/<int:project_id>/toggle-visibility', methods=['POST'])
 @login_required
@@ -531,27 +675,53 @@ def update_project(project_id: int) -> Response | str:
 @login_required
 @role_required('project_id', roles=['creator'])
 def update_github_url(project_id):
-    """Aggiorna l'URL GitHub del progetto"""
+    """Aggiorna il repository GitHub del progetto"""
     try:
         data = request.get_json()
         github_url = data.get('github_url', '').strip()
         
-        # Validazione URL
-        if github_url and not github_url.startswith('https://github.com/'):
-            return jsonify({
-                'success': False,
-                'error': 'L\'URL deve essere un repository GitHub valido (https://github.com/...)'
-            }), 400
+        current_app.logger.info(f"Updating GitHub URL for project {project_id}: '{github_url}'")
+        
+        # Estrai il nome del repository dall'URL
+        github_repo_name = None
+        if github_url:
+            # Validazione URL
+            if not github_url.startswith('https://github.com/'):
+                return jsonify({
+                    'success': False,
+                    'error': 'L\'URL deve essere un repository GitHub valido (https://github.com/...)'
+                }), 400
+            
+            # Pulisci l'URL rimuovendo https://github.com/ e eventuali trailing slash
+            clean_path = github_url.replace('https://github.com/', '').strip('/')
+            current_app.logger.info(f"Clean path after removing domain: '{clean_path}'")
+            
+            # Estrai owner/repo da URL: owner/repo o owner/repo/...
+            parts = [p for p in clean_path.split('/') if p]  # Rimuovi parti vuote
+            current_app.logger.info(f"Parts after split: {parts}")
+            
+            if len(parts) >= 2:
+                github_repo_name = f"{parts[0]}/{parts[1]}"
+            else:
+                current_app.logger.error(f"Not enough parts to extract owner/repo: {parts}")
+        
+        current_app.logger.info(f"Extracted repo name: '{github_repo_name}'")
         
         project = Project.query.get_or_404(project_id)
-        project.github_url = github_url if github_url else None
+        project.github_repo_name = github_repo_name
         
         db.session.commit()
         
+        current_app.logger.info(f"GitHub repo name saved successfully: {project.github_repo_name}")
+        
+        # Ricostruisci l'URL completo per la risposta
+        full_url = f"https://github.com/{github_repo_name}" if github_repo_name else None
+        
         return jsonify({
             'success': True,
-            'message': 'URL GitHub aggiornato con successo!',
-            'github_url': project.github_url
+            'message': 'Repository GitHub aggiornato con successo!',
+            'github_url': full_url,
+            'github_repo_name': github_repo_name
         }), 200
         
     except Exception as e:

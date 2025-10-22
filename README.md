@@ -2,6 +2,25 @@
 
 > **"Democratizing innovation, liberating scientific research, and breaking down barriers to collaborative progress worldwide"**
 
+![Content Types](https://img.shields.io/badge/Content%20Types-6-brightgreen)
+![Formats](https://img.shields.io/badge/File%20Formats-150%2B-blue)
+![Size](https://img.shields.io/badge/Max%20File-500MB-orange)
+
+## 🎨 **Supported Content Types**
+
+KickThisUSS supports **all types of contributions**:
+
+| Type | Formats | Use Cases |
+|------|---------|-----------|
+| 💻 **Software** | 31+ languages | Apps, APIs, Libraries |
+| 🔧 **Hardware** | CAD, PCB, 3D | Electronics, Prototypes |
+| 🎨 **Design** | PSD, Figma, AI | Logos, UI/UX, Graphics |
+| 📄 **Documentation** | PDF, MD, DOCX | Guides, Business Plans |
+| 🎬 **Media** | Video, Audio | Promos, Tutorials, Demos |
+| 🔀 **Mixed** | All formats | Complete projects |
+
+➡️ See [Content Types Guide](docs/CONTENT_TYPES_GUIDE.md) for details
+
 ## 🎯 **Mission Statement**
 
 KickthisUSs is a revolutionary AI-powered crowdfunding and collaboration platform designed to **decentralize progress in the world**. Our mission is to create a global ecosystem where:

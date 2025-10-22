@@ -1,307 +1,1114 @@
-{% extends "base.html" %}
-{% from "partials/_form_helpers.html" import render_field %}
+﻿{% extends "base.html" %}
 
-{% block title %}Invia Soluzione per: {{ task.title }}{% endblock %}
+{% block title %}Pubblica Soluzione - {{ task.title }}{% endblock %}
+
+{% block head_extra %}
+<style>
+/* Submit Solution Page - Modern Design */
+.submit-solution-page {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+}
+
+/* Hero Header con Gradient */
+.solution-hero {
+    background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+    padding: 3rem 1.5rem;
+    margin-bottom: 2rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.solution-hero::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+}
+
+.solution-hero-content {
+    position: relative;
+    max-width: 1024px;
+    margin: 0 auto;
+    text-align: center;
+    z-index: 10;
+}
+
+.solution-title {
+    font-size: 2.5rem;
+    font-weight: 900;
+    color: white;
+    margin-bottom: 1rem;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    letter-spacing: -0.025em;
+}
+
+.solution-subtitle {
+    font-size: 1.125rem;
+    color: rgba(255, 255, 255, 0.95);
+    margin-bottom: 0.5rem;
+}
+
+.solution-subtitle a {
+    color: white;
+    font-weight: 700;
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 4px;
+    transition: all 0.2s;
+}
+
+.solution-subtitle a:hover {
+    text-decoration-color: rgba(255, 255, 255, 0.5);
+}
+
+.solution-hint {
+    font-size: 0.875rem;
+    color: rgba(255, 255, 255, 0.85);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+/* Container */
+.ssp-container {
+    max-width: 1024px;
+    margin: 0 auto;
+    padding: 0 1.5rem 3rem;
+}
+
+/* Main Card con effetto elevato */
+.ssp-card {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 1.5rem;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04);
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.ssp-card:hover {
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.12), 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+.ssp-card-body {
+    padding: 2.5rem;
+}
+
+/* Section */
+.ssp-section {
+    margin-bottom: 3rem;
+    padding-bottom: 2rem;
+    border-bottom: 2px solid #f3f4f6;
+}
+
+.ssp-section:last-child {
+    margin-bottom: 0;
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+/* Step Header con design migliorato */
+.ssp-step-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.ssp-step-number {
+    width: 48px;
+    height: 48px;
+    background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 1.25rem;
+    flex-shrink: 0;
+    box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3);
+    animation: pulse-soft 2s infinite;
+}
+
+@keyframes pulse-soft {
+    0%, 100% { transform: scale(1); box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3); }
+    50% { transform: scale(1.05); box-shadow: 0 6px 16px rgba(255, 107, 53, 0.4); }
+}
+
+.ssp-step-title {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: #111827;
+    letter-spacing: -0.025em;
+}
+
+/* Content Type Grid - Design moderno */
+.ssp-type-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 1rem;
+}
+
+.ssp-type-card {
+    position: relative;
+    padding: 1.5rem 1rem;
+    border: 2px solid #e5e7eb;
+    border-radius: 1rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    background: white;
+}
+
+.ssp-type-card:hover {
+    border-color: #ff6b35;
+    background: linear-gradient(135deg, #fff5f0 0%, #ffe8d9 100%);
+    transform: translateY(-4px);
+    box-shadow: 0 8px 20px rgba(255, 107, 53, 0.2);
+}
+
+.ssp-type-card.selected {
+    border-color: #ff6b35;
+    background: linear-gradient(135deg, #fff5f0 0%, #ffe8d9 100%);
+    box-shadow: 0 0 0 4px rgba(255, 107, 53, 0.1), 0 8px 20px rgba(255, 107, 53, 0.2);
+}
+
+.ssp-type-card.selected::after {
+    content: '✓';
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 24px;
+    height: 24px;
+    background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+    color: white;
+    border-radius: 50%;
+    font-size: 14px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(255, 107, 53, 0.4);
+}
+
+.ssp-type-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    margin: 0 auto 0.75rem;
+    background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+    border-radius: 12px;
+    transition: all 0.3s;
+}
+
+.ssp-type-card:hover .ssp-type-icon,
+.ssp-type-card.selected .ssp-type-icon {
+    background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+}
+
+.ssp-type-icon svg {
+    width: 28px;
+    height: 28px;
+    stroke: #4b5563;
+    fill: none;
+    stroke-width: 2;
+    transition: all 0.3s;
+}
+
+.ssp-type-card:hover .ssp-type-icon svg,
+.ssp-type-card.selected .ssp-type-icon svg {
+    stroke: white;
+}
+
+.ssp-type-label {
+    font-weight: 700;
+    font-size: 0.875rem;
+    color: #111827;
+    margin-bottom: 2px;
+    transition: all 0.3s;
+}
+
+.ssp-type-card:hover .ssp-type-label,
+.ssp-type-card.selected .ssp-type-label {
+    color: #ff6b35;
+}
+
+.ssp-type-sublabel {
+    font-size: 0.75rem;
+    color: #6b7280;
+    transition: all 0.3s;
+}
+
+.ssp-type-card:hover .ssp-type-sublabel,
+.ssp-type-card.selected .ssp-type-sublabel {
+    color: #9ca3af;
+}
+
+/* Tabs con design moderno */
+.ssp-tabs {
+    display: flex;
+    background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+    padding: 6px;
+    border-radius: 12px;
+    margin-bottom: 1.5rem;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.06);
+}
+
+.ssp-tab {
+    flex: 1;
+    padding: 0.75rem 1.25rem;
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #6b7280;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.ssp-tab:hover {
+    color: #111827;
+    background: rgba(255, 255, 255, 0.5);
+}
+
+.ssp-tab.active {
+    background: white;
+    color: #ff6b35;
+    font-weight: 700;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06);
+    transform: translateY(-1px);
+}
+
+/* Drop Zone con design attraente */
+.ssp-dropzone {
+    border: 3px dashed #d1d5db;
+    border-radius: 1rem;
+    padding: 3rem 2rem;
+    text-align: center;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+    background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+    position: relative;
+    overflow: hidden;
+}
+
+.ssp-dropzone::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(circle at 50% 50%, rgba(255, 107, 53, 0.05) 0%, transparent 70%);
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.ssp-dropzone:hover::before {
+    opacity: 1;
+}
+
+.ssp-dropzone:hover {
+    border-color: #ff6b35;
+    background: linear-gradient(135deg, #fff5f0 0%, #ffe8d9 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(255, 107, 53, 0.15);
+}
+
+.ssp-dropzone.drag-over {
+    border-color: #ff6b35;
+    border-style: solid;
+    background: linear-gradient(135deg, #fff5f0 0%, #ffe8d9 100%);
+    box-shadow: 0 0 0 4px rgba(255, 107, 53, 0.1), 0 8px 20px rgba(255, 107, 53, 0.2);
+}
+
+.ssp-dropzone-icon {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 1rem;
+    position: relative;
+    z-index: 10;
+}
+
+.ssp-dropzone-icon svg {
+    width: 100%;
+    height: 100%;
+    stroke: #9ca3af;
+    transition: all 0.3s;
+}
+
+.ssp-dropzone:hover .ssp-dropzone-icon svg {
+    stroke: #ff6b35;
+    transform: translateY(-4px);
+}
+
+.ssp-dropzone-title {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: #111827;
+    margin-bottom: 0.5rem;
+    position: relative;
+    z-index: 10;
+}
+
+.ssp-dropzone-subtitle {
+    font-size: 0.875rem;
+    color: #6b7280;
+    margin-bottom: 1rem;
+    position: relative;
+    z-index: 10;
+}
+
+.ssp-btn-upload {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+    color: white;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 700;
+    transition: all 0.3s;
+    box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3);
+    position: relative;
+    z-index: 10;
+}
+
+.ssp-dropzone:hover .ssp-btn-upload {
+    transform: scale(1.05);
+    box-shadow: 0 6px 16px rgba(255, 107, 53, 0.4);
+}
+
+.ssp-dropzone-meta {
+    font-size: 0.75rem;
+    color: #9ca3af;
+    margin-top: 1rem;
+    position: relative;
+    z-index: 10;
+}
+
+/* Form Controls moderni */
+.ssp-label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: #374151;
+    margin-bottom: 0.5rem;
+}
+
+.ssp-input,
+.ssp-textarea {
+    width: 100%;
+    padding: 0.875rem 1rem;
+    border: 2px solid #e5e7eb;
+    border-radius: 10px;
+    font-size: 0.875rem;
+    font-family: inherit;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    background: white;
+    color: #111827;
+}
+
+.ssp-input:focus,
+.ssp-textarea:focus {
+    outline: none;
+    border-color: #ff6b35;
+    box-shadow: 0 0 0 4px rgba(255, 107, 53, 0.1), 0 4px 12px rgba(255, 107, 53, 0.15);
+    transform: translateY(-1px);
+}
+
+.ssp-textarea {
+    resize: vertical;
+    min-height: 140px;
+    line-height: 1.6;
+}
+
+.ssp-textarea.code {
+    font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
+    background: #1e293b;
+    color: #e2e8f0;
+    border-color: #334155;
+    font-size: 0.8125rem;
+    line-height: 1.7;
+}
+
+.ssp-textarea.code:focus {
+    border-color: #ff6b35;
+    box-shadow: 0 0 0 4px rgba(255, 107, 53, 0.2), 0 4px 12px rgba(255, 107, 53, 0.15);
+}
+
+/* File List con design migliorato */
+.ssp-file-list {
+    margin-top: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.ssp-file-item {
+    display: flex;
+    align-items: center;
+    padding: 1rem;
+    background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+    border: 2px solid #e5e7eb;
+    border-radius: 12px;
+    gap: 1rem;
+    transition: all 0.3s;
+}
+
+.ssp-file-item:hover {
+    border-color: #ff6b35;
+    background: linear-gradient(135deg, #fff5f0 0%, #ffe8d9 100%);
+    transform: translateX(4px);
+    box-shadow: 0 4px 12px rgba(255, 107, 53, 0.15);
+}
+
+.ssp-file-icon {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.ssp-file-icon svg {
+    width: 22px;
+    height: 22px;
+    stroke: white;
+}
+
+.ssp-file-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.ssp-file-name {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #111827;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    margin-bottom: 0.125rem;
+}
+
+.ssp-file-size {
+    font-size: 0.75rem;
+    color: #6b7280;
+}
+
+.ssp-file-remove {
+    padding: 0.5rem 1rem;
+    background: white;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    color: #dc2626;
+    font-size: 0.75rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s;
+    flex-shrink: 0;
+}
+
+.ssp-file-remove:hover {
+    background: #dc2626;
+    color: white;
+    border-color: #dc2626;
+    transform: scale(1.05);
+}
+
+/* Helper Text */
+.ssp-helper {
+    font-size: 0.8125rem;
+    color: #6b7280;
+    margin-top: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.ssp-char-counter {
+    text-align: right;
+    font-size: 0.75rem;
+    color: #6b7280;
+    margin-top: 0.5rem;
+    font-weight: 600;
+}
+
+.ssp-char-counter.error {
+    color: #dc2626;
+    font-weight: 700;
+}
+
+.ssp-char-counter.success {
+    color: #16a34a;
+    font-weight: 700;
+}
+
+/* Info Banner con gradient moderno */
+.ssp-info-banner {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 2rem;
+    border-radius: 1rem;
+    display: flex;
+    gap: 1.25rem;
+    align-items: flex-start;
+    box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+    position: relative;
+    overflow: hidden;
+}
+
+.ssp-info-banner::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+    animation: rotate 20s linear infinite;
+}
+
+@keyframes rotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.ssp-info-icon {
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+    position: relative;
+    z-index: 10;
+}
+
+.ssp-info-icon svg {
+    width: 100%;
+    height: 100%;
+    fill: white;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+}
+
+.ssp-info-content {
+    position: relative;
+    z-index: 10;
+}
+
+.ssp-info-content h3 {
+    font-size: 1.125rem;
+    font-weight: 800;
+    margin-bottom: 0.5rem;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.ssp-info-content p {
+    font-size: 0.9375rem;
+    opacity: 0.95;
+    line-height: 1.6;
+}
+
+/* Footer con design premium */
+.ssp-footer {
+    padding: 2rem;
+    background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+    border-top: 2px solid #e5e7eb;
+}
+
+.ssp-submit-btn {
+    width: 100%;
+    padding: 1.125rem 1.5rem;
+    background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 1.125rem;
+    font-weight: 800;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    box-shadow: 0 10px 30px rgba(255, 107, 53, 0.3);
+    position: relative;
+    overflow: hidden;
+}
+
+.ssp-submit-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    transition: left 0.5s;
+}
+
+.ssp-submit-btn:hover:not(:disabled)::before {
+    left: 100%;
+}
+
+.ssp-submit-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 15px 40px rgba(255, 107, 53, 0.4);
+}
+
+.ssp-submit-btn:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+.ssp-submit-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none !important;
+}
+
+/* Utilities */
+.ssp-hidden {
+    display: none !important;
+}
+
+/* Animazioni */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+    animation: fadeIn 0.4s ease-out;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+    .solution-hero {
+        padding: 2rem 1rem;
+    }
+    
+    .solution-title {
+        font-size: 1.875rem;
+    }
+    
+    .ssp-container {
+        padding: 0 1rem 2rem;
+    }
+    
+    .ssp-card-body {
+        padding: 1.5rem;
+    }
+    
+    .ssp-type-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .ssp-tabs {
+        flex-direction: column;
+        gap: 4px;
+    }
+    
+    .ssp-dropzone {
+        padding: 2rem 1rem;
+    }
+    
+    .ssp-footer {
+        padding: 1.5rem;
+    }
+    
+    .ssp-info-banner {
+        flex-direction: column;
+        padding: 1.5rem;
+    }
+}
+</style>
+{% endblock %}
 
 {% block content %}
-<main class="bg-slate-50 flex-1 py-8">
-    <div class="max-w-3xl mx-auto px-4">
-        <div class="bg-white p-6 md:p-8 rounded-xl shadow-lg border border-gray-200">
-            <h1 class="text-2xl md:text-3xl font-bold text-gray-900 mb-2">Invia la tua Soluzione</h1>
-            <p class="text-gray-600 mb-6">per il task: <a href="{{ url_for('tasks.task_detail', task_id=task.id) }}" class="text-mclaren-orange hover:underline font-semibold">{{ task.title }}</a></p>
+<div class="submit-solution-page">
 
-            <form action="{{ url_for('tasks.submit_solution_form', task_id=task.id) }}" method="POST" enctype="multipart/form-data" novalidate>
-                {{ form.hidden_tag() }} {# Aggiunge il token CSRF e altri campi nascosti #}
-                
-            <form action="{{ url_for('tasks.submit_solution_form', task_id=task.id) }}" method="POST" enctype="multipart/form-data" novalidate>
-                {{ form.hidden_tag() }} {# Aggiunge il token CSRF e altri campi nascosti #}
-                
-                <div class="space-y-6">
-                    {# Selezione Tipo Soluzione #}
-                    <div class="bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-lg p-6">
-                        <h3 class="text-lg font-semibold text-purple-800 mb-4 flex items-center">
-                            <span class="material-icons mr-2">category</span>
-                            Seleziona il tipo di soluzione
-                        </h3>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <label class="solution-type-option cursor-pointer" data-type="software">
-                                <input type="radio" name="solution_type" value="software" class="sr-only" {% if project.github_url %}checked{% endif %}>
-                                <div class="solution-type-card border-2 border-gray-200 rounded-lg p-4 hover:border-blue-500 hover:bg-blue-50 transition-all">
-                                    <div class="flex items-center gap-3 mb-2">
-                                        <svg class="w-6 h-6 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-                                            <path fill-rule="evenodd" d="M10 0C4.477 0 0 4.484 0 10.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0110 4.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.203 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.942.359.31.678.921.678 1.856 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0020 10.017C20 4.484 15.522 0 10 0z" clip-rule="evenodd"></path>
-                                        </svg>
-                                        <h4 class="font-semibold text-blue-800">Sviluppo Software</h4>
-                                    </div>
-                                    <p class="text-sm text-blue-600">Contributi di codice tramite GitHub Pull Request</p>
-                                    {% if not project.github_url %}
-                                    <p class="text-xs text-orange-600 mt-2">⚠️ Repository GitHub non configurato</p>
-                                    {% endif %}
-                                </div>
-                            </label>
-                            
-                            <label class="solution-type-option cursor-pointer" data-type="hardware">
-                                <input type="radio" name="solution_type" value="hardware" class="sr-only" {% if not project.github_url %}checked{% endif %}>
-                                <div class="solution-type-card border-2 border-gray-200 rounded-lg p-4 hover:border-green-500 hover:bg-green-50 transition-all">
-                                    <div class="flex items-center gap-3 mb-2">
-                                        <span class="material-icons text-green-600 text-xl">upload_file</span>
-                                        <h4 class="font-semibold text-green-800">Progetto Hardware</h4>
-                                    </div>
-                                    <p class="text-sm text-green-600">Upload di file CAD, schemi, prototipi e documentazione</p>
-                                </div>
-                            </label>
-                        </div>
-                    </div>
-
-                    {# Flusso SOFTWARE - Campo Pull Request URL #}
-                    <div id="software-section" class="solution-section bg-blue-50 border border-blue-200 rounded-lg p-4" style="display: none;">
-                        <h3 class="text-lg font-semibold text-blue-800 mb-2 flex items-center">
-                            <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M10 0C4.477 0 0 4.484 0 10.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0110 4.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.203 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.942.359.31.678.921.678 1.856 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0020 10.017C20 4.484 15.522 0 10 0z" clip-rule="evenodd"></path>
-                            </svg>
-                            Flusso GitHub - Contributo Software
-                            <button type="button" class="ml-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-full text-sm font-bold cursor-pointer transition-colors flex items-center gap-1" onclick="showHelp('github_workflow')">
-                                <span class="material-icons text-sm">help</span>
-                                Aiuto
-                            </button>
-                        </h3>
-                        
-                        {% if project.github_url %}
-                        <p class="text-blue-700 text-sm mb-4">
-                            Repository: <a href="{{ project.github_url }}" target="_blank" class="underline">{{ project.github_url }}</a>
-                        </p>
-                        <div>
-                            <label for="pull_request_url" class="block text-sm font-medium text-gray-700 mb-1">URL del Pull Request</label>
-                            <input type="url" id="pull_request_url" name="pull_request_url" 
-                                   class="form-input block w-full rounded-md border-gray-300 shadow-sm focus:border-mclaren-orange focus:ring focus:ring-mclaren-orange focus:ring-opacity-50"
-                                   placeholder="https://github.com/owner/repo/pull/123">
-                            <p class="text-xs text-gray-500 mt-1">Esempio: https://github.com/owner/repo/pull/123</p>
-                        </div>
-                        {% else %}
-                        <div class="bg-orange-50 border border-orange-200 rounded-lg p-3">
-                            <p class="text-orange-700 text-sm">
-                                <span class="material-icons text-sm inline align-middle mr-1">warning</span>
-                                Il repository GitHub non è stato configurato per questo progetto. 
-                                Contatta il creatore del progetto per configurarlo.
-                            </p>
-                        </div>
-                        {% endif %}
-                    </div>
-
-                    {# Flusso HARDWARE - Upload File Multipli #}
-                    <div id="hardware-section" class="solution-section bg-green-50 border border-green-200 rounded-lg p-4" style="display: none;">
-                        <h3 class="text-lg font-semibold text-green-800 mb-2 flex items-center">
-                            <span class="material-icons mr-2">upload_file</span>
-                            Flusso Hardware - Upload File
-                            <button type="button" class="ml-2 bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-full text-sm font-bold cursor-pointer transition-colors flex items-center gap-1" onclick="showHelp('hardware_submission')">
-                                <span class="material-icons text-sm">help</span>
-                                Aiuto
-                            </button>
-                        </h3>
-                        <p class="text-green-700 text-sm mb-4">Per design, prototipi, documentazione tecnica:</p>
-                        
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">File Sorgente (CAD, Schemi)</label>
-                                <input type="file" name="source_files" multiple accept=".step,.stp,.dwg,.sch,.brd,.kicad_pcb"
-                                       class="form-input block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-100 file:text-green-800 hover:file:bg-green-200">
-                                <p class="text-xs text-gray-500 mt-1">STEP, DWG, SCH, BRD, KiCad...</p>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">File per Prototipazione</label>
-                                <input type="file" name="prototype_files" multiple accept=".stl,.3mf,.gcode,.svg"
-                                       class="form-input block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-100 file:text-green-800 hover:file:bg-green-200">
-                                <p class="text-xs text-gray-500 mt-1">STL, 3MF, GCODE, SVG...</p>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Documentazione</label>
-                                <input type="file" name="documentation_files" multiple accept=".pdf,.docx,.md,.txt"
-                                       class="form-input block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-100 file:text-green-800 hover:file:bg-green-200">
-                                <p class="text-xs text-gray-500 mt-1">PDF, DOCX, Markdown...</p>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">File Visivi (Immagini/Video)</label>
-                                <input type="file" name="visual_files" multiple accept=".jpg,.jpeg,.png,.gif,.mp4,.mov"
-                                       class="form-input block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-100 file:text-green-800 hover:file:bg-green-200">
-                                <p class="text-xs text-gray-500 mt-1">JPG, PNG, MP4, MOV...</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Campo Descrizione Soluzione -->
-                    <div class="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                        <h3 class="text-lg font-semibold text-gray-800 mb-2">Descrizione della Soluzione</h3>
-                        {{ render_field(form.solution_content, label_visible=True) }}
-                    </div>
-
-                    {# Campo File Singolo (compatibilità) #}
-                    <div>
-                        <label for="solution_file" class="block text-sm font-medium text-gray-700 mb-1">Allega un File Aggiuntivo (Opzionale)</label>
-                        <p class="text-xs text-gray-500 mb-2">File singolo per compatibilità. Dimensione massima: 2MB.</p>
-                        {{ form.solution_file(class="form-input block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-mclaren-orange/10 file:text-mclaren-orange hover:file:bg-mclaren-orange/20") }}
-                        {% for error in form.solution_file.errors %}
-                            <span class="text-red-500 text-xs">{{ error }}</span>
-                        {% endfor %}
-                    </div>
-                </div>
-
-                <div class="mt-8 pt-6 border-t border-gray-200 text-right">
-                    <button type="submit" class="bg-mclaren-orange text-white px-6 py-3 rounded-lg hover:bg-mclaren-orange-darker transition-colors font-bold text-base flex-shrink-0 flex items-center gap-2">
-                        <span class="material-icons text-lg">lightbulb</span>
-                        {{ form.submit.label }}
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-</main>
-
-{# Modal per Assistente AI #}
-<div id="aiHelpModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-white rounded-lg max-w-2xl w-full max-h-[80vh] overflow-y-auto">
-        <div class="flex justify-between items-center p-6 border-b">
-            <h3 class="text-xl font-semibold text-gray-900">Co-Pilota KICKStorm</h3>
-            <button onclick="closeHelp()" class="text-gray-400 hover:text-gray-600">
-                <span class="material-icons">close</span>
-            </button>
-        </div>
-        <div id="aiHelpContent" class="p-6">
-            <div class="animate-pulse flex space-x-4">
-                <div class="rounded-full bg-gray-200 h-10 w-10"></div>
-                <div class="flex-1 space-y-2 py-1">
-                    <div class="h-4 bg-gray-200 rounded w-3/4"></div>
-                    <div class="h-4 bg-gray-200 rounded w-1/2"></div>
-                </div>
-            </div>
-        </div>
+<!-- Hero Header -->
+<div class="solution-hero">
+    <div class="solution-hero-content">
+        <h1 class="solution-title">🚀 Pubblica la tua Soluzione</h1>
+        <p class="solution-subtitle">
+            Task: <a href="{{ url_for('tasks.task_detail', task_id=task.id) }}">{{ task.title }}</a>
+        </p>
+        <p class="solution-hint">
+            <span class="material-icons" style="font-size: 1rem;">info</span>
+            Carica i tuoi file o incolla il codice per pubblicare automaticamente su GitHub
+        </p>
     </div>
 </div>
 
-<script>
-function showHelp(context) {
-    const modal = document.getElementById('aiHelpModal');
-    const content = document.getElementById('aiHelpContent');
-    
-    modal.classList.remove('hidden');
-    
-    // Mostra loading
-    content.innerHTML = `
-        <div class="animate-pulse flex space-x-4">
-            <div class="rounded-full bg-gray-200 h-10 w-10"></div>
-            <div class="flex-1 space-y-2 py-1">
-                <div class="h-4 bg-gray-200 rounded w-3/4"></div>
-                <div class="h-4 bg-gray-200 rounded w-1/2"></div>
-            </div>
-        </div>
-    `;
-    
-    // Chiama API di aiuto
-    const csrfToken = document.querySelector('input[name="csrf_token"]').value;
-    fetch('/api/help', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': csrfToken
-        },
-        body: JSON.stringify({ context: context })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            content.innerHTML = `
-                <div class="flex items-start space-x-3">
-                    <div class="flex-shrink-0">
-                        <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                            <span class="material-icons text-blue-600">smart_toy</span>
-                        </div>
-                    </div>
-                    <div class="flex-1">
-                        <div class="prose prose-sm max-w-none">
-                            ${data.help_content.replace(/\n/g, '<br>')}
-                        </div>
-                    </div>
-                </div>
-            `;
-        } else {
-            content.innerHTML = `
-                <div class="flex items-center space-x-3 text-red-600">
-                    <span class="material-icons">error</span>
-                    <span>Errore nel caricamento dell'aiuto: ${data.error}</span>
-                </div>
-            `;
-        }
-    })
-    .catch(error => {
-        content.innerHTML = `
-            <div class="flex items-center space-x-3 text-red-600">
-                <span class="material-icons">error</span>
-                <span>Errore di connessione. Riprova più tardi.</span>
-            </div>
-        `;
-    });
-}
+<div class="ssp-container animate-fade-in">
 
-function closeHelp() {
-    document.getElementById('aiHelpModal').classList.add('hidden');
-}
-
-// Chiudi modal cliccando fuori
-document.getElementById('aiHelpModal').addEventListener('click', function(e) {
-    if (e.target === this) {
-        closeHelp();
-    }
-});
-
-// Gestione selezione tipo soluzione
-document.addEventListener('DOMContentLoaded', function() {
-    const solutionTypeOptions = document.querySelectorAll('.solution-type-option');
-    const solutionSections = document.querySelectorAll('.solution-section');
-    
-    // Inizializza con la selezione di default
-    const defaultChecked = document.querySelector('input[name="solution_type"]:checked');
-    if (defaultChecked) {
-        showSolutionSection(defaultChecked.value);
-    }
-    
-    // Gestisce il click sulle opzioni
-    solutionTypeOptions.forEach(option => {
-        option.addEventListener('click', function() {
-            const radio = this.querySelector('input[type="radio"]');
-            const solutionType = radio.value;
-            
-            // Deseleziona tutti
-            solutionTypeOptions.forEach(opt => {
-                opt.querySelector('.solution-type-card').classList.remove('border-blue-500', 'bg-blue-50', 'border-green-500', 'bg-green-50');
-                opt.querySelector('.solution-type-card').classList.add('border-gray-200');
-            });
-            
-            // Seleziona l'opzione cliccata
-            radio.checked = true;
-            const card = this.querySelector('.solution-type-card');
-            card.classList.remove('border-gray-200');
-            
-            if (solutionType === 'software') {
-                card.classList.add('border-blue-500', 'bg-blue-50');
-            } else {
-                card.classList.add('border-green-500', 'bg-green-50');
-            }
-            
-            showSolutionSection(solutionType);
-        });
-    });
-    
-    function showSolutionSection(type) {
-        // Nascondi tutte le sezioni
-        solutionSections.forEach(section => {
-            section.style.display = 'none';
-        });
+<!-- Main Form -->
+<div class="ssp-card">
+    <form action="{{ url_for('tasks.submit_solution_form', task_id=task.id) }}" 
+          method="POST" 
+          enctype="multipart/form-data" 
+          id="solutionForm">
+        {{ form.hidden_tag() }}
         
-        // Mostra la sezione appropriata
-        const targetSection = document.getElementById(type + '-section');
-        if (targetSection) {
-            targetSection.style.display = 'block';
-        }
+        <div class="ssp-card-body">
+            
+            <!-- Step 1: Content Type -->
+            <section class="ssp-section">
+                <div class="ssp-step-header">
+                    <span class="ssp-step-number">1</span>
+                    <h2 class="ssp-step-title">Seleziona il tipo di soluzione</h2>
+                </div>
+                
+                <div class="ssp-type-grid">
+                    <div class="ssp-type-card selected" onclick="selectType(this, 'software')">
+                        <input type="radio" name="content_type" value="software" checked class="ssp-hidden">
+                        <div class="ssp-type-icon">
+                            <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/><line x1="9" y1="9" x2="15" y2="9"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+                        </div>
+                        <div class="ssp-type-label">Software</div>
+                        <div class="ssp-type-sublabel">Codice</div>
+                    </div>
+                    
+                    <div class="ssp-type-card" onclick="selectType(this, 'design')">
+                        <input type="radio" name="content_type" value="design" class="ssp-hidden">
+                        <div class="ssp-type-icon">
+                            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 2v20M2 12h20"/></svg>
+                        </div>
+                        <div class="ssp-type-label">Design</div>
+                        <div class="ssp-type-sublabel">Logo, UI</div>
+                    </div>
+                    
+                    <div class="ssp-type-card" onclick="selectType(this, 'hardware')">
+                        <input type="radio" name="content_type" value="hardware" class="ssp-hidden">
+                        <div class="ssp-type-icon">
+                            <svg viewBox="0 0 24 24"><rect x="5" y="7" width="14" height="10" rx="1"/><line x1="8" y1="21" x2="8" y2="17"/><line x1="16" y1="21" x2="16" y2="17"/></svg>
+                        </div>
+                        <div class="ssp-type-label">Hardware</div>
+                        <div class="ssp-type-sublabel">CAD, PCB</div>
+                    </div>
+                    
+                    <div class="ssp-type-card" onclick="selectType(this, 'documentation')">
+                        <input type="radio" name="content_type" value="documentation" class="ssp-hidden">
+                        <div class="ssp-type-icon">
+                            <svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="12" y2="16"/></svg>
+                        </div>
+                        <div class="ssp-type-label">Docs</div>
+                        <div class="ssp-type-sublabel">Guide</div>
+                    </div>
+                    
+                    <div class="ssp-type-card" onclick="selectType(this, 'media')">
+                        <input type="radio" name="content_type" value="media" class="ssp-hidden">
+                        <div class="ssp-type-icon">
+                            <svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21"/></svg>
+                        </div>
+                        <div class="ssp-type-label">Media</div>
+                        <div class="ssp-type-sublabel">Video</div>
+                    </div>
+                    
+                    <div class="ssp-type-card" onclick="selectType(this, 'mixed')">
+                        <input type="radio" name="content_type" value="mixed" class="ssp-hidden">
+                        <div class="ssp-type-icon">
+                            <svg viewBox="0 0 24 24"><path d="M2 12h6l2-9 4 18 2-9h6"/></svg>
+                        </div>
+                        <div class="ssp-type-label">Misto</div>
+                        <div class="ssp-type-sublabel">Vari</div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Step 2: Upload Content -->
+            <section class="ssp-section">
+                <div class="ssp-step-header">
+                    <span class="ssp-step-number">2</span>
+                    <h2 class="ssp-step-title">Carica il tuo contenuto</h2>
+                </div>
+                
+                <!-- Tabs -->
+                <div class="ssp-tabs">
+                    <button type="button" class="ssp-tab active" onclick="showTab(event, 'files')">
+                        <span class="material-icons" style="font-size: 1.125rem;">upload_file</span>
+                        Carica File
+                    </button>
+                    <button type="button" class="ssp-tab" onclick="showTab(event, 'code')">
+                        <span class="material-icons" style="font-size: 1.125rem;">code</span>
+                        Incolla Codice
+                    </button>
+                    <button type="button" class="ssp-tab" onclick="showTab(event, 'pr')">
+                        <span class="material-icons" style="font-size: 1.125rem;">link</span>
+                        Link Pull Request
+                    </button>
+                </div>
+                
+                <!-- Tab: Files -->
+                <div id="tab-files" class="ssp-tab-content">
+                    <div class="ssp-dropzone" id="dropZone" 
+                         ondrop="handleDrop(event)" 
+                         ondragover="handleDragOver(event)" 
+                         ondragleave="handleDragLeave(event)"
+                         onclick="document.getElementById('fileInput').click()">
+                        <div class="ssp-dropzone-icon">
+                            <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+                        </div>
+                        <div class="ssp-dropzone-title">Trascina i file qui</div>
+                        <div class="ssp-dropzone-subtitle">oppure clicca per selezionarli</div>
+                        <div class="ssp-btn-upload">Scegli File</div>
+                        <p class="ssp-dropzone-meta">Max 100MB • Tutti i formati supportati</p>
+                    </div>
+                    <input type="file" name="files" id="fileInput" multiple class="ssp-hidden" onchange="handleFiles(this.files)">
+                    <div id="fileList" class="ssp-file-list"></div>
+                </div>
+                
+                <!-- Tab: Code -->
+                <div id="tab-code" class="ssp-tab-content ssp-hidden">
+                    <label class="ssp-label">Incolla il tuo codice sorgente</label>
+                    <textarea name="solution_code_auto" id="codeTextarea" rows="15" 
+                              class="ssp-textarea code"
+                              placeholder="// Incolla qui il tuo codice
+function myAwesomeSolution() {
+    return 'Awesome!';
+}"></textarea>
+                    <div class="ssp-char-counter" id="codeCounter">0 caratteri</div>
+                </div>
+                
+                <!-- Tab: PR -->
+                <div id="tab-pr" class="ssp-tab-content ssp-hidden">
+                    <label class="ssp-label">
+                        <span class="material-icons" style="font-size: 1rem; vertical-align: middle; margin-right: 0.25rem;">link</span>
+                        URL della Pull Request GitHub
+                    </label>
+                    <input type="url" name="pull_request_url" id="prInput" 
+                           class="ssp-input"
+                           placeholder="https://github.com/owner/repo/pull/123">
+                    <p class="ssp-helper">
+                        <span class="material-icons" style="font-size: 1rem;">info</span>
+                        <strong>Solo per esperti:</strong> Se hai già creato una PR manualmente su GitHub.
+                    </p>
+                </div>
+            </section>
+            
+            <!-- Step 3: Description -->
+            <section class="ssp-section">
+                <div class="ssp-step-header">
+                    <span class="ssp-step-number">3</span>
+                    <h2 class="ssp-step-title">Descrivi la tua soluzione</h2>
+                </div>
+                
+                <textarea name="solution_content" id="descriptionTextarea" rows="6" required 
+                          class="ssp-textarea"
+                          placeholder="Descrivi cosa hai fatto e come funziona la tua soluzione...&#10;&#10;• Spiega l'approccio utilizzato&#10;• Evidenzia le funzionalità principali&#10;• Menziona eventuali tecnologie o librerie usate"></textarea>
+                <p class="ssp-helper">
+                    <span class="material-icons" style="font-size: 1rem;">edit_note</span>
+                    Minimo 50 caratteri richiesti per una descrizione completa
+                </p>
+                <div id="descCounter" class="ssp-char-counter">0 / 50 caratteri</div>
+            </section>
+            
+            <!-- Info Banner -->
+            <div class="ssp-info-banner">
+                <div class="ssp-info-icon">
+                    <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+                </div>
+                <div class="ssp-info-content">
+                    <h3>✨ Pubblicazione Automatica su GitHub</h3>
+                    <p>Il sistema crea automaticamente fork, commit e Pull Request. Non serve avere un account GitHub né conoscere Git. Ti occuperemo noi di tutto! 🚀</p>
+                </div>
+            </div>
+            
+        </div>
+        
+        <!-- Submit Footer -->
+        <div class="ssp-footer">
+            <button type="submit" id="submitBtn" class="ssp-submit-btn">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
+                    <path d="M2 21l21-9L2 3v7l15 2-15 2v7z"/>
+                </svg>
+                <span>Pubblica Soluzione</span>
+                <span class="material-icons" style="font-size: 1.25rem;">arrow_forward</span>
+            </button>
+        </div>
+        
+    </form>
+</div>
+
+</div>
+</div>
+
+<script>
+function selectType(el, type) {
+    document.querySelectorAll('.ssp-type-card').forEach(c => c.classList.remove('selected'));
+    el.classList.add('selected');
+    el.querySelector('input[type="radio"]').checked = true;
+}
+
+function showTab(event, tab) {
+    event.preventDefault();
+    document.querySelectorAll('.ssp-tab').forEach(t => t.classList.remove('active'));
+    event.currentTarget.classList.add('active');
+    document.querySelectorAll('.ssp-tab-content').forEach(t => t.classList.add('ssp-hidden'));
+    document.getElementById('tab-' + tab).classList.remove('ssp-hidden');
+}
+
+function handleDragOver(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    document.getElementById('dropZone').classList.add('drag-over');
+}
+
+function handleDragLeave(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.target.id === 'dropZone') {
+        document.getElementById('dropZone').classList.remove('drag-over');
     }
+}
+
+function handleDrop(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    document.getElementById('dropZone').classList.remove('drag-over');
+    const files = e.dataTransfer.files;
+    document.getElementById('fileInput').files = files;
+    handleFiles(files);
+}
+
+let uploadedFiles = [];
+
+function handleFiles(files) {
+    uploadedFiles = Array.from(files);
+    displayFiles();
+}
+
+function displayFiles() {
+    const fileList = document.getElementById('fileList');
+    fileList.innerHTML = '';
+    if (uploadedFiles.length === 0) return;
+    
+    uploadedFiles.forEach((file, index) => {
+        const size = formatFileSize(file.size);
+        const fileItem = document.createElement('div');
+        fileItem.className = 'ssp-file-item';
+        fileItem.innerHTML = `
+            <div class="ssp-file-icon">
+                <svg viewBox="0 0 24 24" stroke="currentColor" fill="none">
+                    <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                </svg>
+            </div>
+            <div class="ssp-file-info">
+                <div class="ssp-file-name">${escapeHtml(file.name)}</div>
+                <div class="ssp-file-size">${size}</div>
+            </div>
+            <button type="button" class="ssp-file-remove" onclick="removeFile(${index})">Rimuovi</button>
+        `;
+        fileList.appendChild(fileItem);
+    });
+}
+
+function removeFile(index) {
+    uploadedFiles.splice(index, 1);
+    const dataTransfer = new DataTransfer();
+    uploadedFiles.forEach(file => dataTransfer.items.add(file));
+    document.getElementById('fileInput').files = dataTransfer.files;
+    displayFiles();
+}
+
+function formatFileSize(bytes) {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    if (bytes < 1024 * 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+    return (bytes / (1024 * 1024 * 1024)).toFixed(1) + ' GB';
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+const codeTextarea = document.getElementById('codeTextarea');
+if (codeTextarea) {
+    codeTextarea.addEventListener('input', function() {
+        const counter = document.getElementById('codeCounter');
+        const count = this.value.length;
+        counter.textContent = `${count.toLocaleString()} caratteri`;
+        counter.className = count > 0 ? 'ssp-char-counter success' : 'ssp-char-counter';
+    });
+}
+
+const descTextarea = document.getElementById('descriptionTextarea');
+if (descTextarea) {
+    descTextarea.addEventListener('input', function() {
+        const count = this.value.length;
+        const counter = document.getElementById('descCounter');
+        if (count < 50) {
+            counter.textContent = `${count} / 50 caratteri (ne servono ancora ${50 - count})`;
+            counter.className = 'ssp-char-counter error';
+        } else {
+            counter.textContent = `${count} caratteri`;
+            counter.className = 'ssp-char-counter success';
+        }
+    });
+    descTextarea.dispatchEvent(new Event('input'));
+}
+
+document.getElementById('solutionForm').addEventListener('submit', function(e) {
+    const files = uploadedFiles;
+    const code = document.getElementById('codeTextarea')?.value.trim() || '';
+    const pr = document.getElementById('prInput')?.value.trim() || '';
+    const description = document.getElementById('descriptionTextarea').value.trim();
+    
+    if (files.length === 0 && !code && !pr) {
+        e.preventDefault();
+        alert('Devi caricare almeno un file, incollare codice o inserire un link PR.');
+        return;
+    }
+    
+    if (description.length < 50) {
+        e.preventDefault();
+        alert(`La descrizione deve essere di almeno 50 caratteri. Attualmente: ${description.length} caratteri`);
+        document.getElementById('descriptionTextarea').focus();
+        return;
+    }
+    
+    const btn = document.getElementById('submitBtn');
+    btn.disabled = true;
+    btn.innerHTML = `
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="white" class="animate-spin">
+            <circle cx="12" cy="12" r="10" stroke="white" stroke-width="4" fill="none" opacity="0.3"/>
+            <path d="M12 2 A10 10 0 0 1 22 12" stroke="white" stroke-width="4" fill="none"/>
+        </svg>
+        <span>Pubblicazione in corso...</span>
+    `;
 });
+
+// Aggiungi stile per la rotazione
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+    .animate-spin {
+        animation: spin 1s linear infinite;
+    }
+`;
+document.head.appendChild(style);
 </script>
 {% endblock %}

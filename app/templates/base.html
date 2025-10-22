@@ -215,8 +215,82 @@
         </div>
     </footer>
 
+    {# Cookie Consent Banner (GDPR Compliance) #}
+    <div id="cookie-banner" class="hidden fixed bottom-0 left-0 right-0 bg-gray-900 text-white shadow-2xl z-50 border-t-4 border-mclaren-orange">
+        <div class="container mx-auto px-4 py-6">
+            <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                <div class="flex-1">
+                    <h3 class="text-lg font-bold mb-2 flex items-center">
+                        <span class="mr-2">🍪</span>
+                        Cookie & Privacy
+                    </h3>
+                    <p class="text-gray-300 text-sm">
+                        Utilizziamo cookie tecnici essenziali per il funzionamento della piattaforma. Non utilizziamo cookie di profilazione o tracciamento.
+                        Continuando a navigare accetti la nostra 
+                        <a href="{{ url_for('general.privacy_policy') }}" class="text-mclaren-orange hover:underline">Privacy Policy</a> e i
+                        <a href="{{ url_for('general.terms_of_service') }}" class="text-mclaren-orange hover:underline">Termini di Servizio</a>.
+                    </p>
+                </div>
+                <div class="flex gap-3">
+                    <button id="cookie-decline" class="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm font-medium transition-colors">
+                        Solo Necessari
+                    </button>
+                    <button id="cookie-accept" class="px-6 py-2 bg-mclaren-orange hover:bg-orange-600 rounded-lg text-sm font-medium transition-colors shadow-lg">
+                        Accetta
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     {# Scripts di base #}
     <script src="{{ url_for('static', filename='js/animations.js') }}"></script>
+    
+    {# Cookie Consent Script #}
+    <script>
+        (function() {
+            const COOKIE_CONSENT_KEY = 'kickthisuss_cookie_consent';
+            const banner = document.getElementById('cookie-banner');
+            const acceptBtn = document.getElementById('cookie-accept');
+            const declineBtn = document.getElementById('cookie-decline');
+            
+            // Check if user has already made a choice
+            function getCookieConsent() {
+                try {
+                    return localStorage.getItem(COOKIE_CONSENT_KEY);
+                } catch (e) {
+                    return null;
+                }
+            }
+            
+            // Set cookie consent
+            function setCookieConsent(value) {
+                try {
+                    localStorage.setItem(COOKIE_CONSENT_KEY, value);
+                } catch (e) {
+                    console.warn('Cannot save cookie preference:', e);
+                }
+            }
+            
+            // Show banner if no consent recorded
+            const consent = getCookieConsent();
+            if (!consent) {
+                banner.classList.remove('hidden');
+            }
+            
+            // Accept button handler
+            acceptBtn.addEventListener('click', function() {
+                setCookieConsent('accepted');
+                banner.classList.add('hidden');
+            });
+            
+            // Decline button handler (only essential cookies)
+            declineBtn.addEventListener('click', function() {
+                setCookieConsent('declined');
+                banner.classList.add('hidden');
+            });
+        })();
+    </script>
     
     {% block scripts %}{% endblock %}
 </body>

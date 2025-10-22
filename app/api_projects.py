@@ -50,7 +50,7 @@ def create_project_api():
 
     try:
         if AI_SERVICE_AVAILABLE:
-            details = generate_project_details_from_pitch(pitch, category)
+            details = generate_project_details_from_pitch(pitch, category, project_type)
             project_name = details.get('name', 'Progetto Senza Nome')
             project_description = details.get('description', 'Nessuna descrizione generata.')
             rewritten_pitch = details.get('rewritten_pitch', pitch)
@@ -392,6 +392,44 @@ def activate_task_suggestion_api(task_id):
         current_app.logger.error(f"Errore attivazione task suggerito: {e}", exc_info=True)
         return jsonify({"error": "Errore interno del server durante l'attivazione del task."}), 500
 
+@api_projects_bp.route('/task/<int:task_id>/complete', methods=['POST'])
+@login_required  
+def complete_task_api(task_id):
+    """API endpoint per completare un task"""
+    try:
+        task = Task.query.get_or_404(task_id)
+        project = Project.query.get_or_404(task.project_id)
+        
+        # Verifica che l'utente sia il creatore del progetto o assegnato al task
+        is_creator = project.creator_id == current_user.id
+        is_assigned = task.assigned_to_id == current_user.id
+        
+        if not (is_creator or is_assigned):
+            return jsonify({"error": "Solo il creatore del progetto o l'assegnato del task possono completarlo."}), 403
+        
+        if task.status != 'in_progress':
+            return jsonify({"error": "Solo i task in corso possono essere completati."}), 400
+        
+        # Completa il task
+        task.status = 'completed'
+        db.session.commit()
+        
+        return jsonify({
+            "success": True,
+            "message": "Task completato con successo!",
+            "task": {
+                "id": task.id,
+                "title": task.title,
+                "phase": task.phase,
+                "status": task.status
+            }
+        }), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Errore completamento task: {e}", exc_info=True)
+        return jsonify({"error": "Errore interno del server durante il completamento del task."}), 500
+
 @api_projects_bp.route('/task/<int:task_id>/details', methods=['GET'])
 @login_required
 def get_task_details(task_id):
@@ -416,7 +454,8 @@ def get_task_details(task_id):
             'difficulty': task.difficulty,
             'equity_reward': float(task.equity_reward),
             'hypothesis': task.hypothesis,
-            'test_method': task.test_method
+            'test_method': task.test_method,
+            'is_private': task.is_private
         })
         
     except Exception as e:
@@ -449,6 +488,10 @@ def update_and_activate_task(task_id):
         task.phase = request.form.get('phase', 'Development')
         task.difficulty = request.form.get('difficulty', 'Medium')
         task.equity_reward = float(request.form.get('equity_reward', 1.0))
+        
+        # Gestisci visibilità (privato/pubblico)
+        is_private_value = request.form.get('is_private', 'false').lower()
+        task.is_private = is_private_value in ['true', '1', 'yes']
         
         # Campi specifici per task di validazione
         if task.task_type == 'validation':

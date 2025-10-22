@@ -1,19 +1,22 @@
 # app/api_solutions.py
 
-from flask import Blueprint, request, jsonify, current_app, abort
+from flask import Blueprint, request, jsonify, current_app, abort, url_for
 from flask_login import login_required, current_user
 from sqlalchemy import func
 from sqlalchemy.orm import joinedload
 
 from . import db
-from .models import Solution, Task, Project, Collaborator, Activity, TrainingData, Vote
+from .models import Solution, Task, Project, Collaborator, Activity, TrainingData, Vote, Notification
 from .decorators import role_required
+from .extensions import limiter
+from .services.equity_service import EquityService
 
 api_solutions_bp = Blueprint('api_solutions', __name__)
 
 @api_solutions_bp.route('/projects/<int:project_id>/solutions/<int:solution_id>/approve', methods=['POST'])
 @login_required
 @role_required('project_id', roles=['creator'])
+@limiter.limit("100 per hour")  # Rate limit per API endpoints
 def approve_solution_api(project_id, solution_id):
     solution = Solution.query.options(joinedload(Solution.submitter), joinedload(Solution.task).joinedload(Task.project)).get_or_404(solution_id)
     task = solution.task
@@ -46,6 +49,33 @@ def approve_solution_api(project_id, solution_id):
                 role='collaborator'
             )
             db.session.add(new_collaborator)
+        
+        # 🎯 DISTRIBUTE EQUITY AUTOMATICALLY using ProjectEquity system
+        try:
+            equity_service = EquityService()
+            granted_equity = equity_service.distribute_task_completion_equity(solution)
+            
+            if granted_equity:
+                current_app.logger.info(
+                    f'✅ Granted {task.equity_reward}% equity to user {solution.submitted_by_user_id} for task {task.id}'
+                )
+                
+                # 🔔 SEND EQUITY GRANTED NOTIFICATION to contributor
+                equity_notification = Notification(
+                    user_id=solution.submitted_by_user_id,
+                    project_id=project_id,
+                    type='equity_granted',
+                    message=f'🎉 Hai guadagnato {task.equity_reward}% equity sul progetto "{project.name}" completando il task "{task.title}"!',
+                    link=url_for('projects.project_equity', project_id=project_id)
+                )
+                db.session.add(equity_notification)
+                current_app.logger.info(f'📬 Notification created for equity grant to user {solution.submitted_by_user_id}')
+                
+        except ValueError as equity_error:
+            # Log error but don't fail the approval
+            current_app.logger.warning(
+                f'⚠️ Could not distribute equity: {str(equity_error)}'
+            )
             
         activity = Activity(
             user_id=current_user.id,
@@ -76,7 +106,6 @@ def approve_solution_api(project_id, solution_id):
         db.session.add(new_training_data)
 
         # Notifica a tutti i collaboratori e al creatore
-        from .models import Collaborator, Notification
         collaborator_ids = [c.user_id for c in Collaborator.query.filter_by(project_id=project.id).all()]
         if project.creator_id not in collaborator_ids:
             collaborator_ids.append(project.creator_id)
@@ -106,6 +135,7 @@ def approve_solution_api(project_id, solution_id):
 
 @api_solutions_bp.route('/solutions/<int:solution_id>/vote', methods=['POST'])
 @login_required
+@limiter.limit("100 per hour")  # Rate limit per voting API
 def vote_solution_api(solution_id):
     solution = Solution.query.get_or_404(solution_id)
     task = solution.task
@@ -162,6 +192,33 @@ def vote_solution_api(solution_id):
                         role='collaborator'
                     )
                     db.session.add(new_winner_collaborator)
+                
+                # 🎯 DISTRIBUTE EQUITY AUTOMATICALLY using ProjectEquity system
+                try:
+                    equity_service = EquityService()
+                    granted_equity = equity_service.distribute_task_completion_equity(winning_solution)
+                    
+                    if granted_equity:
+                        current_app.logger.info(
+                            f'✅ Granted {task.equity_reward}% equity to user {winning_solution.submitted_by_user_id} for task {task.id} (voting)'
+                        )
+                        
+                        # 🔔 SEND EQUITY GRANTED NOTIFICATION to winner
+                        equity_notification = Notification(
+                            user_id=winning_solution.submitted_by_user_id,
+                            project_id=project.id,
+                            type='equity_granted',
+                            message=f'🎉 Hai vinto la votazione e guadagnato {task.equity_reward}% equity sul progetto "{project.name}" per il task "{task.title}"!',
+                            link=url_for('projects.project_equity', project_id=project.id)
+                        )
+                        db.session.add(equity_notification)
+                        current_app.logger.info(f'📬 Notification created for equity grant to user {winning_solution.submitted_by_user_id}')
+                        
+                except ValueError as equity_error:
+                    # Log error but don't fail the vote
+                    current_app.logger.warning(
+                        f'⚠️ Could not distribute equity after voting: {str(equity_error)}'
+                    )
             # Se c'è ex aequo, annulla tutti i voti e si rivota
             elif len(top_solutions) > 1:
                 Vote.query.filter_by(task_id=task.id).delete()

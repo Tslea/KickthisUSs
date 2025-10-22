@@ -2,114 +2,405 @@
 
 {% block title %}{{ task.title | truncate(50) }}{% endblock %}
 
+{% block head_extra %}
+<style>
+/* Task Detail Page - Modern Full Width Design */
+.task-detail-page {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+}
+
+.task-hero {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 2.5rem 2rem;
+    margin-bottom: 2rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.task-hero::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+}
+
+.task-hero-content {
+    position: relative;
+    max-width: 1400px;
+    margin: 0 auto;
+    z-index: 10;
+}
+
+/* Status Badges Modernizzati */
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.5rem 1rem;
+    border-radius: 9999px;
+    font-size: 0.875rem;
+    font-weight: 700;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s;
+}
+
+.status-badge:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.status-open {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    color: white;
+}
+
+.status-in-progress {
+    background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+    color: white;
+}
+
+.status-submitted {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    color: white;
+}
+
+.status-approved, .status-closed {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+}
+
+/* Task Card Premium */
+.task-main-card {
+    background: white;
+    border-radius: 1.5rem;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+    border: 1px solid #e5e7eb;
+    transition: all 0.3s;
+}
+
+.task-main-card:hover {
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.12);
+}
+
+/* Solution Cards */
+.solution-card {
+    background: white;
+    border-radius: 1rem;
+    padding: 1.5rem;
+    border: 2px solid #e5e7eb;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.solution-card:hover {
+    border-color: #ff6b35;
+    box-shadow: 0 8px 24px rgba(255, 107, 53, 0.15);
+    transform: translateY(-2px);
+}
+
+.solution-card.approved {
+    border-color: #10b981;
+    background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+    box-shadow: 0 8px 24px rgba(16, 185, 129, 0.2);
+}
+
+/* CTA Buttons */
+.cta-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem 2rem;
+    border-radius: 12px;
+    font-weight: 800;
+    font-size: 1.125rem;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+    position: relative;
+    overflow: hidden;
+}
+
+.cta-button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    transition: left 0.5s;
+}
+
+.cta-button:hover::before {
+    left: 100%;
+}
+
+.cta-button:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
+}
+
+.cta-primary {
+    background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+    color: white;
+}
+
+.cta-github {
+    background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
+    color: white;
+}
+
+/* Vote & Action Buttons */
+.action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.625rem 1.25rem;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 700;
+    transition: all 0.3s;
+    border: 2px solid transparent;
+}
+
+.vote-btn {
+    background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+    color: #374151;
+    border-color: #d1d5db;
+}
+
+.vote-btn:hover {
+    background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+    color: white;
+    border-color: #ff6b35;
+    transform: scale(1.05);
+}
+
+.approve-btn {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+}
+
+.approve-btn:hover {
+    background: linear-gradient(135deg, #059669 0%, #047857 100%);
+    transform: scale(1.05);
+}
+
+/* Info Boxes */
+.info-box {
+    padding: 1.5rem;
+    border-radius: 1rem;
+    border-left: 4px solid;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.info-box-blue {
+    background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+    border-color: #3b82f6;
+}
+
+.info-box-purple {
+    background: linear-gradient(135deg, #f3e8ff 0%, #e9d5ff 100%);
+    border-color: #9333ea;
+}
+
+/* Breadcrumb Modernizzato */
+.breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1rem;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    margin-bottom: 1.5rem;
+}
+
+.breadcrumb a {
+    color: #6b7280;
+    font-weight: 600;
+    transition: all 0.2s;
+}
+
+.breadcrumb a:hover {
+    color: #ff6b35;
+}
+
+/* Animations */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.animate-fade-in-up {
+    animation: fadeInUp 0.5s ease-out;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .task-hero {
+        padding: 1.5rem 1rem;
+    }
+    
+    .cta-button {
+        width: 100%;
+        justify-content: center;
+    }
+}
+</style>
+{% endblock %}
+
 {% block content %}
 <!-- Token CSRF per API calls -->
 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
 
-<main class="bg-slate-50 flex-1 py-8">
-    <div class="max-w-4xl mx-auto px-4">
+<main class="task-detail-page py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
-        {# Breadcrumb di navigazione #}
-        <nav aria-label="Breadcrumb" class="mb-6 text-sm">
-            <ol class="flex items-center gap-2 text-gray-500">
-                <li><a href="{{ url_for('projects.home') }}" class="hover:text-mclaren-orange">Home</a></li>
-                <li><span>/</span></li>
-                <li><a href="{{ url_for('projects.project_detail', project_id=project.id) }}" class="hover:text-mclaren-orange">{{ project.name | truncate(25) }}</a></li>
-                <li><span>/</span></li>
-                <li class="text-gray-700 font-medium">Task</li>
-            </ol>
+        {# Breadcrumb di navigazione modernizzato #}
+        <nav aria-label="Breadcrumb" class="breadcrumb animate-fade-in-up">
+            <span class="material-icons text-gray-400">home</span>
+            <a href="{{ url_for('projects.home') }}">Home</a>
+            <span class="material-icons text-gray-300" style="font-size: 1rem;">chevron_right</span>
+            <a href="{{ url_for('projects.project_detail', project_id=project.id) }}">{{ project.name | truncate(30) }}</a>
+            <span class="material-icons text-gray-300" style="font-size: 1rem;">chevron_right</span>
+            <span class="text-gray-900 font-bold">Task</span>
         </nav>
 
-        <div class="space-y-8">
-            {# Sezione Dettagli Principali del Task #}
-            <section class="bg-white p-6 md:p-8 rounded-xl shadow-lg border border-gray-200">
-                <div class="flex flex-col md:flex-row justify-between items-start gap-4">
-                    <div class="flex-1">
-                        <div class="flex items-center gap-x-4 mb-3 flex-wrap">
-                            <span class="text-xs font-semibold px-2 py-1 rounded-full capitalize
-                                {% if task.status == 'approved' or task.status == 'closed' %} bg-green-100 text-green-800
-                                {% elif task.status == 'open' %} bg-blue-100 text-blue-800
-                                {% elif task.status == 'in_progress' %} bg-sky-100 text-sky-800
-                                {% elif task.status == 'submitted' %} bg-yellow-100 text-yellow-800
-                                {% else %} bg-gray-100 text-gray-800 {% endif %}">
-                                Stato: {{ ALLOWED_TASK_STATUS.get(task.status, task.status) }}
-                            </span>
-                            {% if task.is_private %}
-                                <span class="text-xs font-semibold px-2 py-1 rounded-full bg-black text-white flex items-center gap-1 shadow-sm">
-                                    <span class="material-icons text-xs">lock</span>
-                                    Privato
-                                </span>
-                            {% endif %}
-                            <span class="flex items-center gap-1.5 text-xs font-semibold">
-                                {% if task.task_type == 'proposal' %}
-                                    <span class="material-icons text-base text-purple-500" title="Tipo: Proposta/Concept">emoji_objects</span>
-                                    <span>{{ ALLOWED_TASK_TYPES.get(task.task_type, 'Proposta') }}</span>
-                                {% elif task.task_type == 'validation' %}
-                                    <span class="material-icons text-base text-green-500" title="Tipo: Esperimento di Validazione">science</span>
-                                    <span>{{ ALLOWED_TASK_TYPES.get(task.task_type, 'Esperimento di Validazione') }}</span>
-                                {% else %}
-                                    <span class="material-icons text-base text-blue-500" title="Tipo: Implementazione">code</span>
-                                    <span>{{ ALLOWED_TASK_TYPES.get(task.task_type, 'Implementazione') }}</span>
-                                {% endif %}
-                            </span>
-                            <span class="text-xs font-semibold text-mclaren-orange">Equity: {{ "%.2f"|format(task.equity_reward) }}%</span>
-                        </div>
-                        <h1 class="text-2xl md:text-3xl font-bold text-gray-900">{{ task.title }}</h1>
-                    </div>
+        {# Hero Section con informazioni principali #}
+        <div class="task-hero animate-fade-in-up">
+            <div class="task-hero-content">
+                <div class="flex flex-wrap items-center gap-3 mb-4">
+                    <span class="status-badge 
+                        {% if task.status == 'approved' or task.status == 'closed' %}status-approved
+                        {% elif task.status == 'open' %}status-open
+                        {% elif task.status == 'in_progress' %}status-in-progress
+                        {% elif task.status == 'submitted' %}status-submitted
+                        {% else %}bg-gray-500 text-white{% endif %}">
+                        <span class="material-icons" style="font-size: 1rem;">{{ 
+                            'check_circle' if task.status in ['approved', 'closed'] else
+                            'play_circle' if task.status == 'in_progress' else
+                            'hourglass_empty' if task.status == 'submitted' else
+                            'radio_button_unchecked'
+                        }}</span>
+                        {{ ALLOWED_TASK_STATUS.get(task.status, task.status) }}
+                    </span>
+                    {% if task.is_private %}
+                    <span class="status-badge" style="background: linear-gradient(135deg, #1f2937 0%, #111827 100%); color: white;">
+                        <span class="material-icons" style="font-size: 1rem;">lock</span>
+                        Privato
+                    </span>
+                    {% endif %}
+                    
+                    {% if task.task_type == 'proposal' %}
+                    <span class="status-badge" style="background: linear-gradient(135deg, #a855f7 0%, #9333ea 100%); color: white;">
+                        <span class="material-icons" style="font-size: 1rem;">emoji_objects</span>
+                        {{ ALLOWED_TASK_TYPES.get(task.task_type, 'Proposta') }}
+                    </span>
+                    {% elif task.task_type == 'validation' %}
+                    <span class="status-badge" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white;">
+                        <span class="material-icons" style="font-size: 1rem;">science</span>
+                        {{ ALLOWED_TASK_TYPES.get(task.task_type, 'Validazione') }}
+                    </span>
+                    {% else %}
+                    <span class="status-badge" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white;">
+                        <span class="material-icons" style="font-size: 1rem;">code</span>
+                        {{ ALLOWED_TASK_TYPES.get(task.task_type, 'Implementazione') }}
+                    </span>
+                    {% endif %}
+                    
+                    <span class="status-badge" style="background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%); color: white;">
+                        <span class="material-icons" style="font-size: 1rem;">paid</span>
+                        {{ "%.2f"|format(task.equity_reward) }}% Equity
+                    </span>
                 </div>
-                <hr class="my-6">
+                <h1 class="text-3xl md:text-4xl lg:text-5xl font-black text-white mb-2 tracking-tight">{{ task.title }}</h1>
+            </div>
+        </div>
+
+        <div class="space-y-6 animate-fade-in-up" style="animation-delay: 0.1s;">
+            {# Sezione Dettagli Principali del Task #}
+            <section class="task-main-card p-6 md:p-8">
+                <div class="border-t-2 border-gray-100 my-6"></div>
                 <div>
-                    <h2 class="text-lg font-semibold text-gray-800 mb-2">Descrizione del Task</h2>
-                    <div class="prose prose-slate max-w-none">
+                    <h2 class="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                        <span class="material-icons text-2xl text-purple-600">description</span>
+                        Descrizione del Task
+                    </h2>
+                    <div class="prose prose-lg prose-slate max-w-none bg-gray-50 p-6 rounded-xl">
                         {{ task.description | nl2br }}
                     </div>
                 </div>
 
                 {% if task.task_type == 'validation' %}
                 <!-- Sezione specifica per esperimenti di validazione -->
-                <div class="mt-6 p-4 bg-gradient-to-r from-purple-50 to-violet-50 rounded-lg border border-purple-200">
-                    <h3 class="text-lg font-semibold text-purple-800 mb-4 flex items-center">
-                        <span class="material-icons text-purple-600 mr-2">science</span>
-                        Esperimento di Validazione
+                <div class="mt-8 info-box info-box-purple">
+                    <h3 class="text-2xl font-bold text-purple-900 mb-6 flex items-center gap-3">
+                        <div class="w-12 h-12 bg-purple-600 rounded-full flex items-center justify-center">
+                            <span class="material-icons text-white text-2xl">science</span>
+                        </div>
+                        <span>Esperimento di Validazione</span>
                     </h3>
                     
-                    <div class="space-y-4">
+                    <div class="space-y-6">
                         {% if task.hypothesis %}
-                        <div>
-                            <h4 class="font-semibold text-purple-700 mb-2">Ipotesi da Testare</h4>
-                            <div class="bg-white p-3 rounded border border-purple-200">
+                        <div class="bg-white rounded-xl p-5 shadow-md">
+                            <h4 class="font-bold text-purple-800 mb-3 flex items-center gap-2 text-lg">
+                                <span class="material-icons">lightbulb</span>
+                                Ipotesi da Testare
+                            </h4>
+                            <div class="text-gray-700 leading-relaxed">
                                 {{ task.hypothesis | nl2br }}
                             </div>
                         </div>
                         {% endif %}
                         
                         {% if task.test_method %}
-                        <div>
-                            <h4 class="font-semibold text-purple-700 mb-2">Metodo di Test</h4>
-                            <div class="bg-white p-3 rounded border border-purple-200">
+                        <div class="bg-white rounded-xl p-5 shadow-md">
+                            <h4 class="font-bold text-purple-800 mb-3 flex items-center gap-2 text-lg">
+                                <span class="material-icons">science</span>
+                                Metodo di Test
+                            </h4>
+                            <div class="text-gray-700 leading-relaxed">
                                 {{ task.test_method | nl2br }}
                             </div>
                         </div>
                         {% endif %}
                         
                         {% if task.results %}
-                        <div>
-                            <h4 class="font-semibold text-purple-700 mb-2">Risultati</h4>
-                            <div class="bg-white p-3 rounded border border-purple-200">
+                        <div class="bg-white rounded-xl p-5 shadow-md">
+                            <h4 class="font-bold text-purple-800 mb-3 flex items-center gap-2 text-lg">
+                                <span class="material-icons">bar_chart</span>
+                                Risultati
+                            </h4>
+                            <div class="text-gray-700 leading-relaxed">
                                 {{ task.results | nl2br }}
                             </div>
                         </div>
                         {% elif task.creator_id == current_user.id and task.status in ['open', 'in_progress'] %}
-                        <div>
-                            <h4 class="font-semibold text-purple-700 mb-2">Risultati</h4>
+                        <div class="bg-white rounded-xl p-5 shadow-md">
+                            <h4 class="font-bold text-purple-800 mb-3 flex items-center gap-2 text-lg">
+                                <span class="material-icons">edit_note</span>
+                                Inserisci Risultati
+                            </h4>
                             <form method="POST" action="{{ url_for('tasks.update_task_results', task_id=task.id) }}">
                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                                 <textarea name="results" 
-                                          class="w-full p-3 border border-purple-200 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                                          class="w-full p-4 border-2 border-purple-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
                                           rows="4" 
                                           placeholder="Inserisci i risultati dell'esperimento..."></textarea>
                                 <button type="submit" 
-                                        class="mt-2 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition-colors">
+                                        class="mt-3 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white px-6 py-3 rounded-xl transition-all font-bold flex items-center gap-2">
+                                    <span class="material-icons">save</span>
                                     Salva Risultati
                                 </button>
                             </form>
@@ -120,101 +411,136 @@
                 {% endif %}
             </section>
 
-            {# Sezione per proporre una soluzione #}
+            {# Sezione per proporre una soluzione - Design Premium #}
             {% if task.status in ['open', 'in_progress'] and not current_user.is_anonymous and can_submit_solution %}
-                <section id="propose-solution" class="text-center space-y-4">
+                <section id="propose-solution" class="task-main-card p-8 text-center animate-fade-in-up" style="animation-delay: 0.2s;">
+                    <div class="mb-6">
+                        <h2 class="text-3xl font-black text-gray-900 mb-2">Pronto a Contribuire?</h2>
+                        <p class="text-lg text-gray-600">Proponi la tua soluzione e guadagna equity nel progetto</p>
+                    </div>
+                    
                     {# Pulsante GitHub per flusso software #}
                     {% if project.github_url %}
-                        <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
+                        <div class="flex flex-col lg:flex-row gap-4 justify-center items-center mb-6">
                             <a href="{{ project.github_url }}" target="_blank" rel="noopener noreferrer" 
-                               class="inline-flex items-center bg-gray-800 text-white px-6 py-3 rounded-lg hover:bg-gray-700 transition-colors font-bold text-base">
-                                <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                               class="cta-button cta-github">
+                                <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
                                     <path fill-rule="evenodd" d="M10 0C4.477 0 0 4.484 0 10.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0110 4.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.203 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.942.359.31.678.921.678 1.856 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0020 10.017C20 4.484 15.522 0 10 0z" clip-rule="evenodd"></path>
                                 </svg>
-                                Lavora sul Codice (GitHub)
+                                <span>Lavora sul Codice (GitHub)</span>
                             </a>
-                            <button type="button" class="ml-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-full text-sm font-bold cursor-pointer transition-colors flex items-center gap-1" onclick="showHelp('github_workflow')">
-                                <span class="material-icons text-sm">help</span>
-                                Aiuto GitHub
+                            <button type="button" class="action-btn vote-btn" onclick="showHelp('github_workflow')">
+                                <span class="material-icons" style="font-size: 1.125rem;">help</span>
+                                <span>Aiuto GitHub</span>
                             </button>
-                            <span class="text-gray-500 text-sm">oppure</span>
+                        </div>
+                        <div class="flex items-center justify-center gap-3 mb-6">
+                            <div class="h-px bg-gray-300 flex-1"></div>
+                            <span class="text-gray-500 font-semibold">oppure</span>
+                            <div class="h-px bg-gray-300 flex-1"></div>
                         </div>
                     {% endif %}
                     
-                    <div class="flex flex-col sm:flex-row gap-3 items-center justify-center">
-                        <a href="{{ url_for('tasks.submit_solution_form', task_id=task.id) }}" class="inline-block bg-mclaren-orange text-white px-6 py-3 rounded-lg hover:bg-mclaren-orange-darker transition-colors font-bold text-base flex-shrink-0">
-                            <span class="material-icons text-lg inline-block align-middle mr-2">lightbulb</span>
-                            Proponi una Soluzione
+                    <div class="flex flex-col sm:flex-row gap-4 items-center justify-center">
+                        <a href="{{ url_for('tasks.submit_solution_form', task_id=task.id) }}" class="cta-button cta-primary">
+                            <span class="material-icons text-2xl">lightbulb</span>
+                            <span>Proponi una Soluzione</span>
+                            <span class="material-icons text-xl">arrow_forward</span>
                         </a>
-                        <button type="button" class="bg-orange-600 hover:bg-orange-700 text-white px-3 py-1 rounded-full text-sm font-bold cursor-pointer transition-colors flex items-center gap-1" onclick="showHelp('solution_submission')">
-                            <span class="material-icons text-sm">help</span>
-                            Come sottomettere
+                        <button type="button" class="action-btn vote-btn" onclick="showHelp('solution_submission')">
+                            <span class="material-icons" style="font-size: 1.125rem;">help</span>
+                            <span>Come sottomettere</span>
                         </button>
                     </div>
                 </section>
             {% elif not can_submit_solution %}
-                 <div class="bg-blue-100 border-l-4 border-blue-500 text-blue-700 p-4 rounded-md" role="alert">
-                    <p class="font-bold">Limite Raggiunto</p>
-                    <p>Hai già sottomesso il numero massimo di soluzioni consentite per questo task.</p>
+                 <div class="info-box info-box-blue animate-fade-in-up" style="animation-delay: 0.2s;" role="alert">
+                    <div class="flex items-start gap-4">
+                        <div class="flex-shrink-0">
+                            <div class="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center">
+                                <span class="material-icons text-white text-2xl">info</span>
+                            </div>
+                        </div>
+                        <div>
+                            <p class="font-bold text-blue-900 text-lg mb-1">Limite Raggiunto</p>
+                            <p class="text-blue-800">Hai già sottomesso il numero massimo di soluzioni consentite per questo task.</p>
+                        </div>
+                    </div>
                 </div>
             {% endif %}
 
-            {# Sezione Soluzioni Già Proposte #}
-            <section id="solutions-section">
-                <h2 class="text-xl font-bold text-gray-800 mb-4">Soluzioni Proposte ({{ all_solutions|length }})</h2>
-                <div class="space-y-4">
+            {# Sezione Soluzioni Già Proposte - Design Moderno #}
+            <section id="solutions-section" class="animate-fade-in-up" style="animation-delay: 0.3s;">
+                <div class="task-main-card p-6 md:p-8">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-3xl font-black text-gray-900 flex items-center gap-3">
+                            <div class="w-12 h-12 bg-gradient-to-br from-orange-500 to-orange-600 rounded-full flex items-center justify-center">
+                                <span class="material-icons text-white text-2xl">workspaces</span>
+                            </div>
+                            <span>Soluzioni Proposte</span>
+                            <span class="inline-flex items-center justify-center w-10 h-10 text-xl font-bold text-white bg-gradient-to-br from-orange-500 to-orange-600 rounded-full">
+                                {{ all_solutions|length }}
+                            </span>
+                        </h2>
+                    </div>
+                    <div class="space-y-6">
                     {% if all_solutions %}
                         {% for solution in all_solutions %}
-                            <div class="solution-card bg-white p-5 rounded-lg border 
-                                {% if solution.is_approved %} border-green-500 border-2 shadow-xl 
-                                {% else %} border-gray-200 hover:shadow-md transition-shadow {% endif %}"
+                            <div class="solution-card {% if solution.is_approved %}approved{% endif %}"
                                 data-solution-id="{{ solution.id }}">
                                 
-                                <div class="flex justify-between items-start gap-2">
-                                    <div class="flex items-center gap-3">
-                                        <a href="{{ url_for('users.user_profile', username=solution.submitter.username) }}">
-                                            <div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10" 
-                                                 style='background-image: url("https://source.unsplash.com/random/40x40?avatar,person,{{ solution.submitter.id }}");'>
+                                <div class="flex justify-between items-start gap-3 mb-4">
+                                    <div class="flex items-center gap-4">
+                                        <a href="{{ url_for('users.user_profile', username=solution.submitter.username) }}" class="flex-shrink-0">
+                                            <div class="w-14 h-14 bg-gradient-to-br from-orange-400 to-orange-600 rounded-full flex items-center justify-center text-white text-xl font-bold shadow-lg hover:scale-110 transition-transform" 
+                                                 style='background-image: url("https://source.unsplash.com/random/56x56?avatar,person,{{ solution.submitter.id }}"); background-size: cover; background-position: center;'>
                                             </div>
                                         </a>
                                         <div>
-                                            <a href="{{ url_for('users.user_profile', username=solution.submitter.username) }}" class="font-bold text-gray-800 hover:text-mclaren-orange">{{ solution.submitter.username }}</a>
-                                            <p class="text-xs text-gray-500">{{ solution.created_at | humanize_datetime }}</p>
+                                            <a href="{{ url_for('users.user_profile', username=solution.submitter.username) }}" class="font-bold text-lg text-gray-900 hover:text-orange-600 transition-colors">{{ solution.submitter.username }}</a>
+                                            <p class="text-sm text-gray-500 flex items-center gap-1">
+                                                <span class="material-icons" style="font-size: 1rem;">schedule</span>
+                                                {{ solution.created_at | humanize_datetime }}
+                                            </p>
                                         </div>
                                     </div>
                                     {% if solution.is_approved %}
-                                        <span class="flex items-center gap-1.5 bg-green-100 text-green-800 text-xs font-medium px-3 py-1 rounded-full">
-                                            <span class="material-icons text-sm">check_circle</span>
+                                        <span class="flex items-center gap-2 bg-green-500 text-white text-sm font-bold px-4 py-2 rounded-full shadow-lg">
+                                            <span class="material-icons">check_circle</span>
                                             Approvata
                                         </span>
                                     {% endif %}
                                 </div>
                                 
-                                <div class="prose prose-sm max-w-none text-gray-700 mt-4">
+                                <div class="prose prose-base max-w-none text-gray-700 mb-4 bg-gray-50 p-5 rounded-xl">
                                     {{ solution.solution_content | nl2br }}
                                 </div>
 
                                 {% if solution.file_path %}
-                                <div class="mt-4">
-                                    <a href="{{ url_for('static', filename=solution.file_path) }}" target="_blank" class="flex items-center gap-2 text-sm font-medium text-mclaren-orange hover:underline">
+                                <div class="mb-4">
+                                    <a href="{{ url_for('static', filename=solution.file_path) }}" target="_blank" class="inline-flex items-center gap-2 text-base font-semibold text-orange-600 hover:text-orange-700 bg-orange-50 px-4 py-2 rounded-lg hover:bg-orange-100 transition-all">
                                         <span class="material-icons">attachment</span>
                                         Vedi File Allegato
                                     </a>
                                 </div>
                                 {% endif %}
 
-                                <div class="mt-4 pt-4 border-t border-gray-200 flex flex-wrap items-center justify-between gap-4">
-                                    <div class="flex items-center gap-x-4 gap-y-2 flex-wrap">
-                                        <div class="flex items-center gap-1 text-sm text-gray-600">
-                                            <span class="material-icons text-base text-mclaren-orange">how_to_vote</span>
-                                            <span class="font-semibold vote-count">{{ solution.votes.count() }}</span>
-                                            <span>voti</span>
+                                <div class="pt-4 border-t-2 border-gray-100 flex flex-wrap items-center justify-between gap-4">
+                                    <div class="flex items-center gap-x-6 gap-y-2 flex-wrap">
+                                        <div class="flex items-center gap-2 text-base">
+                                            <div class="w-10 h-10 bg-gradient-to-br from-orange-500 to-orange-600 rounded-full flex items-center justify-center">
+                                                <span class="material-icons text-white">how_to_vote</span>
+                                            </div>
+                                            <span class="font-bold text-xl vote-count text-gray-900">{{ solution.votes.count() }}</span>
+                                            <span class="text-gray-600 font-medium">voti</span>
                                         </div>
                                         {% if solution.ai_coherence_score is not none %}
-                                        <div class="flex items-center gap-2 text-sm" title="Punteggio Coerenza AI">
-                                            <span class="material-icons text-base text-sky-500">smart_toy</span>
+                                        <div class="flex items-center gap-2 text-base" title="Punteggio Coerenza AI">
+                                            <div class="w-10 h-10 bg-gradient-to-br from-sky-500 to-sky-600 rounded-full flex items-center justify-center">
+                                                <span class="material-icons text-white">smart_toy</span>
+                                            </div>
                                             {% set score = solution.ai_coherence_score * 100 %}
-                                            <span class="font-semibold 
+                                            <span class="font-bold text-xl
                                                 {% if score >= 80 %} text-green-600
                                                 {% elif score >= 50 %} text-yellow-600
                                                 {% else %} text-red-600 {% endif %}">
@@ -224,21 +550,24 @@
                                         {% endif %}
                                     </div>
                                     
-                                    <div class="flex items-center gap-2">
+                                    <div class="flex items-center gap-3">
                                         {% if not solution.is_approved and task.status != 'closed' and current_user.is_authenticated and current_user.id in project.collaborators|map(attribute='user_id')|list %}
                                             {% if not current_user.votes.filter_by(task_id=task.id).first() %}
-                                                <button class="vote-button flex items-center gap-1.5 h-8 px-3 text-sm rounded-md bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium transition-colors">
-                                                    <span class="material-icons text-base">how_to_vote</span>
+                                                <button class="vote-button action-btn vote-btn">
+                                                    <span class="material-icons">how_to_vote</span>
                                                     Vota per questa soluzione
                                                 </button>
                                             {% else %}
-                                                 <p class="text-sm text-gray-500 italic">Hai già votato</p>
+                                                 <p class="text-sm text-gray-500 italic font-medium flex items-center gap-1">
+                                                     <span class="material-icons text-gray-400" style="font-size: 1rem;">check</span>
+                                                     Hai già votato
+                                                 </p>
                                             {% endif %}
                                         {% endif %}
                                         
                                         {% if current_user.is_authenticated and current_user.id == project.creator_id and not solution.is_approved and task.status != 'closed' %}
-                                        <button class="approve-button flex items-center gap-1.5 h-8 px-3 text-sm rounded-md bg-green-500 hover:bg-green-600 text-white font-semibold transition-colors">
-                                            <span class="material-icons text-base">check</span>
+                                        <button class="approve-button action-btn approve-btn">
+                                            <span class="material-icons">check_circle</span>
                                             Approva Manualmente
                                         </button>
                                         {% endif %}
@@ -247,11 +576,15 @@
                             </div>
                         {% endfor %}
                     {% else %}
-                        <div class="bg-white p-6 rounded-lg border border-dashed border-gray-300 text-center">
-                            <p class="text-gray-500">Nessuna soluzione proposta per questo task.</p>
-                            <p class="text-sm text-gray-400 mt-1">Sii il primo a contribuire!</p>
+                        <div class="bg-gradient-to-br from-gray-50 to-gray-100 p-12 rounded-2xl border-2 border-dashed border-gray-300 text-center">
+                            <div class="w-20 h-20 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <span class="material-icons text-4xl text-gray-400">lightbulb_outline</span>
+                            </div>
+                            <p class="text-xl font-bold text-gray-600 mb-2">Nessuna soluzione proposta per questo task.</p>
+                            <p class="text-base text-gray-500">Sii il primo a contribuire e guadagna equity! 🚀</p>
                         </div>
                     {% endif %}
+                    </div>
                 </div>
             </section>
         </div>

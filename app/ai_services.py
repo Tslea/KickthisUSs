@@ -51,16 +51,28 @@ def analyze_with_ai(prompt: str, max_tokens: int = 1000, temperature: float = 0.
         current_app.logger.error(f"Errore imprevisto chiamata DeepSeek (analisi generica): {e}", exc_info=True)
         return ""
 
-def generate_project_details_from_pitch(pitch: str, category: str) -> dict:
+def generate_project_details_from_pitch(pitch: str, category: str, project_type: str = None) -> dict:
     if not AI_SERVICE_AVAILABLE or client is None:
         raise ConnectionError("DeepSeek AI Service non disponibile o non configurato.")
 
-    system_prompt = """Sei un assistente esperto nell'analisi di idee di progetto. Data un'idea (pitch) e una categoria, genera:
-1.  Un nome accattivante e conciso per il progetto (massimo 10-15 parole).
-2.  Una descrizione dettagliata del progetto (2-3 paragrafi) che espanda l'idea originale, evidenziando potenzialità e obiettivi.
-3.  Un "pitch riscritto" che sia una versione migliorata, più chiara e coinvolgente dell'idea originale (massimo 100 parole).
-Rispondi ESCLUSIVAMENTE in formato JSON valido con le chiavi "name", "description", "rewritten_pitch". Non aggiungere spiegazioni o testo prima o dopo il JSON."""
-    
+    if project_type == "scientific":
+        system_prompt = (
+            "Sei un assistente esperto nella redazione di progetti di ricerca scientifica. "
+            "Data un'idea (pitch) e una categoria, genera:\n"
+            "1. Un titolo scientifico chiaro e preciso (max 15 parole).\n"
+            "2. Una descrizione dettagliata in stile accademico: obiettivi, background scientifico, stato dell’arte, ipotesi, metodologia, potenziale impatto, collaborazioni.\n"
+            "3. Un abstract breve (max 100 parole) adatto a una pubblicazione scientifica.\n"
+            "Rispondi SOLO in JSON valido con le chiavi 'name', 'description', 'rewritten_pitch'."
+        )
+    else:
+        system_prompt = (
+            "Sei un assistente esperto nell'analisi di idee di progetto. Data un'idea (pitch) e una categoria, genera:\n"
+            "1.  Un nome accattivante e conciso per il progetto (massimo 10-15 parole).\n"
+            "2.  Una descrizione dettagliata del progetto (2-3 paragrafi) che espanda l'idea originale, evidenziando potenzialità e obiettivi.\n"
+            "3.  Un 'pitch riscritto' che sia una versione migliorata, più chiara e coinvolgente dell'idea originale (massimo 100 parole).\n"
+            "Rispondi ESCLUSIVAMENTE in formato JSON valido con le chiavi 'name', 'description', 'rewritten_pitch'. Non aggiungere spiegazioni o testo prima o dopo il JSON."
+        )
+
     user_prompt = f'''Pitch: "{pitch}"
 Categoria: "{category}"'''
 
@@ -260,6 +272,7 @@ Descrizione: "{project_description}"{focus_text}'''
     except Exception as e:
         current_app.logger.error(f"Errore imprevisto chiamata DeepSeek (validation experiment): {e}", exc_info=True)
         raise Exception(f"Errore imprevisto generazione esperimento validazione: {e}")
+
 
 def analyze_solution_content(task_title: str, task_description: str, solution_content: str) -> dict:
     if not AI_SERVICE_AVAILABLE or client is None:

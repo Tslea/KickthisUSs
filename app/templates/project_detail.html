@@ -190,7 +190,20 @@
                 {# --- SEZIONE ROADMAP DEI TASK --- #}
                 <section class="mt-8">
                     <div class="flex flex-wrap justify-between items-center mb-6 gap-4">
-                        <h2 class="text-2xl font-bold text-gray-800">Roadmap dei Task</h2>
+                        <div class="flex items-center gap-4">
+                            <h2 class="text-2xl font-bold text-gray-800">Roadmap dei Task</h2>
+                            {# Toggle Views #}
+                            <div class="flex bg-gray-100 rounded-lg p-1 shadow-inner">
+                                <button id="btn-lista" class="px-3 py-2 rounded-md text-sm font-medium transition-all duration-300 ease-in-out bg-white text-gray-900 shadow-sm flex items-center hover:bg-white" onclick="switchToListView()">
+                                    <span class="material-icons text-sm mr-1.5 transform transition-transform duration-300 group-hover:scale-110">view_list</span>
+                                    <span class="font-medium">Lista</span>
+                                </button>
+                                <button id="btn-organizer" class="px-3 py-2 rounded-md text-sm font-medium transition-all duration-300 ease-in-out text-gray-500 hover:text-gray-900 flex items-center" onclick="switchToOrganizerView()">
+                                    <span class="material-icons text-sm mr-1.5 transform transition-transform duration-300 group-hover:scale-110">dashboard</span>
+                                    <span class="font-medium">Organizer</span>
+                                </button>
+                            </div>
+                        </div>
                         {% if current_user.is_authenticated and current_user.id == project.creator_id %}
                             <div class="flex items-center gap-2">
                                 {% if project.private %}
@@ -257,19 +270,19 @@
                             </div>
                             
                             <div id="github-config-section">
-                                {% if project.github_url %}
+                                {% if project.github_repo_name %}
                                 <div class="flex items-center justify-between bg-green-50 border border-green-200 rounded-lg p-3 mb-3">
                                     <div class="flex items-center gap-2">
                                         <span class="material-icons text-green-600 text-sm">check_circle</span>
                                         <span class="text-sm text-green-700 font-medium">Repository configurato</span>
                                     </div>
-                                    <a href="{{ project.github_url }}" target="_blank" rel="noopener noreferrer" 
+                                    <a href="https://github.com/{{ project.github_repo_name }}" target="_blank" rel="noopener noreferrer" 
                                        class="text-sm text-green-700 hover:text-green-800 underline flex items-center gap-1">
                                         Visualizza
                                         <span class="material-icons text-sm">open_in_new</span>
                                     </a>
                                 </div>
-                                <div class="text-xs text-gray-600 break-all mb-3">{{ project.github_url }}</div>
+                                <div class="text-xs text-gray-600 break-all mb-3">https://github.com/{{ project.github_repo_name }}</div>
                                 <button onclick="editGithubUrl()" class="text-sm bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md transition-colors">
                                     Modifica URL
                                 </button>
@@ -286,32 +299,135 @@
                     </div>
                     {% endif %}
                     
-                    <div id="task-phases-container" class="space-y-8">
+                    {# Lista View (Default) #}
+                    <div id="lista-view" class="task-view transition-all duration-300">
+                        <div id="task-phases-container" class="space-y-8">
+                            {% if not has_active_tasks %}
+                                 <div id="no-tasks-placeholder" class="text-center bg-white p-8 rounded-xl shadow-lg border border-gray-200">
+                                    <span class="material-icons text-5xl text-gray-400 mb-2">assignment</span>
+                                    <h3 class="text-lg font-bold text-gray-800">La roadmap è ancora vuota!</h3>
+                                    <p class="text-gray-500 mt-1">Questo progetto non ha ancora task definiti.</p>
+                                </div>
+                            {% else %}
+                                {% for phase_key, phase_name in ALLOWED_TASK_PHASES.items() %}
+                                    {% set tasks_in_phase = tasks_by_phase.get(phase_key, []) %}
+                                    {% if tasks_in_phase %}
+                                    <div id="phase-{{ phase_key }}">
+                                        <h3 class="font-bold text-xl text-gray-700 mb-4 pb-2 border-b-2 border-mclaren-orange">{{ phase_name }}</h3>
+                                        <div id="phase-grid-{{ phase_key }}" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            {% for task in tasks_in_phase %}
+                                                {% set is_creator = current_user.is_authenticated and current_user.id == project.creator_id %}
+                                                {% set is_collaborator = current_user.is_authenticated and current_user in project.collaborators %}
+                                                {% set can_see_suggested = is_creator or is_collaborator %}
+                                                {% if task.status != 'suggested' or can_see_suggested %}
+                                                    {% include 'partials/_task_card_tailwind.html' with context %}
+                                                {% endif %}
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    {# Organizer View (Hidden by default) #}
+                    <div id="organizer-view" class="task-view hidden transition-all duration-300">
                         {% if not has_active_tasks %}
-                             <div id="no-tasks-placeholder" class="text-center bg-white p-8 rounded-xl shadow-lg border border-gray-200">
-                                <span class="material-icons text-5xl text-gray-400 mb-2">assignment</span>
-                                <h3 class="text-lg font-bold text-gray-800">La roadmap è ancora vuota!</h3>
-                                <p class="text-gray-500 mt-1">Questo progetto non ha ancora task definiti.</p>
+                            <div class="flex flex-col items-center justify-center bg-white p-8 rounded-xl shadow-md border border-gray-200">
+                                <span class="material-icons text-5xl text-gray-300 mb-4">dashboard</span>
+                                <p class="text-gray-600 font-semibold">Nessun task da organizzare.</p>
+                                <p class="text-gray-400 text-sm mt-1">Aggiungi task al progetto per visualizzarli qui</p>
+                                <a href="{{ url_for('tasks.add_task_form', project_id=project.id) }}" class="mt-4 px-4 py-2 bg-mclaren-orange text-white rounded-md hover:bg-mclaren-orange-darker transition-colors text-sm font-medium flex items-center">
+                                    <span class="material-icons text-sm mr-1">add</span>
+                                    Aggiungi Task
+                                </a>
                             </div>
                         {% else %}
-                            {% for phase_key, phase_name in ALLOWED_TASK_PHASES.items() %}
-                                {% set tasks_in_phase = tasks_by_phase.get(phase_key, []) %}
-                                {% if tasks_in_phase %}
-                                <div id="phase-{{ phase_key }}">
-                                    <h3 class="font-bold text-xl text-gray-700 mb-4 pb-2 border-b-2 border-mclaren-orange">{{ phase_name }}</h3>
-                                    <div id="phase-grid-{{ phase_key }}" class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        {% for task in tasks_in_phase %}
-                                            {% set is_creator = current_user.is_authenticated and current_user.id == project.creator_id %}
-                                            {% set is_collaborator = current_user.is_authenticated and current_user in project.collaborators %}
-                                            {% set can_see_suggested = is_creator or is_collaborator %}
-                                            {% if task.status != 'suggested' or can_see_suggested %}
-                                                {% include 'partials/_task_card_tailwind.html' with context %}
-                                            {% endif %}
-                                        {% endfor %}
-                                    </div>
+                            <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+                                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-0">
+                                    {% for phase_key, phase_name in ALLOWED_TASK_PHASES.items() %}
+                                        {% set tasks_in_phase = tasks_by_phase.get(phase_key, []) %}
+                                        {% set phase_icons = {
+                                            'ideation': 'lightbulb',
+                                            'planning': 'event_note',
+                                            'execution': 'engineering',
+                                            'review': 'rate_review',
+                                            'completed': 'task_alt',
+                                            'archive': 'inventory_2'
+                                        } %}
+                                        {% set phase_icon = phase_icons.get(phase_key, 'category') %}
+                                        <div class="border-r border-b border-gray-200 last:border-r-0 {% if loop.index > 3 %}border-b-0{% endif %}">
+                                            <div class="px-5 py-3 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-gray-100">
+                                                <div class="flex items-center justify-between">
+                                                    <div class="flex items-center space-x-2">
+                                                        <span class="material-icons text-gray-500 text-sm">{{ phase_icon }}</span>
+                                                        <h3 class="font-semibold text-gray-700 text-sm">{{ phase_name }}</h3>
+                                                    </div>
+                                                    <span class="px-2 py-0.5 bg-white shadow-sm text-gray-600 text-xs rounded-full font-medium">
+                                                        {{ tasks_in_phase|length }}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="p-3 min-h-[150px]">
+                                                {% if tasks_in_phase %}
+                                                    <ul class="space-y-2">
+                                                        {% for task in tasks_in_phase %}
+                                                            {% set can_see = (current_user.is_authenticated and (current_user.id == project.creator_id or current_user in project.collaborators)) %}
+                                                            {% if task.status != 'suggested' or can_see %}
+                                                                <li class="group py-2.5 px-3 hover:bg-gray-50 rounded-lg transition-all duration-200 border border-transparent hover:border-gray-100 hover:shadow-sm">
+                                                                    <div class="flex justify-between items-center">
+                                                                        <div class="flex items-center space-x-2">
+                                                                            <span class="w-2.5 h-2.5 rounded-full shrink-0 ring-1 ring-opacity-25
+                                                                                {{ 'bg-green-500 ring-green-500' if task.status == 'completed' else 
+                                                                                   'bg-orange-400 ring-orange-500 animate-pulse' if task.status == 'active' else 
+                                                                                   'bg-gray-300 ring-gray-400' }}"></span>
+                                                                            <a href="{{ url_for('tasks.task_detail', task_id=task.id) }}" 
+                                                                               class="text-sm font-medium text-gray-700 group-hover:text-mclaren-orange transition-colors">
+                                                                                {{ task.title }}
+                                                                            </a>
+                                                                            {% if task.is_private %}
+                                                                                <span class="material-icons text-xs text-gray-400" title="Task privato">lock</span>
+                                                                            {% endif %}
+                                                                        </div>
+                                                                        
+                                                                        <div class="flex items-center space-x-2">
+                                                                            {% set task_type_icons = {
+                                                                                'bug': 'bug_report',
+                                                                                'feature': 'lightbulb',
+                                                                                'enhancement': 'trending_up',
+                                                                                'documentation': 'description',
+                                                                                'test': 'checklist'
+                                                                            } %}
+                                                                            {% set task_icon = task_type_icons.get(task.type, 'task') %}
+                                                                            <span class="material-icons text-xs text-gray-400 group-hover:text-gray-500 transition-colors" title="{{ task.type.title() if task.type }}">
+                                                                                {{ task_icon }}
+                                                                            </span>
+                                                                            
+                                                                            <span class="text-xs text-gray-400 px-2 py-0.5 bg-gray-50 rounded group-hover:bg-white group-hover:shadow-inner transition-all">
+                                                                                {{ task.type.title() if task.type else '' }}
+                                                                            </span>
+                                                                        </div>
+                                                                    </div>
+                                                                </li>
+                                                            {% endif %}
+                                                        {% endfor %}
+                                                    </ul>
+                                                {% else %}
+                                                    <div class="flex flex-col items-center justify-center h-full py-6">
+                                                        <p class="text-gray-400 text-xs text-center">Nessun task in questa fase</p>
+                                                        <a href="{{ url_for('tasks.add_task_form', project_id=project.id) }}?phase={{ phase_key }}" class="mt-2 text-xs text-mclaren-orange hover:text-mclaren-orange-darker transition-colors flex items-center">
+                                                            <span class="material-icons text-xs mr-1">add_circle_outline</span>
+                                                            Aggiungi
+                                                        </a>
+                                                    </div>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    {% endfor %}
                                 </div>
-                                {% endif %}
-                            {% endfor %}
+                            </div>
                         {% endif %}
                     </div>
                 </section>
@@ -319,6 +435,65 @@
 
             {# Colonna Destra - Equity e Collaboratori #}
             <div class="lg:col-span-1 space-y-8">
+                
+                {# --- NUOVO: Statistiche Task --- #}
+                {% set active_tasks_count = tasks_by_phase.values()|map('length')|sum %}
+                {% set completed_count = completed_tasks|length %}
+                {% set total_count = active_tasks_count + completed_count %}
+                
+                <div class="bg-gradient-to-br from-purple-50 to-indigo-50 p-6 rounded-xl shadow-lg border border-purple-200">
+                    <div class="flex items-center gap-2 mb-4">
+                        <span class="material-icons text-purple-600">analytics</span>
+                        <h3 class="text-lg font-bold text-gray-800">Statistiche Task</h3>
+                    </div>
+                    
+                    <div class="space-y-3">
+                        {# Task Attivi #}
+                        <div class="bg-white p-4 rounded-lg shadow-sm">
+                            <div class="flex justify-between items-center">
+                                <div class="flex items-center gap-2">
+                                    <div class="w-3 h-3 bg-blue-500 rounded-full animate-pulse"></div>
+                                    <span class="text-sm font-medium text-gray-700">Task Attivi</span>
+                                </div>
+                                <span class="text-2xl font-bold text-blue-600">{{ active_tasks_count }}</span>
+                            </div>
+                        </div>
+                        
+                        {# Task Completati #}
+                        <div class="bg-white p-4 rounded-lg shadow-sm">
+                            <div class="flex justify-between items-center">
+                                <div class="flex items-center gap-2">
+                                    <div class="w-3 h-3 bg-green-500 rounded-full"></div>
+                                    <span class="text-sm font-medium text-gray-700">Completati</span>
+                                </div>
+                                <span class="text-2xl font-bold text-green-600">{{ completed_count }}</span>
+                            </div>
+                        </div>
+                        
+                        {# Task Totali #}
+                        <div class="bg-gradient-to-r from-purple-500 to-indigo-600 p-4 rounded-lg shadow-md">
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm font-semibold text-white">Totale Task</span>
+                                <span class="text-2xl font-bold text-white">{{ total_count }}</span>
+                            </div>
+                        </div>
+                        
+                        {# Barra di Progresso #}
+                        {% if total_count > 0 %}
+                        <div class="pt-2">
+                            <div class="flex justify-between text-xs text-gray-600 mb-1">
+                                <span>Progresso</span>
+                                <span>{{ "%.0f"|format((completed_count / total_count) * 100) }}%</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
+                                <div class="bg-gradient-to-r from-green-500 to-emerald-600 h-2.5 rounded-full transition-all duration-500" 
+                                     style="width: {{ (completed_count / total_count) * 100 }}%"></div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
                 <!-- --- Sezione Equity (solo per progetti commerciali) --- -->
                 {% if project.is_commercial %}
                 <div class="bg-white p-6 rounded-xl shadow-lg border border-gray-200">
@@ -347,6 +522,32 @@
                             </div>
                         </div>
                     </div>
+                    
+                    <!-- Links to Equity Management -->
+                    {% if current_user.is_authenticated %}
+                        {% set is_creator = (project.creator_id == current_user.id) %}
+                        {% set is_collaborator = namespace(found=false) %}
+                        {% for collab in project.collaborators %}
+                            {% if collab.user_id == current_user.id %}
+                                {% set is_collaborator.found = true %}
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% if is_creator or is_collaborator.found %}
+                        <div class="mt-6 pt-4 border-t border-gray-200 space-y-2">
+                            <a href="{{ url_for('projects.project_equity', project_id=project.id) }}" 
+                               class="flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-gradient-to-r from-green-500 to-green-600 text-white font-semibold rounded-lg hover:from-green-600 hover:to-green-700 transition-all shadow-md hover:shadow-lg">
+                                <span class="material-icons text-sm">account_balance</span>
+                                <span>Cap Table Dettagliata</span>
+                            </a>
+                            <a href="{{ url_for('projects.project_equity_history', project_id=project.id) }}" 
+                               class="flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all shadow-md hover:shadow-lg">
+                                <span class="material-icons text-sm">history</span>
+                                <span>Equity History & Audit</span>
+                            </a>
+                        </div>
+                        {% endif %}
+                    {% endif %}
                 </div>
                 {% else %}
                 <!-- --- Info per Ricerche Scientifiche --- -->
@@ -404,6 +605,136 @@
 document.addEventListener('DOMContentLoaded', function () {
     const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
     const PHASE_NAMES = JSON.parse('{{ ALLOWED_TASK_PHASES | tojson | safe }}');
+
+    // --- View Toggle Functions with Enhanced Animations ---
+    window.switchToListView = function() {
+        // Prepare for animation
+        const listaView = document.getElementById('lista-view');
+        const organizerView = document.getElementById('organizer-view');
+        
+        // First fade out the current view
+        if (!organizerView.classList.contains('hidden')) {
+            // Add transition class for fade out
+            organizerView.classList.add('opacity-0', 'transition-opacity', 'duration-300');
+            
+            // After fade out completes, switch views
+            setTimeout(() => {
+                organizerView.classList.add('hidden');
+                // Prepare lista view for fade in
+                listaView.classList.remove('hidden');
+                listaView.classList.add('opacity-0');
+                
+                // Trigger reflow for animation
+                void listaView.offsetWidth;
+                
+                // Fade in the lista view
+                listaView.classList.add('transition-opacity', 'duration-300');
+                listaView.classList.remove('opacity-0');
+            }, 300);
+        } else {
+            // If organizer is already hidden, just show lista
+            listaView.classList.remove('hidden');
+        }
+        
+        // Update button styles with subtle transition
+        const btnLista = document.getElementById('btn-lista');
+        const btnOrganizer = document.getElementById('btn-organizer');
+        
+        btnLista.classList.add('bg-white', 'text-gray-900', 'shadow-sm', 'transition-all', 'duration-300');
+        btnLista.classList.remove('text-gray-500');
+        btnOrganizer.classList.remove('bg-white', 'text-gray-900', 'shadow-sm');
+        btnOrganizer.classList.add('text-gray-500', 'transition-all', 'duration-300');
+        
+        // Save preference in localStorage
+        localStorage.setItem('kickthisuss_preferred_view', 'list');
+    };
+
+    window.switchToOrganizerView = function() {
+        // Prepare for animation
+        const listaView = document.getElementById('lista-view');
+        const organizerView = document.getElementById('organizer-view');
+        
+        // First fade out the current view
+        if (!listaView.classList.contains('hidden')) {
+            // Add transition class for fade out
+            listaView.classList.add('opacity-0', 'transition-opacity', 'duration-300');
+            
+            // After fade out completes, switch views
+            setTimeout(() => {
+                listaView.classList.add('hidden');
+                // Prepare organizer view for fade in
+                organizerView.classList.remove('hidden');
+                organizerView.classList.add('opacity-0');
+                
+                // Trigger reflow for animation
+                void organizerView.offsetWidth;
+                
+                // Fade in the organizer view
+                organizerView.classList.add('transition-opacity', 'duration-300');
+                organizerView.classList.remove('opacity-0');
+            }, 300);
+        } else {
+            // If lista is already hidden, just show organizer
+            organizerView.classList.remove('hidden');
+        }
+        
+        // Update button styles with subtle transition
+        const btnLista = document.getElementById('btn-lista');
+        const btnOrganizer = document.getElementById('btn-organizer');
+        
+        btnOrganizer.classList.add('bg-white', 'text-gray-900', 'shadow-sm', 'transition-all', 'duration-300');
+        btnOrganizer.classList.remove('text-gray-500');
+        btnLista.classList.remove('bg-white', 'text-gray-900', 'shadow-sm');
+        btnLista.classList.add('text-gray-500', 'transition-all', 'duration-300');
+        
+        // Save preference in localStorage
+        localStorage.setItem('kickthisuss_preferred_view', 'organizer');
+    };
+
+    // --- Task Management Functions ---
+    window.activateTask = function(taskId) {
+        fetch(`/api/task/${taskId}/activate`, {
+            method: 'POST',
+            headers: { 
+                'X-CSRF-Token': csrfToken, 
+                'Accept': 'application/json' 
+            },
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Errore nell\'attivazione del task');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Errore di connessione');
+        });
+    };
+
+    window.completeTask = function(taskId) {
+        fetch(`/api/task/${taskId}/complete`, {
+            method: 'POST',
+            headers: { 
+                'X-CSRF-Token': csrfToken, 
+                'Accept': 'application/json' 
+            },
+        })
+    .then(res => res.json())
+    .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Errore nel completamento del task');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Errore di connessione');
+        });
+    };
 
     // --- Activate Task Logic ---
     document.body.addEventListener('click', function(e) {
@@ -541,6 +872,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 document.getElementById('edit-task-phase').value = task.phase;
                 document.getElementById('edit-task-difficulty').value = task.difficulty;
                 document.getElementById('edit-task-equity').value = task.equity_reward;
+                document.getElementById('edit-task-private').checked = task.is_private || false;
                 
                 // Gestisci i campi di validazione
                 const validationFields = document.getElementById('validation-fields');
@@ -552,8 +884,10 @@ document.addEventListener('DOMContentLoaded', function () {
                     validationFields.style.display = 'none';
                 }
                 
-                // Mostra il modal
-                document.getElementById('edit-task-modal').style.display = 'flex';
+                // Mostra il modal e scrolla in cima
+                const modal = document.getElementById('edit-task-modal');
+                modal.style.display = 'block';
+                modal.scrollTop = 0; // Assicura che il modal parta dall'alto
             })
             .catch(error => {
                 console.error('Error loading task details:', error);
@@ -569,6 +903,13 @@ document.addEventListener('DOMContentLoaded', function () {
     
     document.getElementById('cancel-edit-task').addEventListener('click', function() {
         document.getElementById('edit-task-modal').style.display = 'none';
+    });
+    
+    // Chiudi il modale cliccando sull'overlay
+    document.getElementById('edit-task-modal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            this.style.display = 'none';
+        }
     });
 
     // Mostra/nascondi campi di validazione
@@ -594,6 +935,7 @@ document.addEventListener('DOMContentLoaded', function () {
         formData.append('phase', document.getElementById('edit-task-phase').value);
         formData.append('difficulty', document.getElementById('edit-task-difficulty').value);
         formData.append('equity_reward', document.getElementById('edit-task-equity').value);
+        formData.append('is_private', document.getElementById('edit-task-private').checked ? 'true' : 'false');
         formData.append('csrf_token', csrfToken);
         
         // Aggiungi campi di validazione se necessario
@@ -641,6 +983,7 @@ document.addEventListener('DOMContentLoaded', function () {
     };
 
     function updateGithubUrl(url) {
+        console.log('Updating GitHub URL:', url);
         const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
         fetch(`{{ url_for('projects.update_github_url', project_id=project.id) }}`, {
             method: 'POST',
@@ -652,7 +995,9 @@ document.addEventListener('DOMContentLoaded', function () {
         })
         .then(response => response.json())
         .then(data => {
+            console.log('Server response:', data);
             if (data.success) {
+                alert(data.message + '\nRepository: ' + (data.github_repo_name || 'Nessuno'));
                 location.reload(); // Ricarica la pagina per mostrare i cambiamenti
             } else {
                 alert('Errore: ' + data.error);
@@ -667,18 +1012,21 @@ document.addEventListener('DOMContentLoaded', function () {
 </script>
 
 {# Modal per modificare task suggeriti #}
-<div id="edit-task-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50" style="display: none;">
-    <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        <div class="p-6 border-b border-gray-200">
-            <div class="flex justify-between items-center">
-                <h3 class="text-xl font-bold text-gray-900">Modifica Task Suggerito</h3>
-                <button id="close-edit-modal" class="text-gray-500 hover:text-gray-700">
-                    <span class="material-icons">close</span>
-                </button>
+<div id="edit-task-modal" class="fixed inset-0 z-50" style="display: none; overflow-y: auto; background-color: rgba(0,0,0,0.5);">
+    <div class="min-h-full flex items-start justify-center p-4 py-10">
+        <div class="relative bg-white rounded-xl shadow-2xl max-w-2xl w-full">
+            <!-- Header -->
+            <div class="p-6 border-b border-gray-200 sticky top-0 bg-white rounded-t-xl z-10">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-xl font-bold text-gray-900">Modifica Task Suggerito</h3>
+                    <button id="close-edit-modal" type="button" class="text-gray-500 hover:text-gray-700">
+                        <span class="material-icons">close</span>
+                    </button>
+                </div>
             </div>
-        </div>
-        
-        <form id="edit-task-form" class="p-6 space-y-6">
+            
+            <!-- Form con contenuto -->
+            <form id="edit-task-form" class="p-6 space-y-6">
             <input type="hidden" id="edit-task-id" name="task_id">
             
             <div>
@@ -738,6 +1086,24 @@ document.addEventListener('DOMContentLoaded', function () {
                 </div>
             </div>
             
+            {# Campo Visibilità Task #}
+            <div class="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <div class="flex items-start space-x-3">
+                    <input type="checkbox" id="edit-task-private" name="is_private" value="true"
+                           class="mt-1 w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2">
+                    <div class="flex-1">
+                        <label for="edit-task-private" class="block text-sm font-semibold text-gray-900 mb-1 cursor-pointer">
+                            <span class="material-icons text-base align-middle mr-1">lock</span>
+                            Rendi questo task privato
+                        </label>
+                        <p class="text-xs text-gray-600">
+                            Se selezionato, solo il creatore del progetto e i collaboratori potranno vedere questo task. 
+                            Utile per task strategici o sensibili.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
             <div id="validation-fields" style="display: none;">
                 <div class="space-y-4 p-4 bg-purple-50 rounded-lg border border-purple-200">
                     <h4 class="font-medium text-purple-800">Campi per Task di Validazione</h4>
@@ -757,16 +1123,18 @@ document.addEventListener('DOMContentLoaded', function () {
                     </div>
                 </div>
             </div>
+            </form>
             
-            <div class="flex justify-end gap-3 pt-4 border-t border-gray-200">
+            <!-- Footer con pulsanti - Sticky per rimanere sempre visibile -->
+            <div class="sticky bottom-0 bg-white border-t border-gray-200 p-6 rounded-b-xl flex justify-end gap-3">
                 <button type="button" id="cancel-edit-task" class="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors">
                     Annulla
                 </button>
-                <button type="submit" class="px-6 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg font-medium transition-colors">
+                <button type="submit" form="edit-task-form" class="px-6 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg font-medium transition-colors shadow-sm">
                     Salva e Attiva
                 </button>
             </div>
-        </form>
+        </div>
     </div>
 </div>
 
@@ -837,6 +1205,17 @@ function showNotification(type, message) {
         }, 300);
     }, 4000);
 }
-</script>
+
+// Load user's view preference when the page loads
+document.addEventListener('DOMContentLoaded', function() {
+    const preferredView = localStorage.getItem('kickthisuss_preferred_view');
+    if (preferredView === 'organizer') {
+        switchToOrganizerView();
+    } else {
+        switchToListView(); // Default to list view if no preference or 'list'
+    }
+});
+
+
 </script>
 {% endblock %}

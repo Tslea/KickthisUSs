@@ -72,6 +72,63 @@ ALLOWED_TASK_DIFFICULTIES = {
     'Very Hard': 'Molto Difficile'
 }
 
+# ⭐ NUOVO: TIPI DI CONTENUTO SUPPORTATI
+CONTENT_TYPES = {
+    'software': '💻 Software/Codice',
+    'hardware': '🔧 Hardware/Elettronica',
+    'design': '🎨 Design Grafico',
+    'documentation': '📄 Documentazione',
+    'media': '🎬 Media/Audio/Video',
+    'mixed': '🔀 Misto'
+}
+
+# ⭐ NUOVO: CATEGORIE CONTENUTO PER TIPO
+CONTENT_CATEGORIES = {
+    'design': {
+        'logo': 'Logo',
+        'branding': 'Brand Identity',
+        'mockup': 'UI/UX Mockup',
+        'illustration': 'Illustrazione',
+        'icon': 'Icona',
+        'banner': 'Banner/Header',
+        'infographic': 'Infografica',
+        'typography': 'Typography/Font'
+    },
+    'documentation': {
+        'user_guide': 'Guida Utente',
+        'technical_doc': 'Documentazione Tecnica',
+        'business_plan': 'Business Plan',
+        'presentation': 'Presentazione',
+        'whitepaper': 'Whitepaper',
+        'tutorial': 'Tutorial',
+        'api_doc': 'Documentazione API'
+    },
+    'media': {
+        'video': 'Video',
+        'audio': 'Audio/Podcast',
+        'animation': 'Animazione',
+        'photography': 'Fotografia',
+        'promotional': 'Materiale Promozionale',
+        'demo': 'Demo Video'
+    },
+    'hardware': {
+        'schematic': 'Schema Elettrico',
+        'pcb': 'PCB Design',
+        'cad_3d': 'Modello 3D',
+        'gerber': 'File Gerber',
+        'bom': 'Bill of Materials',
+        'assembly': 'Istruzioni Assemblaggio'
+    },
+    'software': {
+        'source_code': 'Codice Sorgente',
+        'library': 'Libreria',
+        'plugin': 'Plugin/Estensione',
+        'script': 'Script',
+        'api': 'API',
+        'framework': 'Framework'
+    }
+}
+
 
 # --- MODELLI DATABASE ---
 
@@ -199,6 +256,87 @@ class User(db.Model, UserMixin):
     def __repr__(self):
         return f"<User {self.username}>"
 
+
+# ============================================
+# EQUITY TRACKING MODEL
+# ============================================
+class ProjectEquity(db.Model):
+    """
+    Tracks individual equity ownership for each user in a project.
+    This provides granular tracking of how equity is distributed
+    through task completions, collaboration bonuses, etc.
+    
+    Note: Collaborator.equity_share still exists for backward compatibility,
+    but ProjectEquity is the source of truth for detailed equity tracking.
+    """
+    __tablename__ = 'project_equity'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    project_id = db.Column(db.Integer, db.ForeignKey('project.id'), nullable=False, index=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+    equity_percentage = db.Column(db.Float, default=0.0, nullable=False)
+    
+    # Track how equity was earned (for transparency)
+    earned_from = db.Column(db.String(500), default='')  # Comma-separated: 'creator', 'task_123', 'bonus'
+    
+    # Timestamps
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    last_updated = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    
+    # Relationships
+    project = db.relationship('Project', backref=db.backref('equity_holders', lazy='dynamic', cascade='all, delete-orphan'))
+    user = db.relationship('User', backref=db.backref('project_equities', lazy='dynamic'))
+    
+    # Unique constraint: one equity record per user per project
+    __table_args__ = (
+        db.UniqueConstraint('project_id', 'user_id', name='_project_user_equity_uc'),
+    )
+    
+    def __repr__(self):
+        return f'<ProjectEquity {self.user.username} owns {self.equity_percentage}% of Project {self.project_id}>'
+
+
+# ============================================
+# EQUITY HISTORY/AUDIT LOG MODEL
+# ============================================
+class EquityHistory(db.Model):
+    """
+    Audit log for all equity changes.
+    Tracks who got equity, when, why, and how much.
+    Immutable records for compliance and transparency.
+    """
+    __tablename__ = 'equity_history'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    project_id = db.Column(db.Integer, db.ForeignKey('project.id'), nullable=False, index=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+    
+    # Change details
+    action = db.Column(db.String(50), nullable=False, index=True)  # 'grant', 'revoke', 'transfer', 'adjust'
+    equity_change = db.Column(db.Float, nullable=False)  # Positive for grant, negative for revoke
+    equity_before = db.Column(db.Float, nullable=False)  # Equity before change
+    equity_after = db.Column(db.Float, nullable=False)   # Equity after change
+    
+    # Source of change
+    reason = db.Column(db.String(500))  # Human-readable reason (e.g., "Task 123 completion", "Manual adjustment by creator")
+    source_type = db.Column(db.String(50))  # 'task_completion', 'manual', 'bonus', 'initial'
+    source_id = db.Column(db.Integer)  # ID of related entity (task_id, solution_id, etc.)
+    
+    # Who made the change (can be system/automated)
+    changed_by_user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    
+    # Timestamp
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), index=True)
+    
+    # Relationships
+    project = db.relationship('Project', backref=db.backref('equity_history', lazy='dynamic', order_by='EquityHistory.created_at.desc()'))
+    user = db.relationship('User', foreign_keys=[user_id], backref=db.backref('equity_changes', lazy='dynamic'))
+    changed_by = db.relationship('User', foreign_keys=[changed_by_user_id], backref=db.backref('equity_changes_made', lazy='dynamic'))
+    
+    def __repr__(self):
+        return f'<EquityHistory {self.action} {self.equity_change}% for User {self.user_id} in Project {self.project_id}>'
+
+
 class Project(db.Model):
     __tablename__ = 'project'
     id = db.Column(db.Integer, primary_key=True)
@@ -208,8 +346,11 @@ class Project(db.Model):
     description = db.Column(db.Text)
     rewritten_pitch = db.Column(db.Text)
     cover_image_url = db.Column(db.String(2048))
-    repository_url = db.Column(db.String(255), nullable=True) # --- NUOVO CAMPO ---
-    github_url = db.Column(db.String(255), nullable=True) # --- CAMPO GITHUB PER FLUSSO SOFTWARE ---
+    repository_url = db.Column(db.String(255), nullable=True) # --- CAMPO GENERICO REPOSITORY ---
+    
+    # --- GITHUB INTEGRATION (MINIMALE) ---
+    # Solo il nome del repository - tutto il resto è gestito via GitHub API quando necessario
+    github_repo_name = db.Column(db.String(100), nullable=True, index=True)  # es. "kickthisuss-projects/project-123"
     
     # AI-Generated Project Guide
     ai_mvp_guide = db.Column(db.Text, nullable=True)  # Guida step-by-step per MVP
@@ -253,6 +394,122 @@ class Project(db.Model):
         else:
             # Default per commercial, None, o valori sconosciuti
             return '☀️ Startup'
+    
+    # ============================================
+    # EQUITY MANAGEMENT METHODS
+    # ============================================
+    
+    def get_total_equity_distributed(self):
+        """
+        Calculate total equity distributed to all users.
+        Returns: float (sum of all equity percentages)
+        """
+        total = db.session.query(
+            db.func.sum(ProjectEquity.equity_percentage)
+        ).filter(ProjectEquity.project_id == self.id).scalar()
+        return total or 0.0
+    
+    def get_available_equity(self):
+        """
+        Calculate remaining equity available for distribution.
+        Uses EquityConfiguration if exists, otherwise assumes 100% total.
+        """
+        # Get equity configuration - handle both single object and list cases
+        config = None
+        if hasattr(self, 'equity_config') and self.equity_config:
+            # If it's a list (InstrumentedList), take first element
+            if hasattr(self.equity_config, '__iter__') and not isinstance(self.equity_config, (str, dict)):
+                config = self.equity_config[0] if len(self.equity_config) > 0 else None
+            else:
+                config = self.equity_config
+        
+        if config and hasattr(config, 'team_percentage'):
+            # Total distributable = team_percentage from config
+            max_distributable = config.team_percentage
+        else:
+            # Fallback: assume 100% distributable (minus platform fee)
+            max_distributable = 100.0 - self.platform_fee
+        
+        distributed = self.get_total_equity_distributed()
+        available = max_distributable - distributed
+        
+        return max(0.0, available)  # Never return negative
+    
+    def can_distribute_equity(self, amount):
+        """
+        Check if specified equity amount can be distributed.
+        
+        Args:
+            amount (float): Equity percentage to check
+            
+        Returns:
+            bool: True if amount can be distributed
+        """
+        available = self.get_available_equity()
+        return amount <= available
+    
+    def validate_equity_distribution(self):
+        """
+        Validate that total equity distributed doesn't exceed limits.
+        
+        Raises:
+            ValueError: If equity distribution is invalid
+            
+        Returns:
+            bool: True if valid
+        """
+        total = self.get_total_equity_distributed()
+        
+        # Get equity configuration - handle both single object and list cases
+        config = None
+        if hasattr(self, 'equity_config') and self.equity_config:
+            # If it's a list (InstrumentedList), take first element
+            if hasattr(self.equity_config, '__iter__') and not isinstance(self.equity_config, (str, dict)):
+                config = self.equity_config[0] if len(self.equity_config) > 0 else None
+            else:
+                config = self.equity_config
+        
+        if config and hasattr(config, 'team_percentage'):
+            max_allowed = config.team_percentage
+            if total > max_allowed:
+                raise ValueError(
+                    f'Total equity distributed ({total}%) exceeds team allocation ({max_allowed}%)'
+                )
+        else:
+            # Fallback validation: total shouldn't exceed 100% minus platform fee
+            max_allowed = 100.0 - self.platform_fee
+            if total > max_allowed:
+                raise ValueError(
+                    f'Total equity distributed ({total}%) exceeds maximum allowed ({max_allowed}%)'
+                )
+        
+        return True
+    
+    def get_equity_distribution(self):
+        """
+        Get equity distribution as a dictionary.
+        
+        Returns:
+            dict: {user_id: equity_percentage}
+        """
+        equity_records = ProjectEquity.query.filter_by(project_id=self.id).all()
+        return {eq.user_id: eq.equity_percentage for eq in equity_records}
+    
+    def get_user_equity(self, user_id):
+        """
+        Get equity percentage for a specific user.
+        
+        Args:
+            user_id (int): User ID
+            
+        Returns:
+            float: Equity percentage (0.0 if user has no equity)
+        """
+        equity = ProjectEquity.query.filter_by(
+            project_id=self.id,
+            user_id=user_id
+        ).first()
+        return equity.equity_percentage if equity else 0.0
 
     def __repr__(self):
         return f"<Project {self.name} ({self.project_type})>"
@@ -341,6 +598,11 @@ class Solution(db.Model):
     solution_content = db.Column(db.Text, nullable=False)
     pull_request_url = db.Column(db.String(512), nullable=True) # --- CAMPO PR URL PER FLUSSO SOFTWARE ---
     file_path = db.Column(db.String(2048), nullable=True)
+    
+    # ⭐ NUOVO: Tipo di contenuto della soluzione
+    content_type = db.Column(db.String(20), nullable=True, default='software', index=True)
+    # Valori possibili: 'software', 'hardware', 'design', 'documentation', 'media', 'mixed'
+    
     is_approved = db.Column(db.Boolean, default=False)
     ai_coherence_score = db.Column(db.Float)
     ai_completeness_score = db.Column(db.Float)
@@ -365,6 +627,14 @@ class SolutionFile(db.Model):
     stored_filename = db.Column(db.String(255), nullable=False)
     file_path = db.Column(db.String(2048), nullable=False)
     file_type = db.Column(db.String(10), nullable=False)  # 'source', 'prototype', 'documentation', 'visual'
+    
+    # ⭐ NUOVO: Tipo di contenuto del file
+    content_type = db.Column(db.String(20), nullable=True, default='software', index=True)
+    # Valori: 'software', 'hardware', 'design', 'documentation', 'media'
+    
+    # ⭐ NUOVO: Categoria specifica (es: 'logo', 'mockup', 'video', 'audio')
+    content_category = db.Column(db.String(50), nullable=True)
+    
     file_size = db.Column(db.Integer, nullable=False)
     mime_type = db.Column(db.String(128), nullable=False)
     uploaded_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))

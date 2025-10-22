@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+
+{% block title %}Troppe Richieste - KickStorm{% endblock %}
+
+{% block content %}
+<div class="min-h-screen flex items-center justify-center px-4 py-12">
+    <div class="max-w-md w-full text-center">
+        <!-- Error Icon -->
+        <div class="mb-8">
+            <div class="inline-flex items-center justify-center w-24 h-24 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 shadow-lg">
+                <span class="material-icons text-white text-5xl">speed</span>
+            </div>
+        </div>
+        
+        <!-- Error Code -->
+        <h1 class="text-8xl font-bold text-gray-800 mb-4">429</h1>
+        
+        <!-- Error Title -->
+        <h2 class="text-3xl font-bold text-gray-800 mb-4">
+            Troppe Richieste
+        </h2>
+        
+        <!-- Error Description -->
+        <p class="text-gray-600 mb-8 text-lg leading-relaxed">
+            Hai superato il limite di richieste consentite. 
+            Per proteggere il sistema, le tue richieste sono state temporaneamente limitate.
+        </p>
+        
+        {% if retry_after %}
+        <div class="bg-orange-50 border-l-4 border-orange-500 p-4 mb-8">
+            <div class="flex items-center">
+                <span class="material-icons text-orange-500 mr-3">info</span>
+                <p class="text-orange-700">
+                    <strong>Riprova tra:</strong> {{ retry_after }}
+                </p>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Suggestions -->
+        <div class="bg-gray-50 rounded-lg p-6 mb-8 text-left">
+            <h3 class="font-semibold text-gray-800 mb-3 flex items-center">
+                <span class="material-icons text-blue-500 mr-2">lightbulb</span>
+                Suggerimenti:
+            </h3>
+            <ul class="space-y-2 text-gray-600">
+                <li class="flex items-start">
+                    <span class="material-icons text-sm text-gray-400 mr-2 mt-1">arrow_right</span>
+                    <span>Attendi qualche minuto prima di riprovare</span>
+                </li>
+                <li class="flex items-start">
+                    <span class="material-icons text-sm text-gray-400 mr-2 mt-1">arrow_right</span>
+                    <span>Riduci la frequenza delle tue richieste</span>
+                </li>
+                <li class="flex items-start">
+                    <span class="material-icons text-sm text-gray-400 mr-2 mt-1">arrow_right</span>
+                    <span>Se il problema persiste, contatta il supporto</span>
+                </li>
+            </ul>
+        </div>
+        
+        <!-- Action Buttons -->
+        <div class="flex flex-col sm:flex-row gap-4 justify-center">
+            <a href="javascript:history.back()" 
+               class="inline-flex items-center justify-center px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-all duration-200 font-medium">
+                <span class="material-icons mr-2">arrow_back</span>
+                Torna Indietro
+            </a>
+            <a href="{{ url_for('projects.home') }}" 
+               class="inline-flex items-center justify-center px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg hover:from-orange-600 hover:to-orange-700 transition-all duration-200 font-medium shadow-lg hover:shadow-xl">
+                <span class="material-icons mr-2">home</span>
+                Vai alla Home
+            </a>
+        </div>
+        
+        <!-- Timer Display (optional, can be added with JavaScript) -->
+        <div id="retryTimer" class="mt-6 text-sm text-gray-500">
+            <!-- JavaScript can update this with countdown -->
+        </div>
+    </div>
+</div>
+
+<style>
+    @keyframes pulse-soft {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.7; }
+    }
+    
+    .animate-pulse-soft {
+        animation: pulse-soft 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+</style>
+
+<script>
+    // Optional: Auto-retry countdown timer
+    {% if retry_after and retry_after is number %}
+    let secondsLeft = {{ retry_after }};
+    const timerElement = document.getElementById('retryTimer');
+    
+    function updateTimer() {
+        if (secondsLeft > 0) {
+            timerElement.innerHTML = `<span class="animate-pulse-soft">Puoi riprovare tra ${secondsLeft} secondi...</span>`;
+            secondsLeft--;
+            setTimeout(updateTimer, 1000);
+        } else {
+            timerElement.innerHTML = '<span class="text-green-600 font-semibold">✓ Puoi riprovare ora!</span>';
+        }
+    }
+    
+    updateTimer();
+    {% endif %}
+</script>
+{% endblock %}

@@ -1,6 +1,5 @@
 # app/extensions.py
 
-
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from flask_mail import Mail
@@ -14,4 +13,9 @@ login_manager = LoginManager()
 mail = Mail()
 
 # Flask-Limiter per rate limiting
-limiter = Limiter(key_func=get_remote_address, default_limits=["200 per day", "50 per hour"])
+# Configurazione sarà letta da config.py (RATELIMIT_STORAGE_URL e RATELIMIT_DEFAULT)
+limiter = Limiter(
+    key_func=get_remote_address,
+    storage_uri=None,  # Sarà impostato da app.config in init_app()
+    default_limits=[]  # Sarà impostato da app.config in init_app()
+)

@@ -89,12 +89,17 @@
         <div class="relative container mx-auto px-6 py-24 md:py-32 z-10">
             <div class="text-center mb-12">
                 <h1 class="text-5xl md:text-7xl font-black tracking-tight leading-none mb-6">
-                    Costruisci il <span class="gradient-text">futuro</span>,<br>
-                    un task alla volta.
+                    Decentralizza il <span class="gradient-text">progresso</span>,<br>
+                    costruendo insieme.
                 </h1>
-                <p class="max-w-3xl mx-auto text-xl md:text-2xl text-gray-200 mb-8 leading-relaxed">
-                    KickthisUSs è la piattaforma dove le idee innovative incontrano i talenti per realizzarle. Unisciti a un progetto, contribuisci con le tue abilità e guadagna una vera quota del successo.
+                <p class="max-w-4xl mx-auto text-xl md:text-2xl text-gray-200 mb-8 leading-relaxed">
+                    KickthisUSs è la piattaforma per liberare la ricerca scientifica e accelerare l'innovazione globale: idee, ricercatori e builder collaborano senza barriere. ☀️ Startup con equity reale. 🔬 Ricerca aperta e accessibile.
                 </p>
+                <div class="flex flex-wrap items-center justify-center gap-3 mb-8">
+                    <span class="glass-card px-4 py-2 rounded-full text-sm">🌍 Collaborazione globale</span>
+                    <span class="glass-card px-4 py-2 rounded-full text-sm">📖 Ricerca libera</span>
+                    <span class="glass-card px-4 py-2 rounded-full text-sm">⚖️ Merito prima di tutto</span>
+                </div>
                 
                 {# Statistics Section #}
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12 max-w-4xl mx-auto">
@@ -107,28 +112,41 @@
                         <div class="text-gray-300">Collaboratori</div>
                     </div>
                     <div class="glass-card p-6 rounded-2xl">
-                        <div class="stats-counter text-4xl font-bold mb-2">{{ tasks_completed | default(0) }}</div>
-                        <div class="text-gray-300">Task Completati</div>
+                        <div class="stats-counter text-4xl font-bold mb-2">{{ public_tasks_count | default(0) }}</div>
+                        <div class="text-gray-300">Task Pubblici</div>
                     </div>
                 </div>
                 
                 <div class="flex flex-wrap gap-4 justify-center">
-                    {# --- CORREZIONE: Link dinamico basato sullo stato di autenticazione --- #}
+                    {# CTA principali, inclusive per tutti i livelli #}
                     {% if current_user.is_authenticated %}
                         <a href="{{ url_for('projects.create_project_form') }}" class="inline-flex items-center px-8 py-4 bg-gradient-to-r from-orange-500 to-orange-600 text-white text-lg font-bold rounded-2xl shadow-2xl hover:from-orange-600 hover:to-orange-700 focus:outline-none focus:ring-4 focus:ring-orange-500/50 transition-all transform hover:scale-105 pulse-animation">
-                            <span class="material-icons mr-2">rocket_launch</span>
-                            Inizia a Costruire
+                            <span class="mr-2">☀️</span>
+                            Crea una Startup
+                        </a>
+                        <a href="{{ url_for('projects.create_project_form') }}" class="inline-flex items-center px-8 py-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white text-lg font-bold rounded-2xl shadow-2xl hover:from-blue-600 hover:to-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-500/40 transition-all transform hover:scale-105">
+                            <span class="mr-2">🔬</span>
+                            Avvia un Progetto di Ricerca
                         </a>
                     {% else %}
                         <a href="{{ url_for('auth.register') }}" class="inline-flex items-center px-8 py-4 bg-gradient-to-r from-orange-500 to-orange-600 text-white text-lg font-bold rounded-2xl shadow-2xl hover:from-orange-600 hover:to-orange-700 focus:outline-none focus:ring-4 focus:ring-orange-500/50 transition-all transform hover:scale-105 pulse-animation">
-                            <span class="material-icons mr-2">rocket_launch</span>
-                            Inizia a Costruire
+                            <span class="mr-2">☀️</span>
+                            Crea una Startup
+                        </a>
+                        <a href="{{ url_for('auth.register') }}" class="inline-flex items-center px-8 py-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white text-lg font-bold rounded-2xl shadow-2xl hover:from-blue-600 hover:to-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-500/40 transition-all transform hover:scale-105">
+                            <span class="mr-2">🔬</span>
+                            Avvia un Progetto di Ricerca
                         </a>
                     {% endif %}
                     <a href="#explore-projects" class="inline-flex items-center px-8 py-4 glass-card text-white text-lg font-semibold rounded-2xl hover:bg-white/20 focus:outline-none focus:ring-4 focus:ring-white/50 transition-all">
                         <span class="material-icons mr-2">explore</span>
                         Esplora i Progetti
                     </a>
+                </div>
+                <div class="mt-6 flex flex-wrap items-center justify-center gap-3 text-sm text-gray-200">
+                    <span class="glass-card px-4 py-2 rounded-full">Open‑source su GitHub</span>
+                    <span class="glass-card px-4 py-2 rounded-full">Gratis per iniziare</span>
+                    <span class="glass-card px-4 py-2 rounded-full">Community globale</span>
                 </div>
             </div>
         </div>
@@ -141,6 +159,37 @@
         </div>
     </section>
 
+    {# Vision / Mission section aligned with the platform's goal #}
+    <section class="py-16 md:py-24 bg-white">
+        <div class="container mx-auto px-6">
+            <div class="text-center mb-12">
+                <h2 class="text-4xl md:text-5xl font-black text-gray-900 mb-4">
+                    La <span class="gradient-text">Missione</span>
+                </h2>
+                <p class="max-w-3xl mx-auto text-lg md:text-xl text-gray-600 leading-relaxed">
+                    Democratizzare l'innovazione: abbattere barriere economiche, geografiche e linguistiche per permettere a chiunque di contribuire al progresso umano.
+                </p>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="feature-card bg-gradient-to-br from-white to-gray-50 p-8 rounded-3xl shadow-lg border border-gray-100">
+                    <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-orange-400 to-orange-600 text-white flex items-center justify-center mb-4"><span class="material-icons">public</span></div>
+                    <h3 class="text-xl font-bold mb-2 text-gray-900">Collaborazione Senza Confini</h3>
+                    <p class="text-gray-600">Mettiamo in contatto menti brillanti di tutto il mondo per risolvere problemi reali, insieme.</p>
+                </div>
+                <div class="feature-card bg-gradient-to-br from-white to-gray-50 p-8 rounded-3xl shadow-lg border border-gray-100">
+                    <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-400 to-blue-600 text-white flex items-center justify-center mb-4"><span class="material-icons">menu_book</span></div>
+                    <h3 class="text-xl font-bold mb-2 text-gray-900">Ricerca Aperta</h3>
+                    <p class="text-gray-600">Conoscenza condivisa, risultati pubblici, accesso per tutti: acceleriamo la scienza con trasparenza.</p>
+                </div>
+                <div class="feature-card bg-gradient-to-br from-white to-gray-50 p-8 rounded-3xl shadow-lg border border-gray-100">
+                    <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-green-400 to-green-600 text-white flex items-center justify-center mb-4"><span class="material-icons">grade</span></div>
+                    <h3 class="text-xl font-bold mb-2 text-gray-900">Merito e Impatto</h3>
+                    <p class="text-gray-600">Valorizziamo i contributi concreti: per le startup, equity reale; per la ricerca, riconoscimento e diffusione.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
     {# 2. Enhanced "Come Funziona" Section #}
     <section class="py-20 md:py-32 bg-gradient-to-br from-slate-50 via-white to-slate-50">
         <div class="container mx-auto px-6">
@@ -149,7 +198,7 @@
                     Dall'Idea al Lancio in <span class="gradient-text">4 Semplici Passi</span>
                 </h2>
                 <p class="max-w-3xl mx-auto text-xl text-gray-600 leading-relaxed">
-                    Non finanziare, costruisci. Trasforma la tua visione in realtà con un processo trasparente e collaborativo.
+                    Non finanziare, costruisci. Trasforma la tua visione in realtà con un processo trasparente e collaborativo. Aperta a tutti: chiunque può partecipare.
                 </p>
             </div>
             
@@ -180,7 +229,7 @@
                     </div>
                     <h3 class="text-2xl font-bold text-gray-900 mb-3 text-center">Trova Collaboratori</h3>
                     <p class="text-gray-600 text-center leading-relaxed">
-                        Pubblica il progetto e attira talenti appassionati pronti a contribuire in cambio di una quota di equity.
+                        Pubblica il progetto e accogli persone appassionate di ogni livello, pronte a contribuire in modo libero e inclusivo.
                     </p>
                 </div>
                 
@@ -238,6 +287,60 @@
         </div>
     </section>
 
+    {# Dual Track: Startup vs Research, with existing style #}
+    <section class="py-20 md:py-28 bg-gradient-to-br from-slate-50 via-white to-slate-50">
+        <div class="container mx-auto px-6">
+            <div class="text-center mb-14">
+                <h2 class="text-4xl md:text-5xl font-black text-gray-900 mb-4">Scegli il tuo <span class="gradient-text">Percorso</span></h2>
+                <p class="max-w-3xl mx-auto text-xl text-gray-600">Due strade, un unico obiettivo: spingere avanti l'umanità.</p>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="group bg-white rounded-3xl shadow-lg border border-gray-100 p-8 hover:shadow-2xl transition">
+                    <div class="flex items-center gap-3 mb-3">
+                        <span class="text-2xl">☀️</span>
+                        <h3 class="text-2xl font-bold text-gray-900">Startup Projects</h3>
+                    </div>
+                    <p class="text-gray-600 mb-6">Costruisci prodotti reali. Collabora, completa task e guadagna equity in base al merito.</p>
+                    <div class="flex flex-wrap gap-3">
+                        <a href="{{ url_for('projects.projects_list') }}?project_type=commercial" class="inline-flex items-center px-5 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-semibold rounded-xl hover:from-orange-600 hover:to-orange-700 transition">
+                            <span class="material-icons mr-2">explore</span> Scopri Startup
+                        </a>
+                        {% if current_user.is_authenticated %}
+                        <a href="{{ url_for('projects.create_project_form') }}" class="inline-flex items-center px-5 py-3 glass-card text-gray-900 font-semibold rounded-xl hover:bg-white/60 transition">
+                            <span class="material-icons mr-2">add_circle</span> Crea una Startup
+                        </a>
+                        {% else %}
+                        <a href="{{ url_for('auth.register') }}" class="inline-flex items-center px-5 py-3 glass-card text-gray-900 font-semibold rounded-xl hover:bg-white/60 transition">
+                            <span class="material-icons mr-2">person_add</span> Registrati per Creare
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="group bg-white rounded-3xl shadow-lg border border-gray-100 p-8 hover:shadow-2xl transition">
+                    <div class="flex items-center gap-3 mb-3">
+                        <span class="text-2xl">🔬</span>
+                        <h3 class="text-2xl font-bold text-gray-900">Ricerca Scientifica</h3>
+                    </div>
+                    <p class="text-gray-600 mb-6">Condividi risultati, crea conoscenza aperta e collabora a esperimenti e pubblicazioni accessibili.</p>
+                    <div class="flex flex-wrap gap-3">
+                        <a href="{{ url_for('projects.projects_list') }}?project_type=scientific" class="inline-flex items-center px-5 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold rounded-xl hover:from-blue-600 hover:to-blue-700 transition">
+                            <span class="material-icons mr-2">explore</span> Esplora Ricerca
+                        </a>
+                        {% if current_user.is_authenticated %}
+                        <a href="{{ url_for('projects.create_project_form') }}" class="inline-flex items-center px-5 py-3 glass-card text-gray-900 font-semibold rounded-xl hover:bg-white/60 transition">
+                            <span class="material-icons mr-2">science</span> Avvia un Progetto di Ricerca
+                        </a>
+                        {% else %}
+                        <a href="{{ url_for('auth.register') }}" class="inline-flex items-center px-5 py-3 glass-card text-gray-900 font-semibold rounded-xl hover:bg-white/60 transition">
+                            <span class="material-icons mr-2">person_add</span> Registrati per Avviare
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
     {# 3. Enhanced "Funzionalità Principali" Section #}
     <section class="py-20 md:py-32 bg-white relative overflow-hidden">
         {# Background decoration #}
@@ -252,7 +355,7 @@
                     Una Piattaforma Potenziata dall'<span class="gradient-text">IA</span>
                 </h2>
                 <p class="max-w-3xl mx-auto text-xl text-gray-600 leading-relaxed">
-                    Sfrutta strumenti intelligenti per semplificare ogni fase del processo di sviluppo.
+                    Semplifichiamo ogni fase del percorso con strumenti intelligenti. Aperta a tutti: chiunque può partecipare e contribuire.
                 </p>
             </div>
             
@@ -308,9 +411,9 @@
                 </div>
                 
                 <div class="bg-gradient-to-br from-orange-500 to-orange-600 p-8 rounded-3xl text-white">
-                    <h3 class="text-3xl font-bold mb-4">Networking Globale</h3>
+                    <h3 class="text-3xl font-bold mb-4">Collaborazione Globale</h3>
                     <p class="text-orange-100 mb-6 leading-relaxed">
-                        Connettiti con talenti da tutto il mondo. La tua prossima collaborazione potrebbe cambiare tutto.
+                        Connettiti con persone da tutto il mondo: principianti, autodidatti e contributori di ogni livello collaborano allo stesso tavolo.
                     </p>
                     <div class="flex items-center space-x-4">
                         <div class="flex items-center space-x-2">
@@ -415,7 +518,7 @@
                                                     <span>Votato</span>
                                                 </button>
                                             {% else %}
-                                                <button onclick="voteProject({{ project.id }}, this)" 
+                                                <button data-vote-btn data-project-id="{{ project.id }}" 
                                                         class="text-xs bg-gradient-to-r from-green-500 to-blue-600 hover:from-green-600 hover:to-blue-700 text-white px-2 py-1 rounded-full font-semibold transition duration-300 flex items-center space-x-1">
                                                     <span>🗳️</span>
                                                     <span>Vota</span>
@@ -464,7 +567,7 @@
                     <span class="gradient-text">avventura</span> inizia qui.
                 </h2>
                 <p class="text-xl md:text-2xl text-gray-300 mb-12 leading-relaxed">
-                    Che tu sia un ideatore in cerca di un team o un talento in cerca di una sfida, KickthisUSs è il posto giusto per te.
+                    Che tu sia alle prime armi o super esperto, qui puoi partecipare liberamente e contribuire al cambiamento reale.
                 </p>
                 
                 {# Benefits showcase #}
@@ -488,7 +591,7 @@
                             <span class="material-icons text-2xl text-white">diversity_1</span>
                         </div>
                         <h3 class="text-xl font-bold mb-2">Network Globale</h3>
-                        <p class="text-gray-300 text-sm">Connettiti con innovatori e talenti da tutto il mondo.</p>
+                        <p class="text-gray-300 text-sm">Connettiti con persone e contributori da tutto il mondo.</p>
                     </div>
                 </div>
                 
@@ -521,6 +624,47 @@
 </div>
 
 <script>
+// Animate counters when they enter the viewport
+const animateCounter = (el) => {
+    const target = parseInt(el.textContent || '0');
+    if (isNaN(target) || target <= 0) return;
+    let current = 0;
+    const duration = 1200;
+    const start = performance.now();
+    const step = (now) => {
+        const progress = Math.min((now - start) / duration, 1);
+        current = Math.floor(target * (0.2 + 0.8 * progress));
+        el.textContent = current.toString();
+        if (progress < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+    const counters = document.querySelectorAll('.stats-counter');
+    if ('IntersectionObserver' in window) {
+        const io = new IntersectionObserver((entries, obs) => {
+            entries.forEach(e => {
+                if (e.isIntersecting) {
+                    animateCounter(e.target);
+                    obs.unobserve(e.target);
+                }
+            });
+        }, { threshold: 0.5 });
+        counters.forEach(c => io.observe(c));
+    }
+});
+
+// Delegated click handler to avoid inline JS and keep templates clean
+document.addEventListener('click', function(e) {
+    const btn = e.target.closest('[data-vote-btn]');
+    if (!btn) return;
+    const projectId = parseInt(btn.getAttribute('data-project-id'));
+    if (!isNaN(projectId)) {
+        voteProject(projectId, btn);
+    }
+});
+
 // Funzione per votare un progetto
 function voteProject(projectId, buttonElement) {
     console.log('Tentativo di voto per progetto:', projectId);

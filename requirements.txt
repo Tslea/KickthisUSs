@@ -35,8 +35,21 @@ httpx==0.27.0
 
 # --- Sicurezza ---
 Werkzeug==3.0.3
+Flask-Limiter==3.5.0  # Rate limiting per API e autenticazione
+
+# --- File Upload Validation ---
+python-magic==0.4.27  # MIME type detection
+python-magic-bin==0.4.14; sys_platform == 'win32'  # Binary for Windows
 
 humanize==4.9.0
 
 # --- Server di Produzione ---
 gunicorn==22.0.0
+
+# --- GitHub Integration ---
+PyGithub==2.1.1
+requests>=2.31.0
+
+# --- Task Queue (per operazioni asincrone) ---
+celery>=5.3.4
+redis>=5.0.1

@@ -43,6 +43,11 @@ def user_profile(username):
 
     # Equity totale guadagnata
     total_equity = sum(collab.equity_share for collab in collaborations)
+    
+    # 🎯 EQUITY DETAILED BREAKDOWN using ProjectEquity system
+    from .services.equity_service import EquityService
+    equity_service = EquityService()
+    equity_summary = equity_service.calculate_user_total_equity(user)
 
     # Soluzioni approvate
     num_approved_solutions = len(approved_solutions)
@@ -100,7 +105,8 @@ def user_profile(username):
         curriculum_skills=curriculum_skills,
         total_solutions=total_solutions,
         total_tasks_created=total_tasks_created,
-        ALLOWED_TASK_TYPES=ALLOWED_TASK_TYPES
+        ALLOWED_TASK_TYPES=ALLOWED_TASK_TYPES,
+        equity_summary=equity_summary
     )
 
 def allowed_file(filename):
@@ -161,3 +167,107 @@ def update_profile():
         return redirect(url_for('users.user_profile', username=current_user.username))
     
     return render_template('users/update_profile.html', form=form)
+
+@users_bp.route('/account/delete', methods=['GET', 'POST'])
+@login_required
+def delete_account():
+    """
+    GDPR Compliant Account Deletion Endpoint
+    Allows users to permanently delete their account and all associated data
+    """
+    from flask import request
+    
+    if request.method == 'POST':
+        # Double confirmation check
+        confirmation = request.form.get('confirmation')
+        username_check = request.form.get('username_check')
+        
+        if confirmation != 'DELETE' or username_check != current_user.username:
+            flash('Conferma non valida. Inserisci correttamente i dati richiesti.', 'error')
+            return render_template('users/delete_account.html')
+        
+        # Log the deletion for audit purposes
+        current_app.logger.warning(f"User {current_user.username} (ID: {current_user.id}) requested account deletion")
+        
+        user_email = current_user.email
+        user_id = current_user.id
+        username = current_user.username
+        
+        try:
+            # 1. Delete user's solutions
+            Solution.query.filter_by(submitted_by_user_id=user_id).delete()
+            
+            # 2. Delete user's votes
+            Vote.query.filter_by(user_id=user_id).delete()
+            
+            # 3. Delete collaborations (but keep the projects)
+            Collaborator.query.filter_by(user_id=user_id).delete()
+            
+            # 4. Delete equity history records (as user)
+            from .models import EquityHistory
+            EquityHistory.query.filter_by(user_id=user_id).delete()
+            
+            # 5. Delete project equity allocations
+            from .models import ProjectEquity
+            ProjectEquity.query.filter_by(user_id=user_id).delete()
+            
+            # 6. Handle user's created projects - reassign or delete
+            projects_created = Project.query.filter_by(creator_id=user_id).all()
+            for project in projects_created:
+                # If project has other collaborators, assign to first collaborator
+                collaborators = Collaborator.query.filter_by(project_id=project.id).first()
+                if collaborators:
+                    project.creator_id = collaborators.user_id
+                else:
+                    # Delete project and its tasks if no collaborators
+                    Task.query.filter_by(project_id=project.id).delete()
+                    db.session.delete(project)
+            
+            # 7. Delete user's created tasks
+            Task.query.filter_by(creator_id=user_id).delete()
+            
+            # 8. Delete notifications
+            from .models import Notification
+            Notification.query.filter_by(user_id=user_id).delete()
+            
+            # 9. Delete profile image if exists
+            if current_user.profile_image_url:
+                try:
+                    old_image_path = os.path.join(current_app.root_path, 'static', current_user.profile_image_url)
+                    if os.path.exists(old_image_path):
+                        os.remove(old_image_path)
+                except Exception as e:
+                    current_app.logger.error(f"Error deleting profile image: {e}")
+            
+            # 10. Delete the user account
+            db.session.delete(current_user)
+            db.session.commit()
+            
+            # Log successful deletion
+            current_app.logger.info(f"User account deleted successfully: {username} (ID: {user_id})")
+            
+            # Send confirmation email (optional, if email service configured)
+            try:
+                from .email_service import send_email
+                send_email(
+                    to_email=user_email,
+                    subject='Account Deleted - KickthisUSs',
+                    body=f"Your account ({username}) has been permanently deleted as per your request.\n\nIf this was not you, please contact support immediately."
+                )
+            except Exception as e:
+                current_app.logger.error(f"Failed to send deletion confirmation email: {e}")
+            
+            # Logout user
+            from flask_login import logout_user
+            logout_user()
+            
+            flash('Il tuo account è stato eliminato definitivamente. Grazie per aver utilizzato KickthisUSs.', 'success')
+            return redirect(url_for('projects.home'))
+            
+        except Exception as e:
+            db.session.rollback()
+            current_app.logger.error(f"Error deleting user account {user_id}: {str(e)}")
+            flash('Si è verificato un errore durante la cancellazione dell\'account. Riprova o contatta il supporto.', 'error')
+            return render_template('users/delete_account.html')
+    
+    return render_template('users/delete_account.html')

@@ -21,9 +21,12 @@ class UserFactory(factory.alchemy.SQLAlchemyModelFactory):
     password_hash = factory.LazyFunction(lambda: generate_password_hash('testpassword'))
     profile_image_url = factory.LazyFunction(lambda: fake.image_url())
     created_at = factory.LazyFunction(lambda: fake.date_time_this_year())
+    email_verified = False  # Default non verificato
     
     @factory.post_generation
     def verify_email(obj, create, extracted, **kwargs):
         """Opzionalmente verifica l'email."""
         if extracted:
             obj.email_verified = True
+            if create:
+                db.session.commit()
