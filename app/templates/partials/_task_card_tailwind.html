@@ -1,5 +1,5 @@
 {# /app/templates/partials/_task_card_tailwind.html #}
-<div class="flex flex-col h-full bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden transition-all hover:shadow-xl hover:-translate-y-px relative">
+<div class="flex flex-col h-full bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden transition-all hover:shadow-lg hover:-translate-y-px relative">
     
     {# --- Bottone di Eliminazione --- #}
     {% if current_user.is_authenticated and task.creator_id == current_user.id %}
@@ -11,7 +11,7 @@
     </form>
     {% endif %}
 
-    <div class="p-5 flex flex-col flex-grow">
+    <div class="p-4 flex flex-col flex-grow">
         
         <div class="flex justify-between items-start mb-2">
             <div class="flex items-center gap-2">
@@ -36,6 +36,12 @@
                         Privato
                     </span>
                 {% endif %}
+                {% if task.github_synced_at %}
+                    <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-gray-800 text-white flex items-center gap-1 shadow-sm" title="Sincronizzato con repository esterno il {{ task.github_synced_at.strftime('%d/%m/%Y %H:%M') }}">
+                        <span class="material-icons text-xs">cloud_done</span>
+                        Sincronizzato
+                    </span>
+                {% endif %}
             </div>
             <span class="text-xs font-bold text-mclaren-orange">{{ "%.2f"|format(task.equity_reward) }}%</span>
         </div>
@@ -48,7 +54,7 @@
             {{ task.description | truncate(90) }}
         </p>
 
-        <div class="mt-4 pt-3 border-t border-gray-200 text-xs text-gray-500 space-y-2">
+    <div class="mt-3 pt-3 border-t border-gray-200 text-xs text-gray-500 space-y-2">
             <div class="flex items-center justify-between text-xs text-gray-500">
                 <span class="flex items-center gap-1.5">
                     {% if task.task_type == 'proposal' %}
@@ -71,7 +77,7 @@
     </div>
     
     {# --- SEZIONE DEI PULSANTI DI AZIONE --- #}
-    <div class="bg-gray-50 px-5 py-3">
+    <div class="bg-gray-50 px-4 py-3">
         {% set is_creator = current_user.is_authenticated and project.creator_id == current_user.id %}
         {% set is_collaborator = current_user.is_authenticated and current_user in project.collaborators %}
         {% set can_manage_suggested = is_creator or is_collaborator %}

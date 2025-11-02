@@ -533,6 +533,30 @@ class GitHubService:
         # TODO: Implementare generazione thumbnail reale
         return None
     
+    def verify_repo_access(self, repo_full_name: str) -> bool:
+        """
+        Verifica se il repository esiste e se abbiamo accesso
+        
+        Args:
+            repo_full_name: Nome completo del repo (owner/name)
+        
+        Returns:
+            True se il repo esiste ed è accessibile, False altrimenti
+        """
+        try:
+            url = f"{self.api_base}/repos/{repo_full_name}"
+            response = self._make_request('GET', url)
+            
+            if response and response.status_code == 200:
+                logger.info(f"Repository {repo_full_name} verificato con successo")
+                return True
+            else:
+                logger.warning(f"Repository {repo_full_name} non accessibile")
+                return False
+        except Exception as e:
+            logger.error(f"Errore verifica repository {repo_full_name}: {e}")
+            return False
+    
     def _sanitize_name(self, name: str) -> str:
         """Sanitize nome per GitHub (slug-safe)"""
         import re

@@ -861,3 +861,158 @@ class EquityConfiguration(db.Model):
 
     def __repr__(self):
         return f"<EquityConfig Project {self.project_id}: Team {self.team_percentage}%, Investors {self.investors_percentage}%, KickthisUSs {self.kickthisuss_percentage}%>"
+
+
+# ============================================
+# PROPOSTE LIBERE (FREE PROPOSALS)
+# ============================================
+
+# Tabella di associazione per task aggregati in una proposta
+proposal_tasks = db.Table('proposal_tasks',
+    db.Column('proposal_id', db.Integer, db.ForeignKey('free_proposals.id', ondelete='CASCADE'), primary_key=True),
+    db.Column('task_id', db.Integer, db.ForeignKey('task.id', ondelete='CASCADE'), primary_key=True)
+)
+
+
+class FreeProposal(db.Model):
+    """
+    Proposta libera che può:
+    1. Aggregare più task esistenti
+    2. Proporre un nuovo task non ancora definito
+    
+    Lo sviluppatore specifica l'equity richiesta e la soluzione verrà
+    gestita tramite GitHub come le soluzioni normali.
+    """
+    __tablename__ = 'free_proposals'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    project_id = db.Column(db.Integer, db.ForeignKey('project.id', ondelete='CASCADE'), nullable=False, index=True)
+    developer_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'), nullable=False, index=True)
+    
+    # Dettagli proposta
+    title = db.Column(db.String(200), nullable=False)
+    description = db.Column(db.Text, nullable=False)
+    
+    # Equity richiesta
+    equity_requested = db.Column(db.Float, nullable=False)
+    
+    # Tipo di proposta
+    proposal_type = db.Column(db.String(50), nullable=False, index=True)  # 'multi_task' o 'new_task'
+
+    # Tipologia di contenuto e metodo di pubblicazione (allineato al flusso soluzioni)
+    content_type = db.Column(db.String(20), nullable=False, default='software', index=True)
+    publish_method = db.Column(db.String(20), nullable=False, default='manual')
+    implementation_details = db.Column(db.Text)
+    primary_file_path = db.Column(db.String(2048))
+    
+    # Task esistenti aggregati (many-to-many) - solo se proposal_type = 'multi_task'
+    aggregated_tasks = db.relationship('Task', 
+                                      secondary=proposal_tasks,
+                                      backref=db.backref('proposals', lazy='dynamic'))
+    
+    # Dettagli se è un nuovo task proposto - solo se proposal_type = 'new_task'
+    new_task_details = db.Column(db.Text)
+    
+    # Status della proposta
+    status = db.Column(db.String(20), default='pending', nullable=False, index=True)  # pending, accepted, rejected
+    
+    # Motivazione della decisione
+    decision_note = db.Column(db.Text)
+    decided_at = db.Column(db.DateTime)
+    
+    # --- GITHUB INTEGRATION (come le soluzioni normali) ---
+    github_branch_name = db.Column(db.String(200), nullable=True)
+    github_pr_url = db.Column(db.String(500), nullable=True)
+    github_pr_number = db.Column(db.Integer, nullable=True)
+    github_commit_sha = db.Column(db.String(40), nullable=True)
+    github_synced_at = db.Column(db.DateTime, nullable=True)
+    
+    # Privacy
+    is_public = db.Column(db.Boolean, default=True, nullable=False)
+    
+    # Timestamps
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), index=True)
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    
+    # Relationships
+    project = db.relationship('Project', backref=db.backref('free_proposals', lazy='dynamic', cascade='all, delete-orphan'))
+    developer = db.relationship('User', backref=db.backref('submitted_proposals', lazy='dynamic'))
+    files = db.relationship('FreeProposalFile', back_populates='proposal', lazy='dynamic', cascade='all, delete-orphan')
+    
+    def __repr__(self):
+        return f'<FreeProposal {self.title} by User {self.developer_id} for Project {self.project_id}>'
+    
+    @property
+    def is_pending(self):
+        """Verifica se la proposta è in attesa di decisione"""
+        return self.status == 'pending'
+    
+    @property
+    def is_accepted(self):
+        """Verifica se la proposta è stata accettata"""
+        return self.status == 'accepted'
+    
+    @property
+    def is_rejected(self):
+        """Verifica se la proposta è stata rifiutata"""
+        return self.status == 'rejected'
+    
+    @property
+    def aggregated_task_count(self):
+        """Conta i task aggregati"""
+        return len(self.aggregated_tasks)
+    
+    @property
+    def total_aggregated_equity(self):
+        """Calcola l'equity totale dei task aggregati"""
+        if self.proposal_type != 'multi_task':
+            return 0.0
+        return sum(task.equity_reward or 0.0 for task in self.aggregated_tasks)
+    
+    @property
+    def proposal_type_display(self):
+        """Restituisce il tipo di proposta in formato leggibile"""
+        return {
+            'multi_task': '📦 Aggregazione Task',
+            'new_task': '✨ Nuovo Task Proposto'
+        }.get(self.proposal_type, self.proposal_type)
+    
+    @property
+    def status_badge_class(self):
+        """Restituisce la classe CSS per il badge di status"""
+        return {
+            'pending': 'warning',
+            'accepted': 'success',
+            'rejected': 'danger'
+        }.get(self.status, 'secondary')
+    
+    @property
+    def status_display(self):
+        """Restituisce lo status in formato leggibile"""
+        return {
+            'pending': '⏳ In Attesa',
+            'accepted': '✅ Accettata',
+            'rejected': '❌ Rifiutata'
+        }.get(self.status, self.status)
+
+
+class FreeProposalFile(db.Model):
+    """File allegati a una proposta libera (parità funzionale con SolutionFile)."""
+    __tablename__ = 'free_proposal_file'
+
+    id = db.Column(db.Integer, primary_key=True)
+    proposal_id = db.Column(db.Integer, db.ForeignKey('free_proposals.id', ondelete='CASCADE'), nullable=False, index=True)
+    original_filename = db.Column(db.String(255), nullable=False)
+    stored_filename = db.Column(db.String(255), nullable=False)
+    file_path = db.Column(db.String(2048), nullable=False)
+    file_type = db.Column(db.String(50), nullable=True)
+    content_type = db.Column(db.String(20), nullable=True)
+    content_category = db.Column(db.String(50), nullable=True)
+    file_size = db.Column(db.Integer, nullable=False)
+    mime_type = db.Column(db.String(128), nullable=False)
+    uploaded_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+    proposal = db.relationship('FreeProposal', back_populates='files')
+
+    def __repr__(self):
+        return f"<FreeProposalFile {self.original_filename}>"

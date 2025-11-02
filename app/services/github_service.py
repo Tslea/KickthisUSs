@@ -449,6 +449,153 @@ class GitHubService:
         
         return sanitized
     
+    def sync_task_to_github(self, task, project) -> bool:
+        """
+        Sincronizza un task con GitHub Issue (crea o aggiorna).
+        Funzione invisibile all'utente - funziona automaticamente.
+        
+        Args:
+            task: Task object da sincronizzare
+            project: Project object associato
+        
+        Returns:
+            True se sincronizzazione riuscita, False altrimenti
+        """
+        if not self.is_enabled():
+            logger.debug("GitHub service not enabled - skipping task sync")
+            return False
+        
+        if not project.github_repo_name:
+            logger.debug(f"Project {project.id} has no GitHub repository - skipping sync")
+            return False
+        
+        try:
+            # Prepara il body dell'issue
+            body_parts = []
+            
+            if task.description:
+                body_parts.append(f"**Descrizione:**\n{task.description}")
+            
+            if task.equity_reward and task.equity_reward > 0:
+                body_parts.append(f"\n**Equity Reward:** {task.equity_reward}%")
+            
+            if task.difficulty:
+                body_parts.append(f"\n**Difficoltà:** {task.difficulty}")
+            
+            if task.estimated_hours:
+                body_parts.append(f"\n**Ore stimate:** {task.estimated_hours}")
+            
+            body_parts.append(f"\n\n---\n*Sincronizzato automaticamente da KickThisUSS*")
+            body = "\n".join(body_parts)
+            
+            # Prepara labels
+            labels = []
+            if task.difficulty:
+                labels.append(f"difficulty:{task.difficulty}")
+            if task.status:
+                labels.append(f"status:{task.status}")
+            
+            # Se il task ha già un issue number, aggiorna
+            if task.github_issue_number:
+                result = self.update_issue(
+                    repo_name=project.github_repo_name,
+                    issue_number=task.github_issue_number,
+                    title=task.title,
+                    body=body,
+                    labels=labels,
+                    state='closed' if task.status == 'completed' else 'open'
+                )
+            else:
+                # Altrimenti crea nuovo issue
+                result = self.create_issue(
+                    repo_name=project.github_repo_name,
+                    title=task.title,
+                    body=body,
+                    labels=labels
+                )
+                
+                if result:
+                    # Salva issue number nel task
+                    task.github_issue_number = result['number']
+            
+            if result:
+                task.github_synced_at = datetime.utcnow()
+                logger.info(f"Task {task.id} synced to GitHub issue #{task.github_issue_number}")
+                return True
+            
+            return False
+            
+        except Exception as e:
+            logger.error(f"Failed to sync task {task.id} to GitHub: {e}")
+            return False
+    
+    def update_issue(
+        self,
+        repo_name: str,
+        issue_number: int,
+        title: Optional[str] = None,
+        body: Optional[str] = None,
+        labels: Optional[List[str]] = None,
+        state: Optional[str] = None
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Aggiorna un issue GitHub esistente.
+        
+        Args:
+            repo_name: Nome del repository
+            issue_number: Numero dell'issue da aggiornare
+            title: Nuovo titolo (opzionale)
+            body: Nuovo body (opzionale)
+            labels: Nuove labels (opzionale)
+            state: Nuovo stato 'open' o 'closed' (opzionale)
+        
+        Returns:
+            Dict con informazioni dell'issue aggiornato o None se errore
+        """
+        if not self.is_enabled():
+            logger.warning("GitHub service not enabled - cannot update issue")
+            return None
+        
+        try:
+            repo = self.get_repository(repo_name)
+            if not repo:
+                raise GitHubServiceError(f"Repository {repo_name} not found")
+            
+            issue = repo.get_issue(issue_number)
+            
+            # Prepara i parametri da aggiornare
+            update_params = {}
+            if title is not None:
+                update_params['title'] = title
+            if body is not None:
+                update_params['body'] = body
+            if labels is not None:
+                update_params['labels'] = labels
+            if state is not None:
+                update_params['state'] = state
+            
+            issue.edit(**update_params)
+            
+            logger.info(f"Updated issue #{issue_number} in {repo.full_name}")
+            
+            return {
+                'number': issue.number,
+                'title': issue.title,
+                'html_url': issue.html_url,
+                'state': issue.state,
+                'updated_at': issue.updated_at.isoformat() if issue.updated_at else None
+            }
+            
+        except RateLimitExceededException:
+            logger.error("GitHub API rate limit exceeded")
+            raise GitHubServiceError("Rate limit exceeded. Please try again later.")
+        except GithubException as e:
+            logger.error(f"GitHub API error updating issue: {e}")
+            raise GitHubServiceError(f"Failed to update issue: {e.data.get('message', str(e))}")
+        except Exception as e:
+            logger.error(f"Unexpected error updating issue: {e}")
+            raise GitHubServiceError(f"Unexpected error: {str(e)}")
+    
     def __repr__(self):
         status = "enabled" if self.is_enabled() else "disabled"
         org_info = f", org={self.org_name}" if self.org_name else ""

@@ -7,6 +7,10 @@ from datetime import datetime, timezone
 from .extensions import db, limiter
 from .models import Project, Task, Collaborator, Activity, Endorsement, ALLOWED_TASK_TYPES, SolutionFile
 from .ai_services import AI_SERVICE_AVAILABLE, generate_project_details_from_pitch, generate_suggested_tasks
+from .services.github_service import GitHubService
+
+# Inizializza GitHub service
+github_service = GitHubService()
 
 api_projects_bp = Blueprint('api_projects', __name__)
 
@@ -413,6 +417,13 @@ def complete_task_api(task_id):
         # Completa il task
         task.status = 'completed'
         db.session.commit()
+        
+        # 🔄 SINCRONIZZAZIONE AUTOMATICA CON GITHUB - chiude l'issue
+        try:
+            github_service.sync_task_to_github(task, project)
+            db.session.commit()
+        except Exception as e:
+            current_app.logger.warning(f"GitHub sync failed for completed task {task.id}: {e}")
         
         return jsonify({
             "success": True,

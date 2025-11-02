@@ -1,0 +1,1241 @@
+{% extends "base.html" %}
+
+{% block title %}Proponi Soluzione Libera - {{ project.name }}{% endblock %}
+
+{% block head_extra %}
+<style>
+/* Free Proposal Page – aligned with submit_solution aesthetics */
+.free-proposal-page {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #f9fafb 0%, #eef2f7 100%);
+    padding-bottom: 4rem;
+}
+
+.fp-hero {
+    background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%);
+    padding: 3.5rem 1.5rem 6rem;
+    color: #fff;
+    position: relative;
+    overflow: hidden;
+}
+
+.fp-hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: url("data:image/svg+xml,%3Csvg width='80' height='80' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M48 45v-5h-3v5h-5v3h5v5h3v-5h5v-3h-5zm0-40V0h-3v5h-5v3h5v5h3V8h5V5h-5zM8 45v-5H5v5H0v3h5v5h3v-5h5v-3H8zM8 5V0H5v5H0v3h5v5h3V8h5V5H8z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    opacity: 0.85;
+}
+
+.fp-hero-content {
+    position: relative;
+    max-width: 960px;
+    margin: 0 auto;
+    text-align: center;
+    z-index: 1;
+}
+
+.fp-breadcrumb {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6rem 1.1rem;
+    border-radius: 9999px;
+    background: rgba(255, 255, 255, 0.12);
+    backdrop-filter: blur(6px);
+    margin-bottom: 1.75rem;
+}
+
+.fp-breadcrumb a,
+.fp-breadcrumb span {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 0.9rem;
+    text-decoration: none;
+}
+
+.fp-breadcrumb a:hover {
+    color: #ffffff;
+}
+
+.fp-title {
+    font-size: 2.75rem;
+    font-weight: 900;
+    letter-spacing: -0.03em;
+    margin-bottom: 0.85rem;
+    text-shadow: 0 12px 32px rgba(15, 23, 42, 0.28);
+}
+
+.fp-subtitle {
+    font-size: 1.1rem;
+    color: rgba(255, 255, 255, 0.9);
+    margin-bottom: 1.75rem;
+}
+
+.fp-subtitle a {
+    color: #fff;
+    font-weight: 700;
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 4px;
+}
+
+.fp-hero-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1rem;
+}
+
+.fp-hero-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1rem 1.25rem;
+    border-radius: 1rem;
+    background: rgba(15, 23, 42, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.fp-hero-card h3 {
+    font-size: 0.95rem;
+    font-weight: 700;
+    margin: 0;
+    letter-spacing: 0.02em;
+}
+
+.fp-hero-card span {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.9rem;
+}
+
+.fp-container {
+    max-width: 960px;
+    margin: -4.5rem auto 0;
+    padding: 0 1.5rem;
+    position: relative;
+    z-index: 2;
+}
+
+.fp-card {
+    background: #fff;
+    border-radius: 1.75rem;
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    box-shadow: 0 18px 60px rgba(15, 23, 42, 0.12);
+    overflow: hidden;
+}
+
+.fp-card-body {
+    padding: 3rem;
+}
+
+.fp-section {
+    margin-bottom: 3rem;
+    padding-bottom: 2.5rem;
+    border-bottom: 2px solid #f1f5f9;
+}
+
+.fp-section:last-child {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+}
+
+.fp-step-header {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    margin-bottom: 1.75rem;
+}
+
+.fp-step-number {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 1.35rem;
+    box-shadow: 0 12px 26px rgba(37, 99, 235, 0.35);
+}
+
+.fp-step-title {
+    font-size: 1.55rem;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: -0.01em;
+}
+
+.fp-step-subtitle {
+    font-size: 0.95rem;
+    color: #64748b;
+    max-width: 560px;
+}
+
+.fp-type-grid {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+.fp-type-card {
+    position: relative;
+}
+
+.fp-type-input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.fp-type-content {
+    border: 2px solid #e2e8f0;
+    border-radius: 1.25rem;
+    padding: 1.6rem;
+    background: #fff;
+    transition: all 0.3s ease;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.fp-type-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.fp-type-description {
+    font-size: 0.9rem;
+    color: #64748b;
+}
+
+.fp-type-card:hover .fp-type-content {
+    border-color: #2563eb;
+    box-shadow: 0 16px 32px rgba(37, 99, 235, 0.12);
+    transform: translateY(-4px);
+}
+
+.fp-type-input:checked + .fp-type-content {
+    border-color: #2563eb;
+    background: linear-gradient(135deg, rgba(37, 99, 235, 0.08) 0%, rgba(79, 70, 229, 0.06) 100%);
+    box-shadow: 0 16px 32px rgba(37, 99, 235, 0.14);
+}
+
+.fp-type-input:checked + .fp-type-content::after {
+    content: '✓';
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%);
+    color: #fff;
+    font-size: 0.9rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
+}
+
+.fp-task-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1.25rem;
+}
+
+.fp-task-card {
+    position: relative;
+    border: 1px solid #e2e8f0;
+    border-radius: 1.25rem;
+    padding: 1.25rem 1.5rem;
+    background: #fff;
+    transition: all 0.25s ease;
+    cursor: pointer;
+}
+
+.fp-task-card:hover {
+    border-color: #1d4ed8;
+    box-shadow: 0 12px 26px rgba(29, 78, 216, 0.12);
+    transform: translateY(-3px);
+}
+
+.task-checkbox {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.fp-task-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+}
+
+.fp-task-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 0.75rem;
+}
+
+.fp-task-title {
+    font-weight: 700;
+    color: #0f172a;
+    font-size: 1rem;
+}
+
+.fp-task-equity {
+    display: inline-flex;
+    align-items: center;
+    font-weight: 700;
+    color: #1d4ed8;
+    background: rgba(29, 78, 216, 0.12);
+    border-radius: 9999px;
+    padding: 0.35rem 0.75rem;
+    font-size: 0.85rem;
+}
+
+.fp-task-description {
+    font-size: 0.9rem;
+    color: #64748b;
+}
+
+.fp-task-card.selected {
+    border-color: #2563eb;
+    box-shadow: 0 16px 35px rgba(37, 99, 235, 0.15);
+    background: linear-gradient(135deg, rgba(37, 99, 235, 0.08) 0%, rgba(79, 70, 229, 0.06) 100%);
+}
+
+.fp-task-card.selected::after {
+    content: '✓';
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%);
+    color: #fff;
+    font-size: 0.9rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
+}
+
+.fp-no-tasks {
+    border-radius: 1.25rem;
+    padding: 2rem;
+    background: rgba(37, 99, 235, 0.05);
+    border: 1px dashed rgba(37, 99, 235, 0.3);
+    text-align: center;
+    color: #1d4ed8;
+    font-weight: 600;
+}
+
+.fp-summary {
+    border-radius: 1.25rem;
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    background: rgba(99, 102, 241, 0.07);
+    padding: 1.25rem 1.5rem;
+    margin-top: 1.5rem;
+    transition: all 0.3s ease;
+}
+
+.fp-summary strong {
+    color: #1d4ed8;
+}
+
+.fp-newtask-card {
+    border-radius: 1.25rem;
+    border: 1px solid #e2e8f0;
+    background: #f8fafc;
+    padding: 1.6rem;
+}
+
+.fp-form-label {
+    font-weight: 700;
+    color: #0f172a;
+    margin-bottom: 0.5rem;
+}
+
+.fp-form-control {
+    border-radius: 1rem;
+    border: 1px solid #cbd5f5;
+    padding: 0.9rem 1rem;
+    font-size: 1rem;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.fp-form-control:focus {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.15);
+}
+
+.fp-helper-text {
+    font-size: 0.85rem;
+    color: #64748b;
+    margin-top: 0.4rem;
+}
+
+#equity-preview {
+    border-radius: 1.25rem;
+    border: 1px solid rgba(37, 99, 235, 0.2);
+    background: linear-gradient(135deg, rgba(37, 99, 235, 0.08) 0%, rgba(79, 70, 229, 0.06) 100%);
+    padding: 1.25rem 1.5rem;
+    margin-top: 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+}
+
+#equity-value {
+    font-size: 1.75rem;
+    font-weight: 800;
+    color: #1d4ed8;
+}
+
+.fp-submit-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    justify-content: flex-end;
+}
+
+.fp-btn-secondary {
+    border-radius: 9999px;
+    padding: 0.9rem 1.75rem;
+    font-weight: 600;
+    border: 1px solid #cbd5f5;
+    background: transparent;
+    color: #475569;
+    transition: all 0.2s ease;
+}
+
+.fp-btn-secondary:hover {
+    border-color: #2563eb;
+    color: #1d4ed8;
+    box-shadow: 0 12px 24px rgba(37, 99, 235, 0.14);
+}
+
+.fp-btn-primary {
+    border-radius: 9999px;
+    padding: 0.9rem 2.5rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%);
+    color: #fff;
+    border: none;
+    box-shadow: 0 22px 42px rgba(37, 99, 235, 0.28);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.fp-btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 28px 56px rgba(37, 99, 235, 0.32);
+}
+
+.fp-char-counter {
+    font-weight: 600;
+    margin-left: 0.35rem;
+}
+
+/* --- NUOVO: Sezione upload contenuti --- */
+.fpc-type-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.fpc-type-card {
+    position: relative;
+    border: 2px solid #e2e8f0;
+    border-radius: 1rem;
+    padding: 1.4rem 1rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    background: #fff;
+}
+
+.fpc-type-card:hover,
+.fpc-type-card.fpc-selected {
+    border-color: #2563eb;
+    box-shadow: 0 16px 32px rgba(37, 99, 235, 0.12);
+    background: linear-gradient(135deg, rgba(37, 99, 235, 0.08) 0%, rgba(79, 70, 229, 0.06) 100%);
+}
+
+.fpc-type-card input {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.fpc-type-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    margin: 0 auto 0.75rem;
+    border-radius: 0.85rem;
+    background: rgba(37, 99, 235, 0.12);
+}
+
+.fpc-type-title {
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.fpc-type-sub {
+    font-size: 0.8rem;
+    color: #64748b;
+}
+
+.fpc-tabs {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: #f1f5f9;
+    border-radius: 9999px;
+    padding: 0.35rem;
+    margin-bottom: 1.25rem;
+    flex-wrap: wrap;
+}
+
+.fpc-tab {
+    flex: 1;
+    border: none;
+    background: transparent;
+    padding: 0.65rem 1.2rem;
+    border-radius: 9999px;
+    font-weight: 600;
+    color: #64748b;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+}
+
+.fpc-tab-active {
+    background: #fff;
+    color: #2563eb;
+    box-shadow: 0 12px 24px rgba(37, 99, 235, 0.14);
+}
+
+.fpc-tab-content {
+    display: none;
+}
+
+.fpc-tab-content.fpc-visible {
+    display: block;
+}
+
+.fpc-dropzone {
+    border: 2px dashed rgba(37, 99, 235, 0.4);
+    border-radius: 1.25rem;
+    padding: 2.25rem 1.75rem;
+    text-align: center;
+    background: rgba(248, 250, 252, 0.9);
+    transition: all 0.25s ease;
+    cursor: pointer;
+}
+
+.fpc-dropzone:hover,
+.fpc-dropzone.fpc-drag {
+    border-style: solid;
+    border-color: #2563eb;
+    background: linear-gradient(135deg, rgba(37, 99, 235, 0.05) 0%, rgba(79, 70, 229, 0.08) 100%);
+    box-shadow: 0 16px 42px rgba(37, 99, 235, 0.14);
+}
+
+.fpc-dropzone-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.fpc-dropzone-sub {
+    color: #64748b;
+    margin-bottom: 1rem;
+}
+
+.fpc-file-list {
+    margin-top: 1.5rem;
+    display: grid;
+    gap: 0.75rem;
+}
+
+.fpc-file-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.75rem;
+    border: 1px solid rgba(148, 163, 184, 0.4);
+    border-radius: 0.85rem;
+    padding: 0.75rem 1rem;
+}
+
+.fpc-file-name {
+    font-weight: 600;
+    color: #0f172a;
+}
+
+.fpc-file-size {
+    font-size: 0.8rem;
+    color: #64748b;
+}
+
+.fpc-remove-btn {
+    border: none;
+    background: transparent;
+    color: #ef4444;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.fpc-textarea {
+    width: 100%;
+    border-radius: 1rem;
+    border: 1px solid #cbd5f5;
+    padding: 0.85rem 1rem;
+    resize: vertical;
+    font-family: 'Fira Code', 'SFMono-Regular', Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+}
+
+.fpc-code-counter {
+    margin-top: 0.35rem;
+    font-size: 0.8rem;
+    color: #64748b;
+}
+
+.fpc-helper {
+    font-size: 0.85rem;
+    color: #64748b;
+    margin-top: 0.5rem;
+}
+
+.fpc-hidden {
+    display: none;
+}
+
+@media (max-width: 768px) {
+    .fp-card-body {
+        padding: 2rem;
+    }
+
+    .fp-step-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .fp-hero-content {
+        text-align: left;
+    }
+
+    .fpc-tabs {
+        flex-direction: column;
+        align-items: stretch;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="free-proposal-page">
+    <section class="fp-hero">
+        <div class="fp-hero-content">
+            <nav aria-label="Percorso" class="fp-breadcrumb breadcrumb">
+                <a href="{{ url_for('projects.home') }}">Progetti</a>
+                <span>/</span>
+                <a href="{{ url_for('projects.project_detail', project_id=project.id) }}">{{ project.name }}</a>
+                <span>/</span>
+                <span>Proposta libera</span>
+            </nav>
+
+            <h1 class="fp-title">Proponi Soluzione Libera</h1>
+            <p class="fp-subtitle">
+                Condividi un contributo strutturato per <a href="{{ url_for('projects.project_detail', project_id=project.id) }}">{{ project.name }}</a>
+            </p>
+
+            <div class="fp-hero-grid">
+                <div class="fp-hero-card">
+                    <h3>Equity disponibile</h3>
+                    <span>{{ "%.2f"|format(available_equity) }}%</span>
+                </div>
+                <div class="fp-hero-card">
+                    <h3>Come funziona</h3>
+                    <span>Aggrega task esistenti o proponi una nuova iniziativa</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div class="fp-container">
+        <div class="fp-card">
+            <div class="fp-card-body">
+                                <form method="POST"
+                                            id="proposalForm"
+                                            action="{{ url_for('free_proposals.propose_free_solution', project_id=project.id) }}"
+                                            enctype="multipart/form-data"
+                                            onsubmit="return validateProposalForm(event)">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                    <section class="fp-section">
+                        <div class="fp-step-header">
+                            <div class="fp-step-number">1</div>
+                            <div>
+                                <div class="fp-step-title">Scegli il tipo di proposta</div>
+                                <p class="fp-step-subtitle">Decidi se aggregare task esistenti o suggerirne uno nuovo costruito su misura per il progetto.</p>
+                            </div>
+                        </div>
+
+                        <div class="fp-type-grid">
+                            <label class="fp-type-card">
+                                <input class="fp-type-input" type="radio" name="proposal_type" id="multi_task" value="multi_task" checked onchange="switchProposalType('multi_task')">
+                                <div class="fp-type-content">
+                                    <span class="fp-type-title">Aggrega Task Esistenti</span>
+                                    <span class="fp-type-description">Seleziona più task correlati e presentali con un'unica soluzione coordinata.</span>
+                                </div>
+                            </label>
+
+                            <label class="fp-type-card">
+                                <input class="fp-type-input" type="radio" name="proposal_type" id="new_task" value="new_task" onchange="switchProposalType('new_task')">
+                                <div class="fp-type-content">
+                                    <span class="fp-type-title">Proponi Nuovo Task</span>
+                                    <span class="fp-type-description">Suggerisci un'attività che manca e spiegane l'impatto per il progetto.</span>
+                                </div>
+                            </label>
+                        </div>
+                    </section>
+
+                    <section class="fp-section" id="multi-task-section">
+                        <div class="fp-step-header">
+                            <div class="fp-step-number">2</div>
+                            <div>
+                                <div class="fp-step-title">Seleziona i task da includere</div>
+                                <p class="fp-step-subtitle">Scegli i task che vuoi risolvere insieme. Calcoleremo automaticamente l'equity suggerita.</p>
+                            </div>
+                        </div>
+
+                        {% if available_tasks %}
+                            <div class="fp-task-grid">
+                                {% for task in available_tasks %}
+                                <label class="fp-task-card" for="task_{{ task.id }}">
+                                    <input class="task-checkbox" type="checkbox" name="task_ids" value="{{ task.id }}" id="task_{{ task.id }}" data-equity="{{ task.equity_reward }}" onchange="updateTaskSummary()">
+                                    <div class="fp-task-content">
+                                        <div class="fp-task-header">
+                                            <span class="fp-task-title">{{ task.title }}</span>
+                                            <span class="fp-task-equity">{{ task.equity_reward }}%</span>
+                                        </div>
+                                        <p class="fp-task-description">
+                                            {{ task.description[:140] }}{% if task.description|length > 140 %}...{% endif %}
+                                        </p>
+                                    </div>
+                                </label>
+                                {% endfor %}
+                            </div>
+
+                            <div class="fp-summary d-none" id="task-summary">
+                                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                                    <span><strong id="selected-count">0</strong> task selezionati</span>
+                                    <span>Equity totale consigliata: <strong id="total-equity">0.00</strong>%</span>
+                                </div>
+                            </div>
+                        {% else %}
+                            <div class="fp-no-tasks">Al momento non ci sono task disponibili da aggregare.</div>
+                        {% endif %}
+                    </section>
+
+                    <section class="fp-section d-none" id="new-task-section">
+                        <div class="fp-step-header">
+                            <div class="fp-step-number">2</div>
+                            <div>
+                                <div class="fp-step-title">Descrivi il nuovo task</div>
+                                <p class="fp-step-subtitle">Racconta cosa realizzerai, perché è utile al progetto e quali risultati porterai.</p>
+                            </div>
+                        </div>
+
+                        <div class="fp-newtask-card">
+                            <label for="new_task_details" class="fp-form-label">Dettagli del task proposto *</label>
+                            <textarea class="form-control fp-form-control" id="new_task_details" name="new_task_details" rows="6" placeholder="Descrivi la proposta, gli obiettivi, le milestone e il valore per il progetto..."></textarea>
+                            <p class="fp-helper-text">Minimo 50 caratteri. Suggerisci deliverable concreti e spiegane l'impatto.</p>
+                        </div>
+                    </section>
+
+                    <section class="fp-section">
+                        <div class="fp-step-header">
+                            <div class="fp-step-number">3</div>
+                            <div>
+                                <div class="fp-step-title">Definisci il contenuto della proposta</div>
+                                <p class="fp-step-subtitle">Scegli il tipo di contributo e allega file, codice o link GitHub proprio come nel flusso di pubblicazione delle soluzioni.</p>
+                            </div>
+                        </div>
+
+                        <div class="fpc-type-grid" id="contentTypeGrid">
+                            <label class="fpc-type-card fpc-selected">
+                                <input type="radio" name="content_type" value="software" checked onclick="selectContentType(this)">
+                                <div class="fpc-type-icon"><i class="bi bi-code-slash"></i></div>
+                                <div class="fpc-type-title">Software</div>
+                                <div class="fpc-type-sub">Codice, script, backend</div>
+                            </label>
+                            <label class="fpc-type-card">
+                                <input type="radio" name="content_type" value="design" onclick="selectContentType(this)">
+                                <div class="fpc-type-icon"><i class="bi bi-brush"></i></div>
+                                <div class="fpc-type-title">Design</div>
+                                <div class="fpc-type-sub">UI, logo, mockup</div>
+                            </label>
+                            <label class="fpc-type-card">
+                                <input type="radio" name="content_type" value="hardware" onclick="selectContentType(this)">
+                                <div class="fpc-type-icon"><i class="bi bi-cpu"></i></div>
+                                <div class="fpc-type-title">Hardware</div>
+                                <div class="fpc-type-sub">CAD, PCB, prototipi</div>
+                            </label>
+                            <label class="fpc-type-card">
+                                <input type="radio" name="content_type" value="documentation" onclick="selectContentType(this)">
+                                <div class="fpc-type-icon"><i class="bi bi-journal-text"></i></div>
+                                <div class="fpc-type-title">Documentazione</div>
+                                <div class="fpc-type-sub">Guide, manuali</div>
+                            </label>
+                            <label class="fpc-type-card">
+                                <input type="radio" name="content_type" value="media" onclick="selectContentType(this)">
+                                <div class="fpc-type-icon"><i class="bi bi-camera-video"></i></div>
+                                <div class="fpc-type-title">Media</div>
+                                <div class="fpc-type-sub">Video, audio</div>
+                            </label>
+                            <label class="fpc-type-card">
+                                <input type="radio" name="content_type" value="mixed" onclick="selectContentType(this)">
+                                <div class="fpc-type-icon"><i class="bi bi-collection"></i></div>
+                                <div class="fpc-type-title">Misto</div>
+                                <div class="fpc-type-sub">Pacchetti combinati</div>
+                            </label>
+                        </div>
+
+                        <div class="fpc-tabs" role="tablist">
+                            <button type="button" class="fpc-tab fpc-tab-active" data-tab="files" onclick="toggleContentTab(event, 'files')">
+                                <i class="bi bi-upload"></i> Carica file
+                            </button>
+                            <button type="button" class="fpc-tab" data-tab="code" onclick="toggleContentTab(event, 'code')">
+                                <i class="bi bi-code"></i> Incolla codice
+                            </button>
+                            <button type="button" class="fpc-tab" data-tab="pr" onclick="toggleContentTab(event, 'pr')">
+                                <i class="bi bi-link-45deg"></i> Link Pull Request
+                            </button>
+                        </div>
+
+                        <div id="fpc-tab-files" class="fpc-tab-content fpc-visible">
+                            <div class="fpc-dropzone" id="fpcDropzone" onclick="triggerProposalFileInput()" ondragover="handleProposalDrag(event)" ondragleave="handleProposalDragLeave(event)" ondrop="handleProposalDrop(event)">
+                                <div class="fpc-dropzone-title">Trascina qui i tuoi file</div>
+                                <div class="fpc-dropzone-sub">oppure clicca per selezionarli dal dispositivo</div>
+                            </div>
+                            <input type="file" name="files" id="fpcFileInput" class="fpc-hidden" multiple onchange="handleProposalFiles(this.files)">
+                            <div id="fpcFileList" class="fpc-file-list"></div>
+                            <p class="fpc-helper">Formato consigliato: zip, immagini, documenti, file CAD o qualsiasi allegato rilevante (max 100MB per file).</p>
+                        </div>
+
+                        <div id="fpc-tab-code" class="fpc-tab-content">
+                            <label class="fp-form-label" for="fpcCodeTextarea">Incolla il tuo codice (per auto-PR) *</label>
+                            <textarea class="fpc-textarea" id="fpcCodeTextarea" name="solution_code_auto" rows="12" placeholder="// Incolla qui il codice sorgente o lo snippet principale del tuo contributo"></textarea>
+                            <div id="fpcCodeCounter" class="fpc-code-counter">0 caratteri</div>
+                            <p class="fpc-helper">Se il progetto ha un repository GitHub collegato, genereremo automaticamente il fork, il branch e la Pull Request per te.</p>
+                        </div>
+
+                        <div id="fpc-tab-pr" class="fpc-tab-content">
+                            <label class="fp-form-label" for="fpcPrInput">URL della Pull Request GitHub</label>
+                            <input type="url" class="form-control fp-form-control" id="fpcPrInput" name="pull_request_url" placeholder="https://github.com/owner/repo/pull/123">
+                            <p class="fpc-helper">Se hai già creato manualmente una PR, inserisci qui il link così il team potrà valutarla subito.</p>
+                        </div>
+
+                        <div class="mt-4">
+                            <label for="solution_content" class="fp-form-label">Note tecniche aggiuntive (opzionale)</label>
+                            <textarea class="form-control fp-form-control" id="solution_content" name="solution_content" rows="5" placeholder="Dettaglia come vanno usati i file allegati, eventuali dipendenze o istruzioni di setup."></textarea>
+                        </div>
+                    </section>
+
+                    <section class="fp-section">
+                        <div class="fp-step-header">
+                            <div class="fp-step-number">4</div>
+                            <div>
+                                <div class="fp-step-title">Presenta la tua proposta</div>
+                                <p class="fp-step-subtitle">Definisci un titolo chiaro e una descrizione completa della soluzione.</p>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="title" class="fp-form-label">Titolo della proposta *</label>
+                            <input type="text" class="form-control fp-form-control" id="title" name="title" required minlength="5" maxlength="200" placeholder="Es: Refactoring completo API con copertura test">
+                            <p class="fp-helper-text">Un titolo conciso che descriva bene cosa farai (5-200 caratteri).</p>
+                        </div>
+
+                        <div class="mb-0">
+                            <label for="description" class="fp-form-label">Descrizione dettagliata *</label>
+                            <textarea class="form-control fp-form-control" id="description" name="description" rows="8" required minlength="50" oninput="updateCharCount()" placeholder="Spiega come affronterai l'attività, quali tecnologie userai e quali risultati garantirai."></textarea>
+                            <p class="fp-helper-text"><span id="desc-char-count">0</span><span class="fp-char-counter">/ 50 caratteri minimi</span></p>
+                        </div>
+                    </section>
+
+                    <section class="fp-section">
+                        <div class="fp-step-header">
+                            <div class="fp-step-number">5</div>
+                            <div>
+                                <div class="fp-step-title">Definisci l'equity richiesta</div>
+                                <p class="fp-step-subtitle">Richiedi una quota proporzionata al valore della tua proposta (max {{ "%.2f"|format(available_equity) }}%).</p>
+                            </div>
+                        </div>
+
+                        <div class="row g-3 align-items-end">
+                            <div class="col-md-6">
+                                <label for="equity_requested" class="fp-form-label">Equity desiderata *</label>
+                                <div class="input-group">
+                                    <input type="number" class="form-control fp-form-control" id="equity_requested" name="equity_requested" min="0.1" max="{{ available_equity }}" step="0.1" required value="5.0" oninput="updateEquityPreview()">
+                                    <span class="input-group-text">%</span>
+                                </div>
+                                <p class="fp-helper-text">Valore compreso tra 0.1% e {{ "%.2f"|format(available_equity) }}%.</p>
+                            </div>
+                        </div>
+
+                        <div id="equity-preview">
+                            <span>Con questa richiesta otterresti:</span>
+                            <span id="equity-value">5.0%</span>
+                        </div>
+                    </section>
+
+                    <section>
+                        <div class="fp-submit-actions">
+                            <a href="{{ url_for('projects.project_detail', project_id=project.id) }}" class="fp-btn-secondary btn btn-outline-secondary">Annulla</a>
+                            <button type="submit" class="fp-btn-primary btn btn-primary" id="submit-btn">Invia Proposta</button>
+                        </div>
+                    </section>
+
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// ========================================
+// FREE PROPOSALS - JavaScript Functions
+// Pattern in linea con submit_solution.html
+// ========================================
+
+let proposalUploadedFiles = [];
+const PROPOSAL_MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB
+
+// Gestione tipo contenuto
+function selectContentType(radio) {
+    document.querySelectorAll('.fpc-type-card').forEach(card => card.classList.remove('fpc-selected'));
+    const card = radio.closest('.fpc-type-card');
+    if (card) card.classList.add('fpc-selected');
+    radio.checked = true;
+}
+
+// Tabs upload/code/PR
+function toggleContentTab(event, tab) {
+    if (event) {
+        event.preventDefault();
+        event.currentTarget?.blur();
+    }
+    document.querySelectorAll('.fpc-tab').forEach(btn => btn.classList.remove('fpc-tab-active'));
+    if (event?.currentTarget) event.currentTarget.classList.add('fpc-tab-active');
+
+    document.querySelectorAll('.fpc-tab-content').forEach(block => block.classList.remove('fpc-visible'));
+    const target = document.getElementById(`fpc-tab-${tab}`);
+    if (target) target.classList.add('fpc-visible');
+}
+
+function triggerProposalFileInput() {
+    document.getElementById('fpcFileInput')?.click();
+}
+
+function handleProposalDrag(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    document.getElementById('fpcDropzone')?.classList.add('fpc-drag');
+}
+
+function handleProposalDragLeave(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    const dropzone = document.getElementById('fpcDropzone');
+    if (dropzone && (event.target === dropzone || event.relatedTarget === null)) {
+        dropzone.classList.remove('fpc-drag');
+    }
+}
+
+function handleProposalDrop(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    const dropzone = document.getElementById('fpcDropzone');
+    if (dropzone) dropzone.classList.remove('fpc-drag');
+
+    if (event.dataTransfer?.files?.length) {
+        handleProposalFiles(event.dataTransfer.files);
+    }
+}
+
+function handleProposalFiles(fileList) {
+    if (!fileList || !fileList.length) {
+        return;
+    }
+
+    const warnings = [];
+    Array.from(fileList).forEach(file => {
+        if (file.size > PROPOSAL_MAX_FILE_SIZE) {
+            warnings.push(`"${file.name}" supera il limite di 100MB e verrà ignorato.`);
+            return;
+        }
+
+        const duplicate = proposalUploadedFiles.some(existing => (
+            existing.name === file.name &&
+            existing.size === file.size &&
+            existing.lastModified === file.lastModified
+        ));
+
+        if (!duplicate) {
+            proposalUploadedFiles.push(file);
+        }
+    });
+
+    syncProposalFileInput();
+    renderProposalFiles();
+
+    if (warnings.length) {
+        alert(warnings.join('\n'));
+    }
+}
+
+function syncProposalFileInput() {
+    const input = document.getElementById('fpcFileInput');
+    if (!input) {
+        return;
+    }
+
+    const dataTransfer = new DataTransfer();
+    proposalUploadedFiles.forEach(file => dataTransfer.items.add(file));
+    input.files = dataTransfer.files;
+}
+
+function renderProposalFiles() {
+    const container = document.getElementById('fpcFileList');
+    if (!container) {
+        return;
+    }
+
+    container.innerHTML = '';
+
+    if (proposalUploadedFiles.length === 0) {
+        container.innerHTML = '<div class="text-muted small">Nessun file selezionato al momento.</div>';
+        return;
+    }
+
+    proposalUploadedFiles.forEach((file, index) => {
+        const item = document.createElement('div');
+        item.className = 'fpc-file-item';
+        item.innerHTML = `
+            <div>
+                <div class="fpc-file-name">${escapeHtml(file.name)}</div>
+                <div class="fpc-file-size">${formatFileSize(file.size)}</div>
+            </div>
+            <button type="button" class="fpc-remove-btn" onclick="removeProposalFile(${index})">Rimuovi</button>
+        `;
+        container.appendChild(item);
+    });
+}
+
+function removeProposalFile(index) {
+    proposalUploadedFiles.splice(index, 1);
+    syncProposalFileInput();
+    renderProposalFiles();
+}
+
+function formatFileSize(bytes) {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+    return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+function updateProposalCodeCounter() {
+    const textarea = document.getElementById('fpcCodeTextarea');
+    const counter = document.getElementById('fpcCodeCounter');
+    if (!textarea || !counter) {
+        return;
+    }
+    const count = textarea.value.length;
+    counter.textContent = `${count.toLocaleString()} caratteri`;
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    renderProposalFiles();
+    updateEquityPreview();
+    updateCharCount();
+    updateProposalCodeCounter();
+
+    const codeTextarea = document.getElementById('fpcCodeTextarea');
+    if (codeTextarea) {
+        codeTextarea.addEventListener('input', updateProposalCodeCounter);
+    }
+});
+
+// Toggle tra sezioni multi-task e new-task
+function switchProposalType(type) {
+    const multiSection = document.getElementById('multi-task-section');
+    const newSection = document.getElementById('new-task-section');
+    const summary = document.getElementById('task-summary');
+
+    if (type === 'multi_task') {
+        if (multiSection) multiSection.classList.remove('d-none');
+        if (newSection) newSection.classList.add('d-none');
+    } else if (type === 'new_task') {
+        if (multiSection) multiSection.classList.add('d-none');
+        if (newSection) newSection.classList.remove('d-none');
+        if (summary) summary.classList.add('d-none');
+    }
+}
+
+// Aggiorna summary dei task selezionati
+function updateTaskSummary() {
+    const allCheckboxes = document.querySelectorAll('.task-checkbox');
+    const checkedCheckboxes = document.querySelectorAll('.task-checkbox:checked');
+    const count = checkedCheckboxes.length;
+    const summary = document.getElementById('task-summary');
+    const selectedCount = document.getElementById('selected-count');
+    const totalEquity = document.getElementById('total-equity');
+    const equityInput = document.getElementById('equity_requested');
+    const equityValue = document.getElementById('equity-value');
+
+    let total = 0;
+    checkedCheckboxes.forEach(cb => {
+        total += parseFloat(cb.dataset.equity || 0);
+    });
+
+    allCheckboxes.forEach(cb => {
+        const card = cb.closest('.fp-task-card');
+        if (card) {
+            card.classList.toggle('selected', cb.checked);
+        }
+    });
+
+    if (count > 0 && summary) {
+        summary.classList.remove('d-none');
+        if (selectedCount) selectedCount.textContent = count;
+        if (totalEquity) totalEquity.textContent = total.toFixed(2);
+
+        const multiTaskRadio = document.getElementById('multi_task');
+        if (multiTaskRadio && multiTaskRadio.checked && equityInput) {
+            equityInput.value = total.toFixed(1);
+            if (equityValue) equityValue.textContent = total.toFixed(1) + '%';
+        }
+    } else if (summary) {
+        summary.classList.add('d-none');
+    }
+}
+
+// Aggiorna preview equity
+function updateEquityPreview() {
+    const equityInput = document.getElementById('equity_requested');
+    const equityValue = document.getElementById('equity-value');
+    if (equityInput && equityValue) {
+        equityValue.textContent = equityInput.value + '%';
+    }
+}
+
+// Conta caratteri descrizione
+function updateCharCount() {
+    const textarea = document.getElementById('description');
+    const charCount = document.getElementById('desc-char-count');
+    if (textarea && charCount) {
+        const count = textarea.value.length;
+        charCount.textContent = count;
+
+        if (count < 50) {
+            charCount.style.color = '#dc3545';
+        } else {
+            charCount.style.color = '#198754';
+        }
+    }
+}
+
+// Validazione form prima del submit
+function validateProposalForm(event) {
+    const title = document.getElementById('title');
+    const description = document.getElementById('description');
+    const equity = document.getElementById('equity_requested');
+    const proposalType = document.querySelector('input[name="proposal_type"]:checked');
+    const codeValue = document.getElementById('fpcCodeTextarea')?.value.trim() || '';
+    const prValue = document.getElementById('fpcPrInput')?.value.trim() || '';
+
+    if (!title || !title.value.trim()) {
+        event.preventDefault();
+        alert('⚠️ Il titolo è obbligatorio');
+        title?.focus();
+        return false;
+    }
+
+    if (!description || description.value.length < 50) {
+        event.preventDefault();
+        alert('⚠️ La descrizione deve essere di almeno 50 caratteri');
+        description?.focus();
+        return false;
+    }
+
+    if (!equity || equity.value <= 0) {
+        event.preventDefault();
+        alert('⚠️ Devi specificare l\'equity richiesta');
+        equity?.focus();
+        return false;
+    }
+
+    if (proposalType && proposalType.value === 'multi_task') {
+        const checked = document.querySelectorAll('.task-checkbox:checked');
+        if (checked.length === 0) {
+            event.preventDefault();
+            alert('⚠️ Seleziona almeno un task da aggregare');
+            return false;
+        }
+    } else {
+        const newTaskDetails = document.getElementById('new_task_details');
+        if (newTaskDetails && newTaskDetails.value.trim().length < 50) {
+            event.preventDefault();
+            alert('⚠️ La descrizione del nuovo task deve essere di almeno 50 caratteri');
+            newTaskDetails.focus();
+            return false;
+        }
+    }
+
+    const hasFileUploads = proposalUploadedFiles.length > 0;
+    if (!hasFileUploads && !codeValue && !prValue) {
+        event.preventDefault();
+        alert('⚠️ Carica almeno un file, incolla del codice oppure fornisci un link alla Pull Request.');
+        return false;
+    }
+
+    const submitBtn = document.getElementById('submit-btn');
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Invio in corso...';
+    }
+
+    return true;
+}
+</script>
+{% endblock %}

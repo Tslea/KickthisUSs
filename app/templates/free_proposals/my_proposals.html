@@ -1,0 +1,544 @@
+{% extends "base.html" %}
+
+{% block title %}Le Mie Proposte Libere{% endblock %}
+
+{% block head_extra %}
+<style>
+.fpm-page {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%);
+    padding-bottom: 4rem;
+}
+
+.fpm-hero {
+    background: linear-gradient(140deg, #1d4ed8 0%, #4338ca 100%);
+    padding: 3.25rem 1.5rem 5.25rem;
+    color: #fff;
+    position: relative;
+    overflow: hidden;
+}
+
+.fpm-hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: url("data:image/svg+xml,%3Csvg width='80' height='80' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.08'%3E%3Cpath d='M48 45v-5h-3v5h-5v3h5v5h3v-5h5v-3h-5zm0-40V0h-3v5h-5v3h5v5h3V8h5V5h-5zM8 45v-5H5v5H0v3h5v5h3v-5h5v-3H8zM8 5V0H5v5H0v3h5v5h3V8h5V5H8z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    opacity: 0.9;
+}
+
+.fpm-hero-content {
+    position: relative;
+    z-index: 1;
+    max-width: 1120px;
+    margin: 0 auto;
+}
+
+.fpm-hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.55rem 1.2rem;
+    border-radius: 9999px;
+    background: rgba(255, 255, 255, 0.16);
+    backdrop-filter: blur(6px);
+    font-weight: 600;
+    margin-bottom: 1.35rem;
+}
+
+.fpm-hero-title {
+    font-size: 2.8rem;
+    font-weight: 900;
+    letter-spacing: -0.03em;
+    margin-bottom: 1rem;
+    text-shadow: 0 14px 32px rgba(15, 23, 42, 0.28);
+}
+
+.fpm-hero-subtitle {
+    font-size: 1.05rem;
+    color: rgba(255, 255, 255, 0.92);
+    max-width: 720px;
+}
+
+.fpm-overview-grid {
+    margin-top: 2rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem;
+}
+
+.fpm-overview-card {
+    padding: 1.35rem 1.5rem;
+    border-radius: 1.25rem;
+    background: rgba(15, 23, 42, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+.fpm-overview-card span {
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.88);
+}
+
+.fpm-overview-card strong {
+    font-size: 1.45rem;
+}
+
+.fpm-container {
+    max-width: 1120px;
+    margin: -4rem auto 0;
+    padding: 0 1.5rem;
+    position: relative;
+    z-index: 2;
+}
+
+.fpm-card-shell {
+    background: #fff;
+    border-radius: 1.75rem;
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    box-shadow: 0 18px 60px rgba(15, 23, 42, 0.12);
+    padding: 2.5rem 2.5rem 2.75rem;
+}
+
+.fpm-tablist {
+    display: inline-flex;
+    gap: 0.75rem;
+    padding: 0.35rem;
+    border-radius: 9999px;
+    background: rgba(226, 232, 240, 0.8);
+    margin-bottom: 2.25rem;
+}
+
+.fpm-tab-link {
+    border: none;
+    background: transparent;
+    padding: 0.75rem 1.5rem;
+    border-radius: 9999px;
+    font-weight: 700;
+    color: #475569;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    transition: all 0.2s ease;
+}
+
+.fpm-tab-link.active {
+    background: #fff;
+    box-shadow: 0 12px 32px rgba(59, 130, 246, 0.18);
+    color: #1d4ed8;
+}
+
+.fpm-tab-link .badge {
+    background: rgba(37, 99, 235, 0.15);
+    color: #1d4ed8;
+}
+
+.fpm-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1.5rem;
+}
+
+.fpm-proposal {
+    border-radius: 1.35rem;
+    border: 1px solid #e2e8f0;
+    padding: 1.75rem;
+    background: linear-gradient(135deg, rgba(37, 99, 235, 0.06) 0%, rgba(99, 102, 241, 0.05) 100%);
+    box-shadow: 0 16px 42px rgba(37, 99, 235, 0.12);
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    height: 100%;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.fpm-proposal:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 22px 48px rgba(37, 99, 235, 0.16);
+}
+
+.fpm-proposal h5 {
+    margin: 0;
+    font-weight: 800;
+    color: #0f172a;
+    font-size: 1.15rem;
+}
+
+.fpm-proposal a {
+    text-decoration: none;
+    color: inherit;
+}
+
+.fpm-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    font-size: 0.9rem;
+    color: #64748b;
+}
+
+.fpm-meta span {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.fpm-description {
+    font-size: 0.92rem;
+    color: #475569;
+    min-height: 64px;
+}
+
+.fpm-footer {
+    margin-top: auto;
+    display: grid;
+    gap: 0.75rem;
+}
+
+.fpm-footer .badge {
+    align-self: flex-start;
+    border-radius: 9999px;
+    padding: 0.4rem 0.75rem;
+    font-weight: 600;
+}
+
+.fpm-footer .btn {
+    border-radius: 0.85rem;
+    font-weight: 700;
+}
+
+.fpm-empty {
+    border-radius: 1.35rem;
+    border: 1px dashed rgba(148, 163, 184, 0.5);
+    background: rgba(241, 245, 249, 0.9);
+    padding: 2.5rem;
+    text-align: center;
+    color: #475569;
+}
+
+.fpm-empty i {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+    color: #2563eb;
+}
+
+.fpm-empty a {
+    font-weight: 700;
+    color: #1d4ed8;
+}
+
+.fpm-filter {
+    display: inline-flex;
+    gap: 0.6rem;
+    padding: 0.4rem;
+    background: #f1f5f9;
+    border-radius: 9999px;
+    margin-bottom: 1.75rem;
+}
+
+.fpm-filter button {
+    border: none;
+    background: transparent;
+    padding: 0.55rem 1.15rem;
+    border-radius: 9999px;
+    font-weight: 600;
+    color: #475569;
+    transition: all 0.2s ease;
+}
+
+.fpm-filter button.active {
+    background: #fff;
+    color: #1d4ed8;
+    box-shadow: 0 12px 32px rgba(15, 23, 42, 0.12);
+}
+
+.fpm-project-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.45rem 0.85rem;
+    background: rgba(148, 163, 184, 0.25);
+    border-radius: 9999px;
+    font-size: 0.85rem;
+    color: #1e293b;
+}
+
+.fpm-project-indicator strong {
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.fpm-project-indicator button {
+    border: none;
+    background: transparent;
+    color: #1d4ed8;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 0;
+}
+
+.proposal-card.is-hidden {
+    display: none;
+}
+
+@media (max-width: 768px) {
+    .fpm-hero {
+        padding: 2.75rem 1.2rem 4.5rem;
+    }
+
+    .fpm-hero-title {
+        font-size: 2.2rem;
+    }
+
+    .fpm-card-shell {
+        padding: 1.75rem;
+    }
+
+    .fpm-tablist {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .fpm-tab-link {
+        flex: 1;
+        justify-content: center;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="fpm-page">
+    <header class="fpm-hero">
+        <div class="fpm-hero-content">
+            <div class="fpm-hero-badge">
+                <i class="bi bi-rocket-takeoff"></i> Free Proposal Hub
+            </div>
+            <h1 class="fpm-hero-title">Gestisci tutte le tue proposte libere</h1>
+            <p class="fpm-hero-subtitle">Controlla rapidamente lo stato delle idee inviate, monitora le richieste in arrivo sui tuoi progetti e coordina il prossimo passo con il tuo team.</p>
+
+            <div class="fpm-overview-grid">
+                <div class="fpm-overview-card">
+                    <span><i class="bi bi-send"></i> Proposte inviate</span>
+                    <strong>{{ submitted_proposals | length }}</strong>
+                </div>
+                <div class="fpm-overview-card">
+                    <span><i class="bi bi-inbox"></i> Proposte ricevute</span>
+                    <strong>{{ received_proposals | length }}</strong>
+                </div>
+                <div class="fpm-overview-card">
+                    <span><i class="bi bi-lightning-charge"></i> In attesa</span>
+                    <strong>{{ received_proposals | selectattr('status', 'equalto', 'pending') | list | length }}</strong>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="fpm-container">
+        <div class="fpm-card-shell">
+            <ul class="fpm-tablist nav" id="proposalTabs" role="tablist">
+                <li class="nav-item">
+                    <button class="nav-link fpm-tab-link active" id="submitted-tab" data-bs-toggle="tab" data-bs-target="#submitted" type="button" role="tab">
+                        <i class="bi bi-send"></i> Inviate
+                        {% if submitted_proposals %}<span class="badge">{{ submitted_proposals | length }}</span>{% endif %}
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link fpm-tab-link" id="received-tab" data-bs-toggle="tab" data-bs-target="#received" type="button" role="tab">
+                        <i class="bi bi-inbox"></i> Ricevute
+                        {% if received_proposals %}<span class="badge">{{ received_proposals | length }}</span>{% endif %}
+                    </button>
+                </li>
+            </ul>
+
+            <div class="tab-content" id="proposalTabsContent">
+                <div class="tab-pane fade show active" id="submitted" role="tabpanel" aria-labelledby="submitted-tab">
+                    {% if submitted_proposals %}
+                    <div class="fpm-grid">
+                        {% for proposal in submitted_proposals %}
+                        <div class="fpm-proposal" data-project-id="{{ proposal.project.id }}" data-project-name="{{ proposal.project.name }}">
+                            <div class="d-flex flex-wrap gap-2">
+                                <span class="badge bg-{{ proposal.status_badge_class }}">{{ proposal.status_display }}</span>
+                                <span class="badge bg-light text-dark">{{ proposal.proposal_type_display }}</span>
+                            </div>
+                            <h5>
+                                <a href="{{ url_for('free_proposals.view_free_proposal', proposal_id=proposal.id) }}">{{ proposal.title }}</a>
+                            </h5>
+                            <div class="fpm-meta">
+                                <span><i class="bi bi-folder"></i> <a href="{{ url_for('projects.project_detail', project_id=proposal.project.id) }}">{{ proposal.project.name }}</a></span>
+                                <span><i class="bi bi-calendar3"></i> {{ proposal.created_at.strftime('%d/%m/%Y') }}</span>
+                            </div>
+                            <div class="fpm-description">{{ proposal.description[:120] }}{% if proposal.description|length > 120 %}...{% endif %}</div>
+                            {% if proposal.proposal_type == 'multi_task' %}
+                            <div class="text-muted small">
+                                <i class="bi bi-check-square"></i> {{ proposal.aggregated_task_count }} task aggregati
+                            </div>
+                            {% endif %}
+                            <div class="fpm-footer">
+                                <span class="badge bg-primary">{{ proposal.equity_requested }}% equity</span>
+                                <a href="{{ url_for('free_proposals.view_free_proposal', proposal_id=proposal.id) }}" class="btn btn-outline-primary">Dettagli proposta</a>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="fpm-empty">
+                        <i class="bi bi-stars"></i>
+                        <h5>Ancora nessuna proposta inviata</h5>
+                        <p>Trova il progetto giusto e condividi la tua idea migliore. Il tuo prossimo contributo potrebbe partire da qui.</p>
+                        <a href="{{ url_for('projects.home') }}"><i class="bi bi-search"></i> Esplora nuovi progetti</a>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="tab-pane fade" id="received" role="tabpanel" aria-labelledby="received-tab">
+                    {% if received_proposals %}
+                    <div class="fpm-filter" role="group">
+                        <button type="button" class="active" data-filter-button data-status="all" onclick="filterProposals('all', this)">Tutte ({{ received_proposals | length }})</button>
+                        <button type="button" data-filter-button data-status="pending" onclick="filterProposals('pending', this)">In attesa ({{ received_proposals | selectattr('status', 'equalto', 'pending') | list | length }})</button>
+                        <button type="button" data-filter-button data-status="accepted" onclick="filterProposals('accepted', this)">Accettate ({{ received_proposals | selectattr('status', 'equalto', 'accepted') | list | length }})</button>
+                        <button type="button" data-filter-button data-status="rejected" onclick="filterProposals('rejected', this)">Rifiutate ({{ received_proposals | selectattr('status', 'equalto', 'rejected') | list | length }})</button>
+                    </div>
+                    <div id="project-filter-indicator" class="fpm-project-indicator" hidden>
+                        <span>Progetto <strong data-project-name></strong></span>
+                        <button type="button" aria-label="Rimuovi filtro progetto">Rimuovi</button>
+                    </div>
+
+                    <div class="fpm-grid">
+                        {% for proposal in received_proposals %}
+                        <div class="fpm-proposal proposal-card" data-status="{{ proposal.status }}" data-project-id="{{ proposal.project.id }}" data-project-name="{{ proposal.project.name }}">
+                            <div class="d-flex flex-wrap gap-2">
+                                <span class="badge bg-{{ proposal.status_badge_class }}">{{ proposal.status_display }}</span>
+                                <span class="badge bg-light text-dark">{{ proposal.proposal_type_display }}</span>
+                            </div>
+                            <h5>
+                                <a href="{{ url_for('free_proposals.view_free_proposal', proposal_id=proposal.id) }}">{{ proposal.title }}</a>
+                            </h5>
+                            <div class="fpm-meta">
+                                <span><i class="bi bi-folder"></i> <a href="{{ url_for('projects.project_detail', project_id=proposal.project.id) }}">{{ proposal.project.name }}</a></span>
+                                <span><i class="bi bi-person-circle"></i> {{ proposal.developer.username }}</span>
+                                <span><i class="bi bi-calendar3"></i> {{ proposal.created_at.strftime('%d/%m/%Y') }}</span>
+                            </div>
+                            <div class="fpm-description">{{ proposal.description[:120] }}{% if proposal.description|length > 120 %}...{% endif %}</div>
+                            {% if proposal.proposal_type == 'multi_task' %}
+                            <div class="text-muted small">
+                                <i class="bi bi-check-square"></i> {{ proposal.aggregated_task_count }} task aggregati
+                            </div>
+                            {% endif %}
+                            <div class="fpm-footer">
+                                <span class="badge bg-primary">{{ proposal.equity_requested }}% equity</span>
+                                <a href="{{ url_for('free_proposals.view_free_proposal', proposal_id=proposal.id) }}" class="btn {% if proposal.status == 'pending' %}btn-warning{% else %}btn-outline-primary{% endif %}">
+                                    {% if proposal.status == 'pending' %}
+                                    <i class="bi bi-exclamation-circle"></i> Valuta proposta
+                                    {% else %}
+                                    Dettagli proposta
+                                    {% endif %}
+                                </a>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="fpm-empty">
+                        <i class="bi bi-bell"></i>
+                        <h5>Nessuna proposta ricevuta</h5>
+                        <p>Quando altri creator proporranno la loro soluzione ai tuoi progetti la vedrai qui, pronta per essere valutata.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let activeStatusFilter = 'all';
+    let activeProjectFilter = null;
+
+    function updateProposalVisibility() {
+        const cards = document.querySelectorAll('.proposal-card');
+        cards.forEach(card => {
+            const matchesStatus = activeStatusFilter === 'all' || card.dataset.status === activeStatusFilter;
+            const matchesProject = !activeProjectFilter || card.dataset.projectId === activeProjectFilter;
+            card.classList.toggle('is-hidden', !(matchesStatus && matchesProject));
+        });
+
+        const indicator = document.getElementById('project-filter-indicator');
+        if (!indicator) {
+            return;
+        }
+
+        if (activeProjectFilter) {
+            const sampleCard = document.querySelector(`.proposal-card[data-project-id="${activeProjectFilter}"]`);
+            const nameTarget = indicator.querySelector('[data-project-name]');
+            if (sampleCard && nameTarget) {
+                nameTarget.textContent = sampleCard.dataset.projectName || '';
+                indicator.hidden = false;
+            } else {
+                indicator.hidden = true;
+            }
+        } else {
+            indicator.hidden = true;
+        }
+    }
+
+    function filterProposals(status, button) {
+        activeStatusFilter = status;
+        document.querySelectorAll('[data-filter-button]').forEach(btn => btn.classList.toggle('active', btn === button));
+        updateProposalVisibility();
+    }
+
+    function setProjectFilter(projectId) {
+        activeProjectFilter = projectId;
+        updateProposalVisibility();
+    }
+
+    function clearProjectFilter() {
+        activeProjectFilter = null;
+        updateProposalVisibility();
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const params = new URLSearchParams(window.location.search);
+        const viewParam = params.get('view');
+        const projectParam = params.get('project_id');
+
+        const receivedTabButton = document.getElementById('received-tab');
+        if (receivedTabButton) {
+            receivedTabButton.addEventListener('shown.bs.tab', updateProposalVisibility);
+        }
+
+        if (viewParam === 'received' && receivedTabButton) {
+            if (window.bootstrap && bootstrap.Tab) {
+                const tabInstance = new bootstrap.Tab(receivedTabButton);
+                tabInstance.show();
+            } else {
+                receivedTabButton.click();
+            }
+        }
+
+        const indicator = document.getElementById('project-filter-indicator');
+        if (indicator) {
+            const clearButton = indicator.querySelector('button');
+            if (clearButton) {
+                clearButton.addEventListener('click', (event) => {
+                    event.preventDefault();
+                    clearProjectFilter();
+                    const url = new URL(window.location.href);
+                    url.searchParams.delete('project_id');
+                    history.replaceState({}, '', url);
+                });
+            }
+        }
+
+        if (projectParam) {
+            setProjectFilter(projectParam);
+        } else {
+            updateProposalVisibility();
+        }
+    });
+    </script>
+</script>
+{% endblock %}

@@ -1,5 +1,5 @@
 from flask import Blueprint, jsonify, request, current_app
-from flask_login import login_required
+from flask_login import login_required, current_user
 from models import Project, Solution
 from services.github_service import get_github_service
 from config.github_config import GITHUB_ENABLED
@@ -154,3 +154,60 @@ def toggle_github_sync(project_id):
         'github_sync_enabled': project.github_sync_enabled,
         'message': 'GitHub sync ' + ('enabled' if enabled else 'disabled')
     })
+
+
+@api_github_bp.route('/project/<int:project_id>/connect-repo', methods=['POST'])
+@login_required
+def connect_repo(project_id):
+    """Collega un repository GitHub esistente al progetto"""
+    from app import db
+    from flask_login import current_user
+    
+    project = Project.query.get_or_404(project_id)
+    
+    # Verifica che l'utente sia il creatore del progetto
+    if project.creator_id != current_user.id:
+        return jsonify({'success': False, 'message': 'Non autorizzato'}), 403
+    
+    data = request.json
+    repo_full_name = data.get('repo_full_name')
+    
+    if not repo_full_name or '/' not in repo_full_name:
+        return jsonify({'success': False, 'message': 'Nome repository non valido'}), 400
+    
+    # Verifica che il repository esista su GitHub
+    if GITHUB_ENABLED:
+        try:
+            github_service = get_github_service()
+            # Test connessione al repo
+            repo_exists = github_service.verify_repo_access(repo_full_name)
+            if not repo_exists:
+                return jsonify({
+                    'success': False,
+                    'message': 'Repository non trovato o non accessibile. Verifica il nome e i permessi.'
+                }), 404
+        except Exception as e:
+            current_app.logger.error(f"Errore verifica repository: {e}")
+            return jsonify({
+                'success': False,
+                'message': f'Errore durante la verifica: {str(e)}'
+            }), 500
+    
+    # Salva il nome del repository
+    project.github_repo_name = repo_full_name
+    project.github_repo_url = f'https://github.com/{repo_full_name}'
+    
+    try:
+        db.session.commit()
+        return jsonify({
+            'success': True,
+            'message': 'Repository collegato con successo!',
+            'repo_name': repo_full_name
+        })
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Errore salvataggio repository: {e}")
+        return jsonify({
+            'success': False,
+            'message': 'Errore durante il salvataggio'
+        }), 500

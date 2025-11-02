@@ -21,6 +21,7 @@ from .api_uploads import api_uploads_bp  # Nuova importazione per uploads
 from .routes_wiki import wiki_bp  # Nuova importazione per la Wiki
 from .routes_investments import investments_bp  # Nuova importazione per Investimenti
 from .routes_health import health_bp  # Health check endpoint
+# NOTE: free_proposals_bp importato dentro create_app() per evitare problemi nei test
 from . import errors
 from . import utils
 
@@ -163,6 +164,9 @@ def create_app(config_class=Config):
     from .routes_notifications import notifications_bp
     from .api_ai_wiki import api_ai_wiki
     from .api_ai_projects import api_ai_projects
+    from .routes_free_proposals import free_proposals_bp  # Import qui per evitare problemi nei test
+    from .api_free_proposals import api_free_proposals_bp
+    
     app.register_blueprint(auth_bp, url_prefix='/auth')
     app.register_blueprint(projects_bp, url_prefix='/')
     app.register_blueprint(tasks_bp, url_prefix='/tasks')
@@ -170,6 +174,7 @@ def create_app(config_class=Config):
     app.register_blueprint(general_bp, url_prefix='/')  # Registrazione blueprint pagine generali
     app.register_blueprint(api_solutions_bp, url_prefix='/api')
     app.register_blueprint(api_projects_bp, url_prefix='/api')
+    app.register_blueprint(api_free_proposals_bp, url_prefix='/api')
     app.register_blueprint(api_help_bp, url_prefix='/')  # Registrazione blueprint aiuto AI
     app.register_blueprint(notifications_bp, url_prefix='/')
     app.register_blueprint(invites_bp, url_prefix='/')  # Registrazione blueprint inviti
@@ -179,6 +184,7 @@ def create_app(config_class=Config):
     app.register_blueprint(health_bp, url_prefix='/')  # Health check endpoints
     app.register_blueprint(api_ai_wiki, url_prefix='/api')  # AI Wiki functionality
     app.register_blueprint(api_ai_projects, url_prefix='/api')  # AI Project guides
+    app.register_blueprint(free_proposals_bp, url_prefix='/')  # Free proposals
 
     # Registra i gestori di errore
     app.register_error_handler(401, errors.unauthorized_error)

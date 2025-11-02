@@ -208,6 +208,83 @@ class EquityService:
         )
         
         return solver_equity
+
+    @staticmethod
+    def distribute_free_proposal_equity(proposal, changed_by_user_id=None):
+        """Distribute equity when a free proposal is accepted."""
+        project = proposal.project
+        developer_id = proposal.developer_id
+        equity_amount = proposal.equity_requested
+
+        if equity_amount <= 0:
+            current_app.logger.info(
+                f'Free proposal {proposal.id} requests no equity, skipping distribution'
+            )
+            return None
+
+        if not project.can_distribute_equity(equity_amount):
+            available = project.get_available_equity()
+            raise ValueError(
+                f'Cannot distribute {equity_amount}% equity. Only {available}% available.'
+            )
+
+        equity_record = ProjectEquity.query.filter_by(
+            project_id=project.id,
+            user_id=developer_id
+        ).first()
+
+        equity_before = 0.0
+        if not equity_record:
+            equity_record = ProjectEquity(
+                project_id=project.id,
+                user_id=developer_id,
+                equity_percentage=0.0,
+                earned_from=''
+            )
+            db.session.add(equity_record)
+        else:
+            equity_before = equity_record.equity_percentage
+
+        equity_record.equity_percentage += equity_amount
+        equity_after = equity_record.equity_percentage
+        equity_record.last_updated = datetime.now(timezone.utc)
+
+        source = f'free_proposal_{proposal.id}'
+        if equity_record.earned_from:
+            existing_sources = [s for s in equity_record.earned_from.split(',') if s]
+            if source not in existing_sources:
+                equity_record.earned_from = equity_record.earned_from + f',{source}'
+        else:
+            equity_record.earned_from = source
+
+        EquityService._log_equity_change(
+            project_id=project.id,
+            user_id=developer_id,
+            action='grant',
+            equity_change=equity_amount,
+            equity_before=equity_before,
+            equity_after=equity_after,
+            reason=f'Free proposal "{proposal.title}" accepted',
+            source_type='free_proposal',
+            source_id=proposal.id,
+            changed_by_user_id=changed_by_user_id
+        )
+
+        collaborator = Collaborator.query.filter_by(
+            project_id=project.id,
+            user_id=developer_id
+        ).first()
+
+        if collaborator:
+            collaborator.equity_share = equity_record.equity_percentage
+
+        db.session.commit()
+
+        current_app.logger.info(
+            f'Distributed {equity_amount}% equity to user {developer_id} for free proposal {proposal.id}'
+        )
+
+        return equity_record
     
     @staticmethod
     def get_cap_table(project):

@@ -2,8 +2,19 @@
 
 {% block title %}{{ project.name }}{% endblock %}
 
+{% block head_extra %}
+<style>
+.task-progress-bar-fill {
+    width: var(--progress-value, 0%);
+}
+</style>
+{% endblock %}
+
 {% block content %}
 <main class="bg-slate-50 flex-1 py-8">
+    {% set is_creator = current_user.is_authenticated and current_user.id == project.creator_id %}
+    {% set collaborator_entry = project.collaborators.filter_by(user_id=current_user.id).first() if current_user.is_authenticated else None %}
+    {% set is_collaborator = collaborator_entry is not none %}
     <div class="p-4 md:p-8">
         <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
 
@@ -151,7 +162,7 @@
                                                     <span>Già Votato</span>
                                                 </button>
                                             {% else %}
-                                                <button onclick="voteProject({{ project.id }}, this)" 
+                                                <button onclick="voteProject({{ project.id }}, this);" 
                                                         class="inline-flex items-center px-3 py-2 text-sm font-semibold bg-gradient-to-r from-green-500 to-blue-600 hover:from-green-600 hover:to-blue-700 text-white rounded-lg transition duration-300 space-x-2">
                                                     <span>🗳️</span>
                                                     <span>Vota Progetto</span>
@@ -172,6 +183,24 @@
                     </div>
                 </section>
 
+                {# --- SEZIONE PROPOSTE LIBERE --- #}
+                {% if is_creator or is_collaborator %}
+                <section class="bg-white border border-blue-100 rounded-xl p-5 shadow-sm flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                    <div>
+                        <h2 class="text-lg font-semibold text-blue-900 flex items-center gap-2">
+                            <span class="material-icons text-2xl text-blue-600">rocket_launch</span>
+                            Proposte libere
+                        </h2>
+                        <p class="text-sm text-blue-600 mt-1">Apri la dashboard dedicata per gestire le idee ricevute.</p>
+                    </div>
+                    <a href="{{ url_for('free_proposals.my_proposals', view='received', project_id=project.id) }}"
+                       class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-semibold shadow hover:bg-blue-700 transition">
+                        <span class="material-icons text-base">open_in_new</span>
+                        Gestisci proposte
+                    </a>
+                </section>
+                {% endif %}
+
                 {# --- SEZIONE TASK COMPLETATI --- #}
                 {% if completed_tasks %}
                 <section class="bg-gradient-to-br from-green-50 to-cyan-50 p-6 md:p-8 rounded-xl shadow-lg border border-green-200">
@@ -179,7 +208,7 @@
                         <span class="material-icons text-3xl">verified</span>
                         Hall of Fame: Task Completati
                     </h2>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
                         {% for task in completed_tasks %}
                             {% include 'partials/_task_card_tailwind.html' with context %}
                         {% endfor %}
@@ -219,6 +248,15 @@
                                 <a href="{{ url_for('tasks.add_task_form', project_id=project.id) }}" class="bg-mclaren-orange text-white px-4 py-2 rounded-lg hover:bg-mclaren-orange-darker transition-colors font-semibold text-sm flex items-center gap-2 shadow-sm">
                                     <span class="material-icons text-base">add</span>
                                     Aggiungi Task Manuale
+                                </a>
+                            </div>
+                        {% elif current_user.is_authenticated and current_user.id != project.creator_id %}
+                            {# Pulsante per sviluppatori esterni #}
+                            <div class="flex items-center gap-2">
+                                <a href="{{ url_for('free_proposals.propose_free_solution', project_id=project.id) }}" 
+                                   class="bg-green-500 text-white px-5 py-2.5 rounded-lg hover:bg-green-600 transition-all duration-300 font-semibold text-sm flex items-center gap-2 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">
+                                    <span class="material-icons text-base">rocket_launch</span>
+                                    Proponi Soluzione Libera
                                 </a>
                             </div>
                         {% endif %}
@@ -314,7 +352,7 @@
                                     {% if tasks_in_phase %}
                                     <div id="phase-{{ phase_key }}">
                                         <h3 class="font-bold text-xl text-gray-700 mb-4 pb-2 border-b-2 border-mclaren-orange">{{ phase_name }}</h3>
-                                        <div id="phase-grid-{{ phase_key }}" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div id="phase-grid-{{ phase_key }}" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
                                             {% for task in tasks_in_phase %}
                                                 {% set is_creator = current_user.is_authenticated and current_user.id == project.creator_id %}
                                                 {% set is_collaborator = current_user.is_authenticated and current_user in project.collaborators %}
@@ -485,9 +523,8 @@
                                 <span>Progresso</span>
                                 <span>{{ "%.0f"|format((completed_count / total_count) * 100) }}%</span>
                             </div>
-                            <div class="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
-                                <div class="bg-gradient-to-r from-green-500 to-emerald-600 h-2.5 rounded-full transition-all duration-500" 
-                                     style="width: {{ (completed_count / total_count) * 100 }}%"></div>
+                            <div class="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden task-progress-bar" style="--progress-value: {{ ((completed_count / total_count) * 100)|round(2) }}%;">
+                                <div class="bg-gradient-to-r from-green-500 to-emerald-600 h-2.5 rounded-full transition-all duration-500 task-progress-bar-fill"></div>
                             </div>
                         </div>
                         {% endif %}
@@ -769,7 +806,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         taskPhasesContainer.insertAdjacentHTML('beforeend', `
                             <div id="phase-${task.phase}">
                                 <h3 class="font-bold text-xl text-gray-700 mb-4 pb-2 border-b-2 border-mclaren-orange">${PHASE_NAMES[task.phase] || task.phase}</h3>
-                                <div id="phase-grid-${task.phase}" class="grid grid-cols-1 md:grid-cols-2 gap-6"></div>
+                                <div id="phase-grid-${task.phase}" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5"></div>
                             </div>
                         `);
                         phaseGrid = document.getElementById(`phase-grid-${task.phase}`);
@@ -1215,6 +1252,79 @@ document.addEventListener('DOMContentLoaded', function() {
         switchToListView(); // Default to list view if no preference or 'list'
     }
 });
+
+// === GITHUB CONFIGURATION FUNCTIONS ===
+function addGithubUrl() {
+    const repoUrl = prompt('Inserisci l\'URL del repository GitHub (es: https://github.com/username/repo):');
+    if (!repoUrl) return;
+    
+    // Estrai owner/repo dall'URL
+    const match = repoUrl.match(/github\.com\/([^\/]+\/[^\/]+)/);
+    if (!match) {
+        showNotification('error', 'URL non valido. Usa il formato: https://github.com/username/repository');
+        return;
+    }
+    
+    const repoFullName = match[1].replace(/\.git$/, ''); // Rimuovi .git se presente
+    
+    // Invia richiesta per collegare il repository
+    fetch(`/api/github/project/{{ project.id }}/connect-repo`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify({ repo_full_name: repoFullName })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('success', '🎉 Repository collegato con successo!');
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            showNotification('error', data.message || 'Errore durante il collegamento');
+        }
+    })
+    .catch(error => {
+        console.error('Errore:', error);
+        showNotification('error', 'Errore di connessione al server');
+    });
+}
+
+function editGithubUrl() {
+    const currentRepo = '{{ project.github_repo_name }}';
+    const newRepoUrl = prompt('Modifica l\'URL del repository:', `https://github.com/${currentRepo}`);
+    if (!newRepoUrl || newRepoUrl === `https://github.com/${currentRepo}`) return;
+    
+    const match = newRepoUrl.match(/github\.com\/([^\/]+\/[^\/]+)/);
+    if (!match) {
+        showNotification('error', 'URL non valido');
+        return;
+    }
+    
+    const repoFullName = match[1].replace(/\.git$/, '');
+    
+    fetch(`/api/github/project/{{ project.id }}/connect-repo`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify({ repo_full_name: repoFullName })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('success', 'Repository aggiornato!');
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            showNotification('error', data.message || 'Errore durante l\'aggiornamento');
+        }
+    })
+    .catch(error => {
+        showNotification('error', 'Errore di connessione');
+    });
+}
 
 
 </script>

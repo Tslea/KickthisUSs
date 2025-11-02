@@ -1,0 +1,823 @@
+{% extends "base.html" %}
+
+{% block title %}{{ proposal.title }} - Proposta Libera{% endblock %}
+
+{% block head_extra %}
+<style>
+.fpv-page {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%);
+    padding-bottom: 4rem;
+}
+
+.fpv-hero {
+    background: linear-gradient(140deg, #1d4ed8 0%, #4f46e5 100%);
+    padding: 3.25rem 1.5rem 5.5rem;
+    color: #fff;
+    position: relative;
+    overflow: hidden;
+}
+
+.fpv-hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: url("data:image/svg+xml,%3Csvg width='80' height='80' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.06'%3E%3Cpath d='M48 45v-5h-3v5h-5v3h5v5h3v-5h5v-3h-5zm0-40V0h-3v5h-5v3h5v5h3V8h5V5h-5zM8 45v-5H5v5H0v3h5v5h3v-5h5v-3H8zM8 5V0H5v5H0v3h5v5h3V8h5V5H8z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    opacity: 0.9;
+}
+
+.fpv-hero-content {
+    position: relative;
+    z-index: 1;
+    max-width: 980px;
+    margin: 0 auto;
+}
+
+.fpv-breadcrumb {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6rem 1.2rem;
+    border-radius: 9999px;
+    background: rgba(255, 255, 255, 0.12);
+    backdrop-filter: blur(6px);
+    margin-bottom: 1.75rem;
+}
+
+.fpv-breadcrumb a,
+.fpv-breadcrumb span {
+    color: rgba(255, 255, 255, 0.92);
+    text-decoration: none;
+    font-size: 0.95rem;
+}
+
+.fpv-breadcrumb a:hover {
+    color: #fff;
+}
+
+.fpv-status-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    margin-bottom: 1.5rem;
+}
+
+.fpv-status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.5rem 1.1rem;
+    border-radius: 9999px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    background: rgba(15, 23, 42, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.fpv-hero-title {
+    font-size: 2.85rem;
+    font-weight: 900;
+    line-height: 1.1;
+    letter-spacing: -0.03em;
+    text-shadow: 0 14px 32px rgba(15, 23, 42, 0.28);
+    margin-bottom: 1rem;
+}
+
+.fpv-hero-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 0.95rem;
+}
+
+.fpv-hero-meta span {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.fpv-container {
+    max-width: 1100px;
+    margin: -4.25rem auto 0;
+    padding: 0 1.5rem;
+    position: relative;
+    z-index: 2;
+}
+
+.fpv-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+    gap: 1.5rem;
+}
+
+.fpv-card {
+    background: #fff;
+    border-radius: 1.75rem;
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    box-shadow: 0 18px 60px rgba(15, 23, 42, 0.12);
+    padding: 2.75rem;
+}
+
+.fpv-section {
+    margin-bottom: 2.75rem;
+}
+
+.fpv-section:last-child {
+    margin-bottom: 0;
+}
+
+.fpv-section-title {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    font-size: 1.35rem;
+    font-weight: 800;
+    color: #0f172a;
+    margin-bottom: 1rem;
+}
+
+.fpv-section-title i {
+    font-size: 1.35rem;
+    color: #2563eb;
+}
+
+.fpv-description {
+    font-size: 1.05rem;
+    line-height: 1.75;
+    color: #334155;
+}
+
+.fpv-task-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1rem;
+}
+
+.fpv-task-card {
+    border-radius: 1.1rem;
+    border: 1px solid #e2e8f0;
+    padding: 1.5rem;
+    background: linear-gradient(135deg, rgba(37, 99, 235, 0.06) 0%, rgba(99, 102, 241, 0.05) 100%);
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    box-shadow: 0 10px 30px rgba(37, 99, 235, 0.12);
+}
+
+.fpv-task-card h6 {
+    margin: 0;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.fpv-task-card p {
+    margin: 0;
+    color: #64748b;
+    font-size: 0.9rem;
+}
+
+.fpv-task-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.85rem;
+    color: #475569;
+}
+
+.fpv-alert {
+    margin-top: 1.25rem;
+    border-radius: 1rem;
+    background: rgba(59, 130, 246, 0.08);
+    border: 1px solid rgba(59, 130, 246, 0.2);
+    padding: 1rem 1.25rem;
+    color: #1d4ed8;
+    font-weight: 600;
+}
+
+.fpv-note {
+    border-radius: 1.25rem;
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    background: rgba(248, 250, 252, 0.95);
+    padding: 1.5rem;
+}
+
+.fpv-note strong {
+    display: inline-block;
+    margin-bottom: 0.75rem;
+}
+
+.fpv-sidebar-card {
+    background: #fff;
+    border-radius: 1.5rem;
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    box-shadow: 0 14px 44px rgba(15, 23, 42, 0.12);
+    margin-bottom: 1.25rem;
+    overflow: hidden;
+}
+
+.fpv-sidebar-card:last-child {
+    margin-bottom: 0;
+}
+
+.fpv-sidebar-header {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.12) 0%, rgba(99, 102, 241, 0.1) 100%);
+    padding: 1.1rem 1.5rem;
+    font-weight: 700;
+    color: #1e293b;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+.fpv-sidebar-body {
+    padding: 1.75rem;
+}
+
+.fpv-project-pitch {
+    font-size: 0.95rem;
+    color: #475569;
+    margin-bottom: 1.25rem;
+}
+
+.fpv-meta-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #64748b;
+    font-size: 0.9rem;
+}
+
+.fpv-developer {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    margin-bottom: 1.25rem;
+}
+
+.fpv-developer-avatar {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    color: #fff;
+    background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%);
+}
+
+.fpv-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.75rem;
+    text-align: center;
+}
+
+.fpv-stats-grid div {
+    background: rgba(241, 245, 249, 0.8);
+    border-radius: 0.9rem;
+    padding: 0.75rem 0.5rem;
+}
+
+.fpv-stats-grid span {
+    display: block;
+    font-size: 0.8rem;
+    color: #64748b;
+    margin-bottom: 0.25rem;
+}
+
+.fpv-stats-grid strong {
+    font-size: 1rem;
+    color: #0f172a;
+}
+
+.fpv-progress {
+    margin-bottom: 1.5rem;
+}
+
+.fpv-progress-bar {
+    height: 8px;
+    border-radius: 9999px;
+    background: rgba(148, 163, 184, 0.3);
+    overflow: hidden;
+}
+
+.fpv-progress-bar span {
+    display: block;
+    height: 100%;
+    border-radius: 9999px;
+    background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%);
+    width: var(--progress-width, 0%);
+}
+
+.fpv-timeline {
+    display: grid;
+    gap: 0.75rem;
+    font-size: 0.9rem;
+    color: #64748b;
+}
+
+.fpv-timeline span {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.fpv-decision-card {
+    background: #fff7ed;
+    border-radius: 1.5rem;
+    border: 1px solid rgba(249, 115, 22, 0.25);
+    box-shadow: 0 16px 38px rgba(249, 115, 22, 0.18);
+    padding: 2.25rem;
+    margin-top: 1.5rem;
+}
+
+.fpv-decision-card h5 {
+    font-weight: 800;
+    color: #9a3412;
+    margin-bottom: 1.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+.fpv-form-label {
+    font-weight: 700;
+    color: #0f172a;
+    margin-bottom: 0.5rem;
+}
+
+.fpv-form-control {
+    border-radius: 1rem;
+    border: 1px solid #fdba74;
+    padding: 0.95rem 1rem;
+    font-size: 1rem;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.fpv-form-control:focus {
+    border-color: #fb923c;
+    box-shadow: 0 0 0 4px rgba(251, 146, 60, 0.25);
+}
+
+.fpv-equity-summary {
+    border-radius: 1.1rem;
+    background: rgba(255, 255, 255, 0.6);
+    padding: 1.25rem 1.5rem;
+    border: 1px solid rgba(251, 146, 60, 0.25);
+    margin: 1.5rem 0;
+}
+
+.fpv-actions {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 0.75rem;
+}
+
+.fpv-actions .btn-lg {
+    border-radius: 0.85rem;
+    padding: 0.85rem 1.5rem;
+    font-weight: 700;
+}
+
+.fpv-delete {
+    margin-top: 1.5rem;
+}
+
+.fpv-delete .btn {
+    border-radius: 0.85rem;
+    font-weight: 600;
+}
+
+.fpv-github-card {
+    border-radius: 1.25rem;
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    background: rgba(15, 23, 42, 0.03);
+    padding: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.fpv-github-card code {
+    display: inline-block;
+    background: rgba(15, 23, 42, 0.08);
+    padding: 0.35rem 0.6rem;
+    border-radius: 0.65rem;
+    font-size: 0.85rem;
+    color: #0f172a;
+}
+
+@media (max-width: 992px) {
+    .fpv-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .fpv-card {
+        padding: 2.2rem;
+    }
+
+    .fpv-sidebar-card {
+        margin-bottom: 1rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .fpv-hero {
+        padding: 2.75rem 1.1rem 4.5rem;
+    }
+
+    .fpv-hero-title {
+        font-size: 2.2rem;
+    }
+
+    .fpv-breadcrumb {
+        padding: 0.5rem 1rem;
+    }
+
+    .fpv-card {
+        padding: 1.75rem;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="fpv-page">
+    <header class="fpv-hero">
+        <div class="fpv-hero-content">
+            <nav class="fpv-breadcrumb" aria-label="breadcrumb">
+                <a href="{{ url_for('projects.home') }}"><i class="bi bi-grid"></i> Progetti</a>
+                <span>›</span>
+                <a href="{{ url_for('projects.project_detail', project_id=proposal.project.id) }}">{{ proposal.project.name }}</a>
+                <span>›</span>
+                <span>Proposta Libera</span>
+            </nav>
+
+            <div class="fpv-status-group">
+                <span class="fpv-status-badge">
+                    <i class="bi bi-lightning-charge-fill"></i>
+                    {{ proposal.status_display }}
+                </span>
+                <span class="fpv-status-badge">
+                    <i class="bi bi-layer-forward"></i>
+                    {{ proposal.proposal_type_display }}
+                </span>
+                <span class="fpv-status-badge">
+                    <i class="bi bi-percent"></i>
+                    {{ proposal.equity_requested }}% equity
+                </span>
+            </div>
+
+            <h1 class="fpv-hero-title">{{ proposal.title }}</h1>
+
+            <div class="fpv-hero-meta">
+                <span><i class="bi bi-person-circle"></i> Proposto da <strong>{{ proposal.developer.username }}</strong></span>
+                <span><i class="bi bi-calendar3"></i> {{ proposal.created_at.strftime('%d/%m/%Y %H:%M') }}</span>
+                <span><i class="bi bi-briefcase"></i> Progetto {{ proposal.project.name }}</span>
+            </div>
+        </div>
+    </header>
+
+    <div class="fpv-container">
+        <div class="fpv-layout">
+            <main class="fpv-card">
+                <section class="fpv-section">
+                    <div class="fpv-section-title">
+                        <i class="bi bi-file-text"></i>
+                        <span>Descrizione</span>
+                    </div>
+                    <div class="fpv-description">
+                        {{ proposal.description | replace('\n', '<br>') | safe }}
+                    </div>
+                </section>
+
+                {% if proposal.proposal_type == 'multi_task' and aggregated_tasks %}
+                <section class="fpv-section">
+                    <div class="fpv-section-title">
+                        <i class="bi bi-check2-square"></i>
+                        <span>Task Aggregati</span>
+                        <span class="badge bg-primary">{{ aggregated_tasks | length }}</span>
+                    </div>
+                    <div class="fpv-task-list">
+                        {% for task in aggregated_tasks %}
+                        <div class="fpv-task-card">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <h6>{{ task.title }}</h6>
+                                <span class="badge bg-primary">{{ task.equity_share }}%</span>
+                            </div>
+                            <p>{{ task.description[:150] }}{% if task.description|length > 150 %}...{% endif %}</p>
+                            <div class="fpv-task-meta">
+                                <span><i class="bi bi-check-circle"></i> Status:</span>
+                                <span class="badge bg-secondary">{{ task.status }}</span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% if proposal.status == 'pending' %}
+                    <div class="fpv-alert">
+                        <i class="bi bi-info-circle"></i>
+                        Se accetti la proposta, tutti i task inclusi saranno contrassegnati come completati.
+                    </div>
+                    {% endif %}
+                </section>
+                {% endif %}
+
+                {% if proposal.proposal_type == 'new_task' and proposal.new_task_details %}
+                <section class="fpv-section">
+                    <div class="fpv-section-title">
+                        <i class="bi bi-plus-circle"></i>
+                        <span>Nuovo Task Proposto</span>
+                    </div>
+                    <div class="fpv-note">
+                        {{ proposal.new_task_details | replace('\n', '<br>') | safe }}
+                    </div>
+                </section>
+                {% endif %}
+
+                {% if proposal.status != 'pending' and proposal.decision_note %}
+                <section class="fpv-section">
+                    <div class="fpv-section-title">
+                        <i class="bi bi-chat-left-quote"></i>
+                        <span>Motivazione della Decisione</span>
+                    </div>
+                    <div class="fpv-note">
+                        <strong>{{ proposal.project.creator.username }}</strong>
+                        <p class="mb-2">{{ proposal.decision_note }}</p>
+                        <small class="text-muted">{{ proposal.decided_at.strftime('%d/%m/%Y %H:%M') }}</small>
+                    </div>
+                </section>
+                {% endif %}
+
+                {% if proposal.github_pr_url %}
+                <section class="fpv-section">
+                    <div class="fpv-section-title">
+                        <i class="bi bi-github"></i>
+                        <span>GitHub Pull Request</span>
+                    </div>
+                    <div class="fpv-github-card">
+                        <div>
+                            <small class="text-muted d-block">Branch</small>
+                            <code>{{ proposal.github_branch_name }}</code>
+                        </div>
+                        <a href="{{ proposal.github_pr_url }}" target="_blank" class="btn btn-dark">
+                            <i class="bi bi-github"></i> Vedi PR #{{ proposal.github_pr_number }}
+                        </a>
+                    </div>
+                </section>
+                {% endif %}
+
+                {% if is_creator and proposal.status == 'pending' %}
+                <section class="fpv-section">
+                    <div class="fpv-decision-card">
+                        <h5><i class="bi bi-exclamation-triangle-fill"></i> Il progetto attende la tua decisione</h5>
+                        <form id="decisionForm"
+                              data-decision-url="{{ url_for('api_free_proposals.handle_free_proposal_decision', project_id=proposal.project_id, proposal_id=proposal.id) }}">
+                            <div class="mb-3">
+                                <label for="decision_note" class="fpv-form-label">Motivazione (opzionale)</label>
+                                <textarea class="fpv-form-control" id="decision_note" name="decision_note" rows="3" placeholder="Spiega il motivo della tua decisione..."></textarea>
+                                <div class="form-text">
+                                    Un breve feedback aiuta lo sviluppatore a capire il tuo punto di vista.
+                                </div>
+                            </div>
+
+                            <div class="fpv-equity-summary">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <small class="text-muted d-block">Equity disponibile</small>
+                                        <strong class="fs-5">{{ "%.2f"|format(proposal.project.get_available_equity()) }}%</strong>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <small class="text-muted d-block">Equity richiesta</small>
+                                        <strong class="fs-5 text-primary">{{ proposal.equity_requested }}%</strong>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="fpv-actions">
+                                <button type="button" class="btn btn-success btn-lg" data-action="accept">
+                                    <i class="bi bi-check-circle-fill"></i> Accetta proposta
+                                </button>
+                                <button type="button" class="btn btn-danger btn-lg" data-action="reject">
+                                    <i class="bi bi-x-circle-fill"></i> Rifiuta
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </section>
+                {% endif %}
+
+                {% if is_developer and proposal.status == 'pending' %}
+                <section class="fpv-section fpv-delete">
+                    <form method="POST" action="{{ url_for('free_proposals.delete_free_proposal', proposal_id=proposal.id) }}" onsubmit="return confirm('❌ Sei sicuro di voler eliminare questa proposta?')">
+                        <button type="submit" class="btn btn-outline-danger">
+                            <i class="bi bi-trash"></i> Elimina proposta
+                        </button>
+                    </form>
+                </section>
+                {% endif %}
+            </main>
+
+            <aside>
+                <div class="fpv-sidebar-card">
+                    <div class="fpv-sidebar-header">
+                        <i class="bi bi-folder"></i>
+                        <span>Progetto</span>
+                    </div>
+                    <div class="fpv-sidebar-body">
+                        <h5 class="mb-2">
+                            <a href="{{ url_for('projects.project_detail', project_id=proposal.project.id) }}" class="text-decoration-none">
+                                {{ proposal.project.name }}
+                            </a>
+                        </h5>
+                        <p class="fpv-project-pitch">{{ proposal.project.pitch }}</p>
+                        <div class="fpv-meta-row">
+                            <i class="bi bi-person-circle"></i>
+                            <span>Creato da <strong>{{ proposal.project.creator.username }}</strong></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="fpv-sidebar-card">
+                    <div class="fpv-sidebar-header">
+                        <i class="bi bi-person-badge"></i>
+                        <span>Sviluppatore</span>
+                    </div>
+                    <div class="fpv-sidebar-body">
+                        <div class="fpv-developer">
+                            {% if proposal.developer.profile_image_url %}
+                            <img src="{{ proposal.developer.profile_image_url }}" class="fpv-developer-avatar" alt="{{ proposal.developer.username }}">
+                            {% else %}
+                            <div class="fpv-developer-avatar">{{ proposal.developer.username[0].upper() }}</div>
+                            {% endif %}
+                            <div>
+                                <h6 class="mb-0">{{ proposal.developer.username }}</h6>
+                                <small class="text-muted">Contributor</small>
+                            </div>
+                        </div>
+                        <div class="fpv-stats-grid">
+                            <div>
+                                <span>Progetti</span>
+                                <strong>{{ proposal.developer.collaborations.count() }}</strong>
+                            </div>
+                            <div>
+                                <span>Task</span>
+                                <strong>{{ proposal.developer.solutions.count() }}</strong>
+                            </div>
+                            <div>
+                                <span>Equity</span>
+                                <strong>0.0%</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="fpv-sidebar-card">
+                    <div class="fpv-sidebar-header">
+                        <i class="bi bi-bar-chart"></i>
+                        <span>Statistiche</span>
+                    </div>
+                    <div class="fpv-sidebar-body">
+                        <div class="fpv-progress">
+                            <div class="d-flex justify-content-between mb-1">
+                                <span class="small text-muted">Equity richiesta</span>
+                                <strong class="text-primary">{{ proposal.equity_requested }}%</strong>
+                            </div>
+                            <div class="fpv-progress-bar" style="--progress-width: {{ proposal.equity_requested }}%;">
+                                <span></span>
+                            </div>
+                        </div>
+
+                        {% if proposal.proposal_type == 'multi_task' %}
+                        <div class="mb-3 d-flex justify-content-between">
+                            <span class="small text-muted">Task aggregati</span>
+                            <strong>{{ aggregated_tasks | length }}</strong>
+                        </div>
+                        <div class="mb-3 d-flex justify-content-between">
+                            <span class="small text-muted">Equity totale task</span>
+                            <strong class="text-muted">{{ "%.2f"|format(proposal.total_aggregated_equity) }}%</strong>
+                        </div>
+                        {% endif %}
+
+                        <div class="fpv-timeline">
+                            <span><i class="bi bi-clock"></i> Creata {{ proposal.created_at.strftime('%d/%m/%Y') }}</span>
+                            {% if proposal.decided_at %}
+                            <span><i class="bi bi-check2-circle"></i> Decisa {{ proposal.decided_at.strftime('%d/%m/%Y') }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </aside>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+    {% block scripts %}
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const decisionForm = document.getElementById('decisionForm');
+        if (!decisionForm) {
+            return;
+        }
+
+        const csrfTokenMeta = document.querySelector('meta[name="csrf-token"]');
+        const csrfToken = csrfTokenMeta ? csrfTokenMeta.getAttribute('content') : '';
+        const noteField = decisionForm.querySelector('#decision_note');
+        const actionButtons = decisionForm.querySelectorAll('button[data-action]');
+        const decisionUrl = decisionForm.dataset.decisionUrl;
+
+        function restoreButtons() {
+            actionButtons.forEach(function(button) {
+                if (button.dataset.originalLabel) {
+                    button.innerHTML = button.dataset.originalLabel;
+                    delete button.dataset.originalLabel;
+                }
+                button.disabled = false;
+            });
+        }
+
+        function submitDecision(action) {
+            if (!decisionUrl) {
+                console.error('Missing decision endpoint for free proposal.');
+                return;
+            }
+
+            actionButtons.forEach(function(button) {
+                button.disabled = true;
+                button.dataset.originalLabel = button.innerHTML;
+                button.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Invio...';
+            });
+
+            const payload = {
+                decision: action,
+                note: noteField ? noteField.value.trim() : ''
+            };
+
+            fetch(decisionUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRFToken': csrfToken
+                },
+                body: JSON.stringify(payload)
+            })
+                .then(function(response) {
+                    return response.json().then(function(data) {
+                        return { ok: response.ok, data: data };
+                    });
+                })
+                .then(function(result) {
+                    if (!result.ok) {
+                        throw new Error(result.data.error || result.data.message || 'Operazione non riuscita');
+                    }
+
+                    const redirectUrl = result.data.redirect_url;
+                    if (redirectUrl) {
+                        window.location.href = redirectUrl;
+                    } else {
+                        window.location.reload();
+                    }
+                })
+                .catch(function(error) {
+                    console.error('Errore durante la decisione della proposta:', error);
+                    alert(error.message);
+                    restoreButtons();
+                });
+        }
+
+        decisionForm.addEventListener('submit', function(event) {
+            event.preventDefault();
+        });
+
+        actionButtons.forEach(function(button) {
+            button.addEventListener('click', function() {
+                const action = button.dataset.action;
+                if (!action) {
+                    return;
+                }
+
+                if (action === 'accept') {
+                    const confirmAccept = confirm('✅ Sei sicuro di voler ACCETTARE questa proposta?\n\nVerranno assegnati {{ proposal.equity_requested }}% di equity a {{ proposal.developer.username }}.');
+                    if (!confirmAccept) {
+                        return;
+                    }
+                }
+
+                if (action === 'reject') {
+                    const confirmReject = confirm('❌ Sei sicuro di voler RIFIUTARE questa proposta?');
+                    if (!confirmReject) {
+                        return;
+                    }
+                }
+
+                submitDecision(action);
+            });
+        });
+    });
+    </script>
+    {% endblock %}

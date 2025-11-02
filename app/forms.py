@@ -82,6 +82,19 @@ class AddTaskForm(FlaskForm):
     
     submit = SubmitField('Aggiungi Task')
     
+    def process(self, formdata=None, obj=None, data=None, **kwargs):
+        """Pre-processa i dati del form per gestire la virgola come separatore decimale"""
+        # Controlla se formdata ha il metodo get (è un dict-like object)
+        if formdata is not None and hasattr(formdata, 'get'):
+            # Converte la virgola in punto per il campo equity_reward
+            equity_value = formdata.get('equity_reward')
+            if equity_value and isinstance(equity_value, str) and ',' in equity_value:
+                # Crea una copia modificabile del formdata
+                from werkzeug.datastructures import MultiDict
+                formdata = MultiDict(formdata)
+                formdata['equity_reward'] = equity_value.replace(',', '.')
+        return super(AddTaskForm, self).process(formdata, obj, data, **kwargs)
+    
     def validate_hypothesis(self, field):
         if self.task_type.data == 'validation' and not field.data:
             raise ValidationError('L\'ipotesi è obbligatoria per gli esperimenti di validazione.')

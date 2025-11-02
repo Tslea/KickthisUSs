@@ -15,6 +15,7 @@ from .models import (
 from .forms import SolutionForm, AddTaskForm, BaseForm
 from .decorators import role_required
 from .ai_services import generate_suggested_tasks, analyze_solution_content
+from .services.github_service import GitHubService
 
 tasks_bp = Blueprint('tasks', __name__, template_folder='templates')
 MAX_SOLUTIONS_PER_USER = 3
@@ -27,6 +28,9 @@ HARDWARE_FILE_TYPES = {
     'documentation': {'pdf', 'docx', 'doc', 'md', 'txt', 'odt'},
     'visual': {'jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'mp4', 'webm', 'avi', 'mov'}
 }
+
+# Inizializza GitHub service
+github_service = GitHubService()
 
 def allowed_file(filename: str) -> bool:
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -160,6 +164,15 @@ def add_task_form(project_id: int) -> Response | str:
                 )
                 db.session.add(notif)
         db.session.commit()
+        
+        # 🔄 SINCRONIZZAZIONE AUTOMATICA CON GITHUB (invisibile all'utente)
+        try:
+            github_service.sync_task_to_github(new_task, project)
+            db.session.commit()  # Salva github_issue_number e github_synced_at
+        except Exception as e:
+            # Non bloccare la creazione del task se GitHub fallisce
+            current_app.logger.warning(f"GitHub sync failed for task {new_task.id}: {e}")
+        
         flash('Task aggiunto con successo!', 'success')
         return redirect(url_for('projects.project_detail', project_id=project.id))
 
@@ -213,6 +226,14 @@ def suggest_ai_task_api(project_id: int):
         db.session.add(new_task)
         db.session.commit()
         
+        # 🔄 SINCRONIZZAZIONE AUTOMATICA CON GITHUB (invisibile all'utente)
+        try:
+            github_service.sync_task_to_github(new_task, project)
+            db.session.commit()  # Salva github_issue_number e github_synced_at
+        except Exception as e:
+            # Non bloccare la creazione del task se GitHub fallisce
+            current_app.logger.warning(f"GitHub sync failed for AI task {new_task.id}: {e}")
+        
         return jsonify({
             'id': new_task.id,
             'title': new_task.title,
@@ -259,6 +280,16 @@ def update_task_results(task_id: int):
             task.status = 'submitted'  # Pronto per la revisione
         
         db.session.commit()
+        
+        # 🔄 SINCRONIZZAZIONE AUTOMATICA CON GITHUB (invisibile all'utente)
+        try:
+            project = Project.query.get(task.project_id)
+            if project:
+                github_service.sync_task_to_github(task, project)
+                db.session.commit()
+        except Exception as e:
+            current_app.logger.warning(f"GitHub sync failed for task {task.id}: {e}")
+        
         flash("Risultati aggiornati con successo!", "success")
     else:
         flash("I risultati non possono essere vuoti.", "error")

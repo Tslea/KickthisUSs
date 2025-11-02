@@ -63,6 +63,23 @@
                 </p>
             </div>
 
+            {# Debug: Mostra errori di validazione del form #}
+            {% if form.errors %}
+            <div class="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
+                <h3 class="text-red-800 font-semibold mb-2 flex items-center gap-2">
+                    <span class="material-icons text-red-600">error</span>
+                    Errori di validazione
+                </h3>
+                <ul class="list-disc list-inside text-red-700 text-sm space-y-1">
+                    {% for field_name, errors in form.errors.items() %}
+                        {% for error in errors %}
+                        <li><strong>{{ field_name }}:</strong> {{ error }}</li>
+                        {% endfor %}
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+
             <form method="POST" action="{{ url_for('tasks.add_task_form', project_id=project.id) }}" id="add-task-form-manual" novalidate class="space-y-8">
                 {{ form.hidden_tag() }}
 
@@ -120,7 +137,7 @@
                         
                         {{ render_field_tailwind(form.equity_reward, 
                             label="Ricompensa in Equity",
-                            placeholder="Es: 1.5", 
+                            placeholder="Es: 1.5 oppure 1,5", 
                             description="Percentuale di equity assegnata a chi completa questo task con successo") 
                         }}
                     </div>

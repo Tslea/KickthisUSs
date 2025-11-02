@@ -4,10 +4,13 @@ document.addEventListener('DOMContentLoaded', function() {
     // Animazione fade-in per elementi che entrano nel viewport
     const observer = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                entry.target.classList.add('animate-fade-in');
-                observer.unobserve(entry.target);
+            if (!entry.isIntersecting) {
+                return;
             }
+
+            entry.target.classList.remove('opacity-0');
+            entry.target.classList.add('animate-fade-in');
+            observer.unobserve(entry.target);
         });
     }, {
         root: null,
@@ -20,10 +23,15 @@ document.addEventListener('DOMContentLoaded', function() {
     animateElements.forEach(el => {
         el.classList.add('opacity-0'); // Inizialmente invisibili
         observer.observe(el);
+
+        el.addEventListener('animationend', function handleAnimationEnd() {
+            el.classList.remove('animate-fade-in');
+            el.removeEventListener('animationend', handleAnimationEnd);
+        });
     });
 
     // Animazione per pulsanti
-    const buttons = document.querySelectorAll('.btn-primary, .btn-secondary, .btn-accent');
+    const buttons = document.querySelectorAll('.btn');
     buttons.forEach(button => {
         button.addEventListener('mousedown', function() {
             this.classList.add('scale-95');
