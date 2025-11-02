@@ -596,6 +596,52 @@ class GitHubService:
             logger.error(f"Unexpected error updating issue: {e}")
             raise GitHubServiceError(f"Unexpected error: {str(e)}")
     
+    def get_repo_stats(self, repo_name: str) -> Optional[Dict[str, Any]]:
+        """
+        Ottieni statistiche del repository GitHub.
+        
+        Returns:
+            Dict con statistiche o None se errore
+        """
+        if not self.is_enabled():
+            return None
+        
+        try:
+            repo = self.get_repository(repo_name)
+            if not repo:
+                return None
+            
+            # Conta issues aperti e chiusi
+            open_issues = repo.open_issues_count
+            closed_issues = repo.get_issues(state='closed').totalCount
+            
+            # Conta commits recenti (ultimi 30 giorni)
+            from datetime import datetime, timedelta
+            since_date = datetime.utcnow() - timedelta(days=30)
+            recent_commits = repo.get_commits(since=since_date).totalCount
+            
+            # Ottieni contributors
+            contributors_count = repo.get_contributors().totalCount
+            
+            # Ottieni data ultimo aggiornamento
+            updated_at = repo.updated_at
+            
+            return {
+                'open_issues': open_issues,
+                'closed_issues': closed_issues,
+                'total_issues': open_issues + closed_issues,
+                'recent_commits': recent_commits,
+                'contributors': contributors_count,
+                'updated_at': updated_at.isoformat() if updated_at else None,
+                'stars': repo.stargazers_count,
+                'forks': repo.forks_count,
+                'watchers': repo.watchers_count
+            }
+            
+        except Exception as e:
+            logger.error(f"Error getting repo stats for {repo_name}: {e}")
+            return None
+    
     def __repr__(self):
         status = "enabled" if self.is_enabled() else "disabled"
         org_info = f", org={self.org_name}" if self.org_name else ""

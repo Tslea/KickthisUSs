@@ -159,7 +159,7 @@ def toggle_github_sync(project_id):
 @api_github_bp.route('/project/<int:project_id>/connect-repo', methods=['POST'])
 @login_required
 def connect_repo(project_id):
-    """Collega un repository GitHub esistente al progetto"""
+    """Collega un repository GitHub esistente al progetto, o lo crea se non esiste"""
     from app import db
     from flask_login import current_user
     
@@ -171,6 +171,7 @@ def connect_repo(project_id):
     
     data = request.json
     repo_full_name = data.get('repo_full_name')
+    auto_create = data.get('auto_create', False)  # Flag per creare automaticamente
     
     if not repo_full_name or '/' not in repo_full_name:
         return jsonify({'success': False, 'message': 'Nome repository non valido'}), 400
@@ -181,11 +182,32 @@ def connect_repo(project_id):
             github_service = get_github_service()
             # Test connessione al repo
             repo_exists = github_service.verify_repo_access(repo_full_name)
+            
             if not repo_exists:
-                return jsonify({
-                    'success': False,
-                    'message': 'Repository non trovato o non accessibile. Verifica il nome e i permessi.'
-                }), 404
+                if auto_create:
+                    # Crea automaticamente il repository
+                    repo_name = repo_full_name.split('/')[-1]
+                    
+                    result = github_service.create_repository(
+                        repo_name=repo_name,
+                        description=project.pitch or f"Repository per il progetto {project.name}",
+                        private=project.private if hasattr(project, 'private') else False
+                    )
+                    
+                    if not result:
+                        return jsonify({
+                            'success': False,
+                            'message': 'Impossibile creare il repository automaticamente.'
+                        }), 500
+                    
+                    # Repository creato con successo
+                    current_app.logger.info(f"Repository {repo_full_name} creato automaticamente")
+                else:
+                    return jsonify({
+                        'success': False,
+                        'message': 'Repository non trovato. Vuoi crearlo automaticamente?',
+                        'can_create': True
+                    }), 404
         except Exception as e:
             current_app.logger.error(f"Errore verifica repository: {e}")
             return jsonify({
@@ -199,10 +221,15 @@ def connect_repo(project_id):
     
     try:
         db.session.commit()
+        message = 'Repository collegato con successo!'
+        if not repo_exists and auto_create:
+            message = 'Repository creato e collegato con successo!'
+        
         return jsonify({
             'success': True,
-            'message': 'Repository collegato con successo!',
-            'repo_name': repo_full_name
+            'message': message,
+            'repo_name': repo_full_name,
+            'created': auto_create and not repo_exists
         })
     except Exception as e:
         db.session.rollback()
@@ -210,4 +237,121 @@ def connect_repo(project_id):
         return jsonify({
             'success': False,
             'message': 'Errore durante il salvataggio'
+        }), 500
+
+
+@api_github_bp.route('/project/<int:project_id>/sync-all-tasks', methods=['POST'])
+@login_required
+def sync_all_tasks(project_id):
+    """Sincronizza tutti i task del progetto con GitHub Issues"""
+    from app import db
+    from models import Task
+    from app.services.github_service import GitHubService
+    
+    project = Project.query.get_or_404(project_id)
+    
+    # Verifica che l'utente sia il creatore del progetto
+    if project.creator_id != current_user.id:
+        return jsonify({'success': False, 'message': 'Non autorizzato'}), 403
+    
+    # Verifica che ci sia un repository collegato
+    if not project.github_repo_name:
+        return jsonify({
+            'success': False,
+            'message': 'Nessun repository collegato. Collega prima un repository.'
+        }), 400
+    
+    if not GITHUB_ENABLED:
+        return jsonify({
+            'success': False,
+            'message': 'Integrazione GitHub non abilitata'
+        }), 400
+    
+    try:
+        github_service = GitHubService()
+        
+        # Ottieni tutti i task del progetto
+        tasks = Task.query.filter_by(project_id=project_id).all()
+        
+        synced_count = 0
+        failed_count = 0
+        skipped_count = 0
+        
+        for task in tasks:
+            # Salta i task già sincronizzati di recente (nelle ultime 24 ore)
+            from datetime import datetime, timedelta
+            if task.github_synced_at and (datetime.utcnow() - task.github_synced_at) < timedelta(hours=24):
+                skipped_count += 1
+                continue
+            
+            # Sincronizza il task
+            success = github_service.sync_task_to_github(task, project)
+            if success:
+                synced_count += 1
+            else:
+                failed_count += 1
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': f'Sincronizzazione completata!',
+            'stats': {
+                'synced': synced_count,
+                'failed': failed_count,
+                'skipped': skipped_count,
+                'total': len(tasks)
+            }
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Errore sincronizzazione task: {e}")
+        return jsonify({
+            'success': False,
+            'message': f'Errore durante la sincronizzazione: {str(e)}'
+        }), 500
+
+
+@api_github_bp.route('/project/<int:project_id>/repo-stats', methods=['GET'])
+@login_required
+def get_repo_stats(project_id):
+    """Ottieni statistiche del repository GitHub collegato"""
+    from app.services.github_service import GitHubService
+    
+    project = Project.query.get_or_404(project_id)
+    
+    # Verifica che ci sia un repository collegato
+    if not project.github_repo_name:
+        return jsonify({
+            'success': False,
+            'message': 'Nessun repository collegato'
+        }), 400
+    
+    if not GITHUB_ENABLED:
+        return jsonify({
+            'success': False,
+            'message': 'Integrazione GitHub non abilitata'
+        }), 400
+    
+    try:
+        github_service = GitHubService()
+        stats = github_service.get_repo_stats(project.github_repo_name)
+        
+        if not stats:
+            return jsonify({
+                'success': False,
+                'message': 'Impossibile ottenere le statistiche'
+            }), 500
+        
+        return jsonify({
+            'success': True,
+            'stats': stats
+        })
+        
+    except Exception as e:
+        current_app.logger.error(f"Errore ottenimento statistiche: {e}")
+        return jsonify({
+            'success': False,
+            'message': f'Errore: {str(e)}'
         }), 500

@@ -166,6 +166,7 @@ def create_app(config_class=Config):
     from .api_ai_projects import api_ai_projects
     from .routes_free_proposals import free_proposals_bp  # Import qui per evitare problemi nei test
     from .api_free_proposals import api_free_proposals_bp
+    from .routes_webhooks import webhooks_bp  # GitHub webhooks
     
     app.register_blueprint(auth_bp, url_prefix='/auth')
     app.register_blueprint(projects_bp, url_prefix='/')
@@ -185,6 +186,7 @@ def create_app(config_class=Config):
     app.register_blueprint(api_ai_wiki, url_prefix='/api')  # AI Wiki functionality
     app.register_blueprint(api_ai_projects, url_prefix='/api')  # AI Project guides
     app.register_blueprint(free_proposals_bp, url_prefix='/')  # Free proposals
+    app.register_blueprint(webhooks_bp)  # GitHub webhooks (già con url_prefix='/webhooks')
 
     # Registra i gestori di errore
     app.register_error_handler(401, errors.unauthorized_error)

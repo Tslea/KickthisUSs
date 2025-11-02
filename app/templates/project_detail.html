@@ -321,9 +321,16 @@
                                     </a>
                                 </div>
                                 <div class="text-xs text-gray-600 break-all mb-3">https://github.com/{{ project.github_repo_name }}</div>
-                                <button onclick="editGithubUrl()" class="text-sm bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md transition-colors">
-                                    Modifica URL
-                                </button>
+                                
+                                <div class="flex gap-2">
+                                    <button onclick="editGithubUrl()" class="text-sm bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md transition-colors">
+                                        Modifica URL
+                                    </button>
+                                    <button onclick="syncAllTasks()" class="text-sm bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-md transition-colors flex items-center gap-1">
+                                        <span class="material-icons text-sm">sync</span>
+                                        Sincronizza Tutti i Task
+                                    </button>
+                                </div>
                                 {% else %}
                                 <div class="text-sm text-gray-600 mb-3">
                                     Configura il repository GitHub per abilitare il flusso di sviluppo software con Pull Request.
@@ -1045,6 +1052,57 @@ document.addEventListener('DOMContentLoaded', function () {
             alert('Errore durante l\'aggiornamento dell\'URL GitHub');
         });
     }
+
+    // Funzione per sincronizzare tutti i task con GitHub
+    window.syncAllTasks = function() {
+        if (!confirm('Vuoi sincronizzare tutti i task con GitHub?\n\nQuesto potrebbe richiedere alcuni secondi.')) {
+            return;
+        }
+
+        const button = event.target.closest('button');
+        const originalText = button.innerHTML;
+        button.disabled = true;
+        button.innerHTML = '<span class="material-icons text-sm animate-spin">sync</span> Sincronizzando...';
+
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+        fetch(`/api/github/project/{{ project.id }}/sync-all-tasks`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            button.disabled = false;
+            button.innerHTML = originalText;
+            
+            if (data.success) {
+                const stats = data.stats;
+                let message = `✅ Sincronizzazione completata!\n\n`;
+                message += `📊 Statistiche:\n`;
+                message += `• Sincronizzati: ${stats.synced}\n`;
+                if (stats.skipped > 0) {
+                    message += `• Saltati (già sincronizzati): ${stats.skipped}\n`;
+                }
+                if (stats.failed > 0) {
+                    message += `• Falliti: ${stats.failed}\n`;
+                }
+                message += `• Totale: ${stats.total}`;
+                
+                alert(message);
+                location.reload(); // Ricarica per mostrare i badge aggiornati
+            } else {
+                alert('❌ Errore: ' + data.message);
+            }
+        })
+        .catch(error => {
+            button.disabled = false;
+            button.innerHTML = originalText;
+            console.error('Errore:', error);
+            alert('❌ Errore durante la sincronizzazione dei task');
+        });
+    };
 });
 </script>
 
@@ -1279,8 +1337,35 @@ function addGithubUrl() {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            showNotification('success', '🎉 Repository collegato con successo!');
+            const message = data.created ? '🎉 Repository creato e collegato con successo!' : '🎉 Repository collegato con successo!';
+            showNotification('success', message);
             setTimeout(() => location.reload(), 1500);
+        } else if (data.can_create) {
+            // Repository non esiste, chiedi se vuoi crearlo
+            if (confirm('⚠️ ' + data.message + '\n\nVuoi che lo creiamo automaticamente per te?')) {
+                // Riprova con auto_create=true
+                fetch(`/api/github/project/{{ project.id }}/connect-repo`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token() }}'
+                    },
+                    body: JSON.stringify({ repo_full_name: repoFullName, auto_create: true })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showNotification('success', '🎉 Repository creato e collegato con successo!');
+                        setTimeout(() => location.reload(), 1500);
+                    } else {
+                        showNotification('error', data.message || 'Errore durante la creazione');
+                    }
+                })
+                .catch(error => {
+                    console.error('Errore:', error);
+                    showNotification('error', 'Errore di connessione al server');
+                });
+            }
         } else {
             showNotification('error', data.message || 'Errore durante il collegamento');
         }
