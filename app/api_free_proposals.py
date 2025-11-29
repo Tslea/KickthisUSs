@@ -114,7 +114,7 @@ def handle_free_proposal_decision(project_id, proposal_id):
             type='proposal_accepted',
             message=(
                 f"🎉 La tua proposta '{proposal.title}' per {proposal.project.name} "
-                f"è stata accettata! Hai guadagnato {proposal.equity_requested}% equity."
+                f"è stata accettata! Hai guadagnato {proposal.equity_requested}% shares."
             )
         )
         db.session.add(notification)
@@ -141,7 +141,7 @@ def handle_free_proposal_decision(project_id, proposal_id):
         response = {
             "message": (
                 f"Proposta accettata. {proposal.developer.username} ha guadagnato "
-                f"{proposal.equity_requested}% di equity."
+                f"{proposal.equity_requested}% di shares."
             ),
             "status": proposal.status,
             "redirect_url": url_for('projects.project_detail', project_id=project_id)

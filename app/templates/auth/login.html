@@ -1,76 +1,64 @@
 {# app/templates/auth/login.html #}
 {% extends "base.html" %}
 
-{% block title %}Login - KICKStorm{% endblock %}
+{% block title %}Login - KickThisUss{% endblock %}
 
 {% block content %}
-<main class="px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 flex flex-1 justify-center items-center py-8 min-h-[calc(100vh-112px)]"> {# 112px = circa altezza navbar+footer #}
-    <div class="layout-content-container w-full max-w-md">
-        <div class="bg-white p-6 md:p-8 rounded-xl shadow-2xl border border-gray-200">
-            <div class="mb-6 text-center">
-                <a href="{{ url_for('projects.home') }}" class="inline-flex items-center gap-2 text-mclaren-orange mb-4">
-                    <div class="size-10"> {# Logo #}
-                        <svg fill="none" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><path d="M44 11.2727C44 14.0109 39.8386 16.3957 33.69 17.6364C39.8386 18.877 44 21.2618 44 24C44 26.7382 39.8386 29.123 33.69 30.3636C39.8386 31.6043 44 33.9891 44 36.7273C44 40.7439 35.0457 44 24 44C12.9543 44 4 40.7439 4 36.7273C4 33.9891 8.16144 31.6043 14.31 30.3636C8.16144 29.123 4 26.7382 4 24C4 21.2618 8.16144 18.877 14.31 17.6364C8.16144 16.3957 4 14.0109 4 11.2727C4 7.25611 12.9543 4 24 4C35.0457 4 44 7.25611 44 11.2727Z" fill="currentColor"></path></svg>
-                    </div>
-                    <h1 class="text-gray-900 tracking-tight text-3xl font-bold">KICKStorm</h1>
-                </a>
-                <h2 class="text-2xl font-semibold text-gray-800">Accedi al Tuo Account</h2>
-                <p class="text-sm text-gray-500 mt-1">Bentornato! Inserisci le tue credenziali.</p>
-            </div>
+<main class="bg-black min-h-screen flex items-center justify-center px-4 py-12">
+    <div class="w-full max-w-md">
+        
+        <div class="text-center mb-10">
+            <h1 class="text-4xl font-bold text-white font-display mb-2">Bentornato</h1>
+            <p class="text-gray-500">Inserisci le tue credenziali per accedere.</p>
+        </div>
 
+        <div class="bg-gray-900 border border-gray-800 rounded-2xl p-8 shadow-2xl">
+            
             {% include 'partials/_flash_messages_tailwind.html' ignore missing %}
 
-            <form method="POST" action="{{ url_for('auth.login') }}{% if request.args.get('next') %}?next={{ request.args.get('next')|urlencode }}{% endif %}" novalidate>
-                {# --- TOKEN CSRF FONDAMENTALE --- #}
+            <form method="POST" action="{{ url_for('auth.login') }}{% if request.args.get('next') %}?next={{ request.args.get('next')|urlencode }}{% endif %}" novalidate class="space-y-6">
                 {{ form.hidden_tag() }} 
                 
-                <div class="space-y-5">
-                    <div>
-                        {{ form.email.label(class="block text-sm font-medium leading-6 text-gray-900 mb-1") }}
-                        {{ form.email(class="form-input block w-full rounded-lg border-gray-300 shadow-sm focus:border-mclaren-orange focus:ring focus:ring-mclaren-orange focus:ring-opacity-50 text-sm py-2.5", placeholder="latua@email.com", type="email", autocomplete="email") }}
-                        {% if form.email.errors %}
-                            <div class="mt-1">
-                            {% for error in form.email.errors %}
-                                <p class="text-xs text-red-600">{{ error }}</p>
-                            {% endfor %}
-                            </div>
-                        {% endif %}
-                    </div>
-
-                    <div>
-                        {{ form.password.label(class="block text-sm font-medium leading-6 text-gray-900 mb-1") }}
-                        {{ form.password(class="form-input block w-full rounded-lg border-gray-300 shadow-sm focus:border-mclaren-orange focus:ring focus:ring-mclaren-orange focus:ring-opacity-50 text-sm py-2.5", placeholder="La tua password", autocomplete="current-password") }}
-                        {% if form.password.errors %}
-                            <div class="mt-1">
-                            {% for error in form.password.errors %}
-                                <p class="text-xs text-red-600">{{ error }}</p>
-                            {% endfor %}
-                            </div>
-                        {% endif %}
-                    </div>
-
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center">
-                            {{ form.remember(class="form-checkbox h-4 w-4 text-mclaren-orange border-gray-300 rounded focus:ring-mclaren-orange") }}
-                            {{ form.remember.label(class="ml-2 block text-sm text-gray-700 select-none") }}
-                        </div>
-                        {# Link password dimenticata - IMPLEMENTATO! #}
-                        <div class="text-sm">
-                            <a href="{{ url_for('auth.forgot_password') }}" class="font-semibold text-mclaren-orange hover:text-mclaren-orange-darker">Password dimenticata?</a>
-                        </div>
-                    </div>
+                <div>
+                    {{ form.email.label(class="block text-sm font-bold text-gray-400 mb-2 uppercase tracking-wider") }}
+                    {{ form.email(class="w-full bg-black border border-gray-800 rounded-lg px-4 py-3 text-white placeholder-gray-600 focus:border-accent focus:ring-1 focus:ring-accent transition-colors", placeholder="latua@email.com", type="email", autocomplete="email") }}
+                    {% if form.email.errors %}
+                        {% for error in form.email.errors %}
+                            <p class="mt-1 text-xs text-red-500 font-bold">{{ error }}</p>
+                        {% endfor %}
+                    {% endif %}
                 </div>
 
-                <div class="mt-8">
-                    {{ form.submit(class="w-full flex items-center justify-center rounded-lg h-11 px-5 py-2.5 text-sm font-semibold text-white bg-mclaren-orange hover:bg-mclaren-orange-darker focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-mclaren-orange-darker shadow-sm transition-colors") }}
+                <div>
+                    <div class="flex justify-between items-center mb-2">
+                        {{ form.password.label(class="block text-sm font-bold text-gray-400 uppercase tracking-wider") }}
+                        <a href="{{ url_for('auth.forgot_password') }}" class="text-xs text-accent hover:text-white transition-colors font-bold">
+                            Password dimenticata?
+                        </a>
+                    </div>
+                    {{ form.password(class="w-full bg-black border border-gray-800 rounded-lg px-4 py-3 text-white placeholder-gray-600 focus:border-accent focus:ring-1 focus:ring-accent transition-colors", placeholder="••••••••", autocomplete="current-password") }}
+                    {% if form.password.errors %}
+                        {% for error in form.password.errors %}
+                            <p class="mt-1 text-xs text-red-500 font-bold">{{ error }}</p>
+                        {% endfor %}
+                    {% endif %}
                 </div>
+
+                <div class="flex items-center">
+                    {{ form.remember(class="w-4 h-4 text-accent bg-black border-gray-700 rounded focus:ring-accent focus:ring-offset-gray-900") }}
+                    {{ form.remember.label(class="ml-2 block text-sm text-gray-400") }}
+                </div>
+
+                <button type="submit" class="w-full bg-white text-black font-bold py-3.5 rounded-lg hover:bg-gray-200 transition-colors text-lg">
+                    Accedi
+                </button>
             </form>
-
-            <p class="mt-8 text-center text-sm text-gray-500">
-                Non hai un account?
-                <a href="{{ url_for('auth.register') }}" class="font-semibold leading-6 text-mclaren-orange hover:text-mclaren-orange-darker hover:underline">Registrati ora</a>
-            </p>
         </div>
+
+        <p class="mt-8 text-center text-gray-500">
+            Non hai un account?
+            <a href="{{ url_for('auth.register') }}" class="text-white font-bold hover:underline">Registrati ora</a>
+        </p>
     </div>
 </main>
 {% endblock %}

@@ -146,6 +146,14 @@ python run.py
 
 Visit `http://localhost:5000` to start changing the world! 🌍
 
+### Workspace Upload (Beta)
+- Carica codice/asset del tuo progetto direttamente su KickthisUSs senza configurare GitHub manualmente.
+- Endpoint principali:
+  - `POST /api/projects/<id>/upload-zip`
+  - `POST /api/projects/<id>/files`
+  - `POST /api/projects/<id>/finalize-upload`
+- Consulta `cli/kick_cli_stub.py` per lo stub del client CLI (upload ZIP, file singoli e finalize).
+
 ## 🌟 **Project Types**
 
 ### ☀️ **Startup Projects**
@@ -188,6 +196,11 @@ We welcome all forms of contribution to our mission of decentralizing global pro
 - AI model enhancements
 - Security audits and improvements
 - Performance optimizations
+
+### 🧱 Database Transaction Guidelines
+- Utilizza sempre il context manager `db_transaction()` (definito in `app/utils.py`) per qualsiasi operazione che esegue più scritture/flush nella stessa request.
+- Esegui tutte le mutate all'interno del blocco `with db_transaction():` così da ottenere commit atomici e rollback automatici in caso di eccezioni.
+- Evita `db.session.commit()`/`rollback()` manuali fuori da questo helper, così i service layer (es. EquityService) restano coerenti e testabili.
 
 ### 🎨 **Creative Contributions**
 - UI/UX design improvements

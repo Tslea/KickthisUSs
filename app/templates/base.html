@@ -1,100 +1,189 @@
 <!DOCTYPE html>
 <html lang="it" class="h-full">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{% block title %}KickthisUSs{% endblock %}</title>
 
+    {# SEO Meta Tags #}
+    {% block meta %}
+    <meta name="description"
+        content="{% block meta_description %}KickthisUSs - Piattaforma di crowdfunding e collaborazione per progetti innovativi. Unisciti a progetti, contribuisci con le tue abilità e guadagna equity reale.{% endblock %}">
+    <meta name="keywords"
+        content="{% block meta_keywords %}crowdfunding, collaborazione, startup, innovazione, equity, progetti, investimenti{% endblock %}">
+    <meta name="author" content="KickthisUSs">
+    <meta name="robots" content="index, follow">
+
+    {# Open Graph Tags #}
+    <meta property="og:title" content="{% block og_title %}KickthisUSs{% endblock %}">
+    <meta property="og:description"
+        content="{% block og_description %}KickthisUSs - Piattaforma di crowdfunding e collaborazione per progetti innovativi{% endblock %}">
+    <meta property="og:type" content="{% block og_type %}website{% endblock %}">
+    <meta property="og:url" content="{{ request.url }}">
+    <meta property="og:image"
+        content="{% block og_image %}{{ url_for('static', filename='images/og-default.png', _external=True) }}{% endblock %}">
+    <meta property="og:site_name" content="KickthisUSs">
+
+    {# Twitter Card #}
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{% block twitter_title %}KickthisUSs{% endblock %}">
+    <meta name="twitter:description"
+        content="{% block twitter_description %}KickthisUSs - Piattaforma di crowdfunding e collaborazione{% endblock %}">
+    {% endblock %}
+
     {# Font e Icone usati nel progetto #}
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link
+        href="https://api.fontshare.com/v2/css?f[]=clash-display@400,500,600,700&f[]=cabinet-grotesk@400,500,700,800&display=swap"
+        rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 
     {# --- IL LINK FONDAMENTALE AL CSS DI TAILWIND --- #}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/output.css') }}">
-    
+
     {# --- CSS PERSONALIZZATO AGGIUNTIVO --- #}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css"
+        integrity="sha512-zjzKtVfoCEN0z7dxyzKDn5XxhxL7sRKqzZo4PMBVXgS5aXoaZySUdkGFUTkOcJCIZy9FHn5Vf3L7hIwrKyYtJw=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
 
     {% block head_extra %}{% endblock %}
 </head>
-<body class="bg-gray-50 flex flex-col min-h-screen antialiased">
+
+<body
+    class="bg-black text-white flex flex-col min-h-screen antialiased font-sans selection:bg-accent selection:text-white">
+    {# Skip to main content link for accessibility #}
+    <a href="#main-content"
+        class="sr-only focus:not-sr-only focus:absolute focus:top-0 focus:left-0 focus:z-50 focus:p-3 focus:bg-accent focus:text-white focus:font-semibold focus:shadow-lg">
+        Vai al contenuto principale
+    </a>
+
+    <div id="toast-root" class="fixed top-4 right-4 z-50 space-y-2 w-full max-w-sm pointer-events-none"
+        aria-live="assertive" aria-atomic="true"></div>
 
     {# Header moderno con navbar migliorata #}
-    <header class="bg-white/95 backdrop-blur-md shadow-sm sticky top-0 z-50 border-b border-gray-100">
-        <div class="container mx-auto px-4 sm:px-6">
-            <nav class="flex justify-between items-center py-4">
-                {# Logo con effetto gradient #}
-                <a href="{{ url_for('projects.home') }}" class="flex items-center">
-                    <span class="text-2xl font-extrabold bg-gradient-to-r from-primary-500 to-primary-600 bg-clip-text text-transparent">Kick</span>
-                    <span class="text-2xl font-extrabold bg-gradient-to-r from-accent-500 to-accent-600 bg-clip-text text-transparent">thisUSs</span>
+    <header class="bg-black/95 backdrop-blur-md sticky top-0 z-50 border-b border-gray-800">
+        <div class="container mx-auto px-6">
+            <nav class="flex justify-between items-center py-5" role="navigation"
+                aria-label="Barra di navigazione principale">
+                {# Logo Minimalista #}
+                <a href="{{ url_for('projects.home') }}" class="flex items-center group"
+                    aria-label="Vai alla home page di KickthisUSs">
+                    <span
+                        class="text-2xl font-bold text-white tracking-tight group-hover:text-gray-300 transition-colors font-display">KickThisUss</span>
                 </a>
-                
+
                 {# Hamburger menu per mobile #}
-                <button id="mobile-menu-button" class="md:hidden flex items-center p-2 rounded-lg hover:bg-gray-100">
-                    <span class="material-icons">menu</span>
+                <button id="mobile-menu-button"
+                    class="md:hidden flex items-center p-2 rounded-lg text-white hover:bg-gray-800 focus-ring"
+                    aria-label="Apri menu di navigazione" aria-expanded="false" aria-controls="mobile-menu">
+                    <span class="material-icons" aria-hidden="true">menu</span>
                 </button>
-                
-                {# Link di navigazione desktop #}
-                <div class="hidden md:flex items-center space-x-6">
-                    <a href="{{ url_for('projects.home') }}" class="nav-item {{ 'nav-item-active' if request.path == url_for('projects.home') }}">Home</a>
-                    <a href="{{ url_for('projects.projects_list') }}" class="nav-item {{ 'nav-item-active' if request.path == url_for('projects.projects_list') }}">Progetti</a>
-                    <a href="{{ url_for('investments.investments_page') }}" class="nav-item {{ 'nav-item-active' if request.path == url_for('investments.investments_page') }}">Investimenti</a>
+
+                {# Link di navigazione desktop - RIDOTTI AL MINIMO #}
+                <nav class="hidden md:flex items-center space-x-8" aria-label="Link di navigazione desktop">
                     {% if current_user.is_authenticated %}
-                    <a href="{{ url_for('projects.create_project_form') }}" class="btn-primary shadow-md transform transition hover:scale-105">
-                        <span class="material-icons text-sm mr-1">add_circle</span> Crea Progetto
+                    <a href="{{ url_for('projects.home') }}"
+                        class="text-sm font-medium text-gray-400 hover:text-white transition-colors">Home</a>
+                    <a href="{{ url_for('projects.projects_list') }}"
+                        class="text-sm font-medium text-gray-400 hover:text-white transition-colors">Progetti</a>
+                    <a href="{{ url_for('projects.create_project_form') }}"
+                        class="px-5 py-2 bg-accent text-white text-sm font-bold rounded-lg hover:bg-red-700 transition-transform transform hover:scale-105">
+                        Crea Progetto
+                    </a>
+                    {% else %}
+                    <a href="{{ url_for('projects.projects_list') }}"
+                        class="text-sm font-medium text-gray-400 hover:text-white transition-colors">Esplora</a>
+                    <a href="{{ url_for('auth.login') }}"
+                        class="text-sm font-medium text-white hover:text-gray-300 transition-colors">Accedi</a>
+                    <a href="{{ url_for('auth.register') }}"
+                        class="px-5 py-2 bg-accent text-white text-sm font-bold rounded-lg hover:bg-red-700 transition-transform transform hover:scale-105">
+                        Inizia Ora
                     </a>
                     {% endif %}
-                </div>
+                </nav>
 
                 {# Sezione utente a destra #}
-                <div class="hidden md:flex items-center space-x-2">
+                <div class="hidden md:flex items-center space-x-6">
                     {% if current_user.is_authenticated %}
-                        <div class="relative group">
-                            <button class="flex items-center space-x-2 p-1.5 rounded-full hover:bg-gray-100">
-                                {% if current_user.profile_image_url %}
-                                    <img src="{{ url_for('static', filename=current_user.profile_image_url) }}" 
-                                         alt="Profilo" 
-                                         class="w-8 h-8 rounded-full object-cover border-2 border-gray-200">
-                                {% else %}
-                                    <div class="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center text-primary-600 font-semibold">
-                                        {{ current_user.username[0] | upper }}
-                                    </div>
-                                {% endif %}
-                                <span class="text-gray-700 font-medium">{{ current_user.username }}</span>
-                                <span class="material-icons text-gray-400 text-sm">expand_more</span>
-                            </button>
-                            <div class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg overflow-hidden border border-gray-100 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform origin-top-right group-hover:scale-100 scale-95">
-                                <a href="{{ url_for('users.user_profile', username=current_user.username) }}" class="block px-4 py-2 text-gray-700 hover:bg-gray-50 flex items-center">
-                                    <span class="material-icons text-gray-400 mr-2 text-sm">person</span>
-                                    Profilo
-                                </a>
-                                <a href="{{ url_for('auth.logout') }}" class="block px-4 py-2 text-gray-700 hover:bg-gray-50 flex items-center">
-                                    <span class="material-icons text-gray-400 mr-2 text-sm">logout</span>
-                                    Logout
-                                </a>
+                    {# Badge Notifiche #}
+                    <a href="{{ url_for('notifications_bp.notifications_list') }}"
+                        class="relative p-2 rounded-full text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
+                        aria-label="Notifiche" id="notifications-link">
+                        <span class="material-icons" aria-hidden="true">notifications</span>
+                        <span id="notification-badge"
+                            class="hidden absolute top-1 right-1 inline-flex items-center justify-center w-2 h-2 bg-accent rounded-full">
+                        </span>
+                    </a>
+                    <div class="relative group">
+                        <button class="flex items-center space-x-3 p-1 rounded-full hover:bg-gray-800 transition-colors"
+                            aria-label="Menu utente per {{ current_user.username }}" aria-expanded="false"
+                            aria-haspopup="true" id="user-menu-button">
+                            {% if current_user.profile_image_url %}
+                            <img src="{{ url_for('static', filename=current_user.profile_image_url) }}"
+                                alt="Immagine profilo di {{ current_user.username }}"
+                                class="w-8 h-8 rounded-full object-cover border border-gray-700">
+                            {% else %}
+                            <div class="w-8 h-8 bg-gray-800 rounded-full flex items-center justify-center text-white font-bold text-xs border border-gray-700"
+                                aria-hidden="true">
+                                {{ current_user.username[0] | upper }}
                             </div>
+                            {% endif %}
+                        </button>
+                        <div class="absolute right-0 mt-2 w-56 bg-black border border-gray-800 rounded-xl shadow-2xl overflow-hidden opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform origin-top-right group-hover:scale-100 scale-95 z-50"
+                            role="menu" aria-labelledby="user-menu-button" id="user-menu">
+                            <div class="px-4 py-3 border-b border-gray-800">
+                                <p class="text-sm text-white font-medium">{{ current_user.username }}</p>
+                                <p class="text-xs text-gray-500 truncate">{{ current_user.email }}</p>
+                            </div>
+                            <a href="{{ url_for('users.user_profile', username=current_user.username) }}"
+                                class="block px-4 py-3 text-sm text-gray-300 hover:bg-gray-900 hover:text-white transition-colors"
+                                role="menuitem">
+                                Profilo
+                            </a>
+                            <a href="{{ url_for('notifications_bp.notifications_list') }}"
+                                class="block px-4 py-3 text-sm text-gray-300 hover:bg-gray-900 hover:text-white transition-colors"
+                                role="menuitem">
+                                Notifiche
+                            </a>
+                            <div class="border-t border-gray-800"></div>
+                            <a href="{{ url_for('auth.logout') }}"
+                                class="block px-4 py-3 text-sm text-red-500 hover:bg-gray-900 transition-colors"
+                                role="menuitem">
+                                Esci
+                            </a>
                         </div>
-                    {% else %}
-                        <a href="{{ url_for('auth.login') }}" class="nav-item px-3 py-1">Login</a>
-                        <a href="{{ url_for('auth.register') }}" class="btn-primary">Registrati</a>
+                    </div>
                     {% endif %}
                 </div>
             </nav>
-            
+
             {# Menu mobile (nascosto per default) #}
-            <div id="mobile-menu" class="md:hidden hidden bg-white border-t border-gray-100 py-3 animate-fade-in">
-                <div class="flex flex-col space-y-3 px-4">
-                    <a href="{{ url_for('projects.home') }}" class="py-2 nav-item {{ 'nav-item-active' if request.path == url_for('projects.home') }}">Home</a>
-                    <a href="{{ url_for('projects.projects_list') }}" class="py-2 nav-item {{ 'nav-item-active' if request.path == url_for('projects.projects_list') }}">Progetti</a>
-                    <a href="{{ url_for('investments.investments_page') }}" class="py-2 nav-item {{ 'nav-item-active' if request.path == url_for('investments.investments_page') }}">Investimenti</a>
+            <div id="mobile-menu" class="md:hidden hidden bg-white border-t border-gray-100 py-3 animate-fade-in"
+                role="navigation" aria-label="Menu di navigazione mobile">
+                <nav class="flex flex-col space-y-3 px-4" aria-label="Link di navigazione">
+                    <a href="{{ url_for('projects.home') }}"
+                        class="py-2 nav-item {{ 'nav-item-active' if request.path == url_for('projects.home') }}">Home</a>
+                    <a href="{{ url_for('projects.projects_list') }}"
+                        class="py-2 nav-item {{ 'nav-item-active' if request.path == url_for('projects.projects_list') }}">Progetti</a>
+                    <a href="{{ url_for('investments.investments_page') }}"
+                        class="py-2 nav-item {{ 'nav-item-active' if request.path == url_for('investments.investments_page') }}">Investimenti</a>
                     {% if current_user.is_authenticated %}
                     <a href="{{ url_for('projects.create_project_form') }}" class="py-2 flex items-center nav-item">
                         <span class="material-icons text-sm mr-1">add_circle</span> Crea Progetto
                     </a>
-                    <a href="{{ url_for('users.user_profile', username=current_user.username) }}" class="py-2 flex items-center nav-item">
+                    <a href="{{ url_for('notifications_bp.notifications_list') }}"
+                        class="py-2 flex items-center nav-item">
+                        <span class="material-icons text-sm mr-1">notifications</span> Notifiche
+                    </a>
+                    <a href="{{ url_for('users.user_profile', username=current_user.username) }}"
+                        class="py-2 flex items-center nav-item">
                         <span class="material-icons text-sm mr-1">person</span> Profilo
                     </a>
                     <a href="{{ url_for('auth.logout') }}" class="py-2 flex items-center nav-item text-red-500">
@@ -102,9 +191,10 @@
                     </a>
                     {% else %}
                     <a href="{{ url_for('auth.login') }}" class="py-2 nav-item">Login</a>
-                    <a href="{{ url_for('auth.register') }}" class="py-2 nav-item text-primary-500 font-semibold">Registrati</a>
+                    <a href="{{ url_for('auth.register') }}"
+                        class="py-2 nav-item text-primary-500 font-semibold">Registrati</a>
                     {% endif %}
-                </div>
+                </nav>
             </div>
         </div>
     </header>
@@ -116,107 +206,125 @@
             <div class="flex items-center">
                 <div class="flex-shrink-0">
                     <svg class="h-5 w-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                        <path fill-rule="evenodd"
+                            d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                            clip-rule="evenodd"></path>
                     </svg>
                 </div>
                 <div class="ml-3">
                     <p class="text-sm text-yellow-700">
-                        <strong>⚠️ Email non verificata:</strong> Verifica la tua email per accedere a tutte le funzionalità. Controlla la tua casella di posta!
+                        <strong>⚠️ Email non verificata:</strong> Verifica la tua email per accedere a tutte le
+                        funzionalità. Controlla la tua casella di posta!
                     </p>
                 </div>
             </div>
             <div class="flex-shrink-0">
-                <a href="{{ url_for('auth.resend_verification') }}" class="text-sm font-medium text-yellow-700 hover:text-yellow-600 underline">
+                <a href="{{ url_for('auth.resend_verification') }}"
+                    class="text-sm font-medium text-yellow-700 hover:text-yellow-600 underline">
                     Invia di nuovo
                 </a>
             </div>
         </div>
     </div>
     {% endif %}
-    
+
     {# Aggiungi JavaScript per il menu mobile #}
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             const mobileMenuButton = document.getElementById('mobile-menu-button');
             const mobileMenu = document.getElementById('mobile-menu');
-            
-            mobileMenuButton.addEventListener('click', function() {
+
+            mobileMenuButton.addEventListener('click', function () {
                 mobileMenu.classList.toggle('hidden');
-                // Cambia l'icona del menu
+                // Cambia l'icona del menu e aggiorna aria-expanded
                 const menuIcon = mobileMenuButton.querySelector('.material-icons');
-                if (mobileMenu.classList.contains('hidden')) {
+                const isHidden = mobileMenu.classList.contains('hidden');
+                if (isHidden) {
                     menuIcon.textContent = 'menu';
+                    mobileMenuButton.setAttribute('aria-expanded', 'false');
                 } else {
                     menuIcon.textContent = 'close';
+                    mobileMenuButton.setAttribute('aria-expanded', 'true');
                 }
             });
         });
     </script>
 
     {# Il blocco principale dove verrà inserito il contenuto delle altre pagine #}
-    <main class="flex-grow">
+    <main id="main-content" class="flex-grow" role="main">
         {# Qui verranno mostrati i messaggi flash, es. "Login effettuato con successo" #}
         {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-            <div class="container mx-auto px-6 mt-4">
-                {% for category, message in messages %}
-                    <div class="p-4 rounded-md 
+        {% if messages %}
+        <div class="container mx-auto px-6 mt-4" aria-live="assertive" aria-atomic="true">
+            {% for category, message in messages %}
+            <div class="p-4 rounded-md 
                         {% if category == 'success' %} bg-green-100 text-green-700 
                         {% elif category == 'danger' %} bg-red-100 text-red-700
-                        {% else %} bg-blue-100 text-blue-700 {% endif %}" 
-                        role="alert">
-                        {{ message }}
-                    </div>
-                {% endfor %}
+                        {% else %} bg-blue-100 text-blue-700 {% endif %}" role="alert">
+                {{ message }}
             </div>
-            {% endif %}
+            {% endfor %}
+        </div>
+        {% endif %}
         {% endwith %}
+
+        {# Banner email verification - Mostra solo se utente loggato ma non verificato #}
+        {% if current_user.is_authenticated and not current_user.email_verified %}
+        {% if request.endpoint != 'auth.login' and request.endpoint != 'auth.register' %}
+        <div id="email-verification-banner"
+            class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mx-auto container px-6 mt-4" role="alert">
+            <div class="flex items-center justify-between flex-wrap gap-3">
+                <div class="flex items-center flex-1 min-w-0">
+                    <span class="material-icons text-yellow-600 mr-3 flex-shrink-0">email</span>
+                    <div class="min-w-0">
+                        <p class="text-sm font-semibold text-yellow-800">
+                            Verifica la tua email per creare progetti e contribuire
+                        </p>
+                        <p class="text-xs text-yellow-700 mt-1">
+                            Controlla la tua casella di posta o richiedi un nuovo link di verifica.
+                        </p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3 flex-shrink-0">
+                    <a href="{{ url_for('auth.resend_verification') }}"
+                        class="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white text-sm font-semibold rounded-lg transition-colors whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2">
+                        Invia nuovamente email
+                    </a>
+                    <button type="button" onclick="dismissEmailBanner()"
+                        class="text-yellow-600 hover:text-yellow-800 focus:outline-none focus:ring-2 focus:ring-yellow-500 rounded p-1"
+                        aria-label="Chiudi banner">
+                        <span class="material-icons">close</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        {% endif %}
 
         {% block content %}{% endblock %}
     </main>
 
-    {# Footer moderno #}
-    <footer class="bg-gray-900 text-white mt-auto border-t border-gray-800">
-        <div class="container mx-auto px-6 py-12">
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
-                <div class="md:col-span-2 space-y-4">
-                    <div class="flex items-center">
-                        <span class="text-2xl font-extrabold bg-gradient-to-r from-primary-400 to-primary-500 bg-clip-text text-transparent">Kick</span>
-                        <span class="text-2xl font-extrabold bg-gradient-to-r from-accent-400 to-accent-500 bg-clip-text text-transparent">thisUSs</span>
-                    </div>
-                    <p class="text-gray-400 max-w-md">
-                        KickthisUSs - la piattaforma dove le idee innovative incontrano i talenti per realizzarle. 
-                        Unisciti a un progetto, contribuisci con le tue abilità e guadagna una vera quota del successo.
-                    </p>
-                </div>
-                
-                <div class="space-y-4">
-                    <h3 class="text-lg font-bold text-white">Link Utili</h3>
-                    <ul class="space-y-2">
-                        <li><a href="{{ url_for('projects.home') }}" class="text-gray-400 hover:text-white transition-colors">Home</a></li>
-                        <li><a href="{{ url_for('projects.projects_list') }}" class="text-gray-400 hover:text-white transition-colors">Esplora Progetti</a></li>
-                        <li><a href="{{ url_for('general.how_it_works') }}" class="text-gray-400 hover:text-white transition-colors">Come Funziona</a></li>
-                    </ul>
-                </div>
-                
-                <div class="space-y-4">
-                    <h3 class="text-lg font-bold text-white">Legale</h3>
-                    <ul class="space-y-2">
-                        <li><a href="{{ url_for('general.terms_of_service') }}" class="text-gray-400 hover:text-white transition-colors">Termini di Servizio</a></li>
-                        <li><a href="{{ url_for('general.privacy_policy') }}" class="text-gray-400 hover:text-white transition-colors">Privacy Policy</a></li>
-                    </ul>
-                </div>
+    {# Footer moderno e minimale #}
+    <footer class="bg-black text-white mt-auto border-t border-gray-800 py-12">
+        <div class="container mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6">
+            <div class="flex items-center gap-2">
+                <span class="text-xl font-bold font-display">KickThisUss</span>
+                <span class="text-gray-600 text-sm">© {{ current_year }}</span>
             </div>
-            
-            <div class="border-t border-gray-800 mt-8 pt-8 flex flex-col md:flex-row justify-between items-center">
-                <p class="text-gray-500 text-sm">&copy; {% block current_year %}{{ current_year }}{% endblock %} KickthisUSs. Tutti i diritti riservati (ma il codice è open!).</p>
-                <p class="text-gray-500 text-sm mt-2 md:mt-0">Made with <span class="text-primary-500">❤</span> in Italy</p>
+
+            <div class="flex gap-8 text-sm text-gray-500">
+                <a href="{{ url_for('general.terms_of_service') }}"
+                    class="hover:text-white transition-colors">Termini</a>
+                <a href="{{ url_for('general.privacy_policy') }}" class="hover:text-white transition-colors">Privacy</a>
+                <a href="{{ url_for('general.how_it_works') }}" class="hover:text-white transition-colors">Come
+                    Funziona</a>
             </div>
         </div>
     </footer>
 
     {# Cookie Consent Banner (GDPR Compliance) #}
-    <div id="cookie-banner" class="hidden fixed bottom-0 left-0 right-0 bg-gray-900 text-white shadow-2xl z-50 border-t-4 border-mclaren-orange">
+    <div id="cookie-banner"
+        class="hidden fixed bottom-0 left-0 right-0 bg-gray-900 text-white shadow-2xl z-50 border-t-4 border-mclaren-orange">
         <div class="container mx-auto px-4 py-6">
             <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                 <div class="flex-1">
@@ -225,17 +333,22 @@
                         Cookie & Privacy
                     </h3>
                     <p class="text-gray-300 text-sm">
-                        Utilizziamo cookie tecnici essenziali per il funzionamento della piattaforma. Non utilizziamo cookie di profilazione o tracciamento.
-                        Continuando a navigare accetti la nostra 
-                        <a href="{{ url_for('general.privacy_policy') }}" class="text-mclaren-orange hover:underline">Privacy Policy</a> e i
-                        <a href="{{ url_for('general.terms_of_service') }}" class="text-mclaren-orange hover:underline">Termini di Servizio</a>.
+                        Utilizziamo cookie tecnici essenziali per il funzionamento della piattaforma. Non utilizziamo
+                        cookie di profilazione o tracciamento.
+                        Continuando a navigare accetti la nostra
+                        <a href="{{ url_for('general.privacy_policy') }}"
+                            class="text-mclaren-orange hover:underline">Privacy Policy</a> e i
+                        <a href="{{ url_for('general.terms_of_service') }}"
+                            class="text-mclaren-orange hover:underline">Termini di Servizio</a>.
                     </p>
                 </div>
                 <div class="flex gap-3">
-                    <button id="cookie-decline" class="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm font-medium transition-colors">
+                    <button id="cookie-decline"
+                        class="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm font-medium transition-colors focus-ring-subtle">
                         Solo Necessari
                     </button>
-                    <button id="cookie-accept" class="px-6 py-2 bg-mclaren-orange hover:bg-orange-600 rounded-lg text-sm font-medium transition-colors shadow-lg">
+                    <button id="cookie-accept"
+                        class="px-6 py-2 bg-mclaren-orange hover:bg-orange-600 rounded-lg text-sm font-medium transition-colors shadow-lg focus-ring">
                         Accetta
                     </button>
                 </div>
@@ -245,15 +358,114 @@
 
     {# Scripts di base #}
     <script src="{{ url_for('static', filename='js/animations.js') }}"></script>
-    
+    <script src="{{ url_for('static', filename='js/task_management.js') }}"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"
+        integrity="sha512-EvrdzXcX4Jt9I7H5PHeTtNKgHdwNwp0UrEGouGZWlznImPi0tLxe3LjXLp8dkUBaRdOy+nK8BPVKx/aRXefx+A=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/11.1.0/marked.min.js"
+        integrity="sha512-VBXexdFv+DE5jBqFaUG2RglN6E466+vWXTjhBMWrMUR3pvN8MPmMXxMvmP0xSg6u40qCMgfHTCqkfNNpOaltsw=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" defer></script>
+    <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+    <script>
+        (function () {
+            const container = document.getElementById('toast-root');
+            window.showToast = function ({ message, type = 'info', duration = 4000 } = {}) {
+                if (!container || !message) return;
+                const wrapper = document.createElement('div');
+                const palette = {
+                    success: 'bg-green-600 text-white',
+                    error: 'bg-red-600 text-white',
+                    warning: 'bg-yellow-500 text-gray-900',
+                    info: 'bg-gray-900 text-white'
+                };
+                wrapper.className = `pointer-events-auto px-4 py-3 rounded-lg shadow-xl text-sm font-medium flex items-center gap-2 ${palette[type] || palette.info}`;
+                wrapper.innerHTML = `<span class="material-icons text-base">notifications</span><span>${message}</span>`;
+                container.appendChild(wrapper);
+                setTimeout(() => {
+                    wrapper.classList.add('opacity-0', 'translate-y-2');
+                    setTimeout(() => wrapper.remove(), 200);
+                }, duration);
+            };
+        })();
+    </script>
+    <script>
+        window.__APP_VALIDATION_RULES = {{ validation_rules | tojson }};
+    </script>
+    <script src="{{ url_for('static', filename='js/validation.js') }}" defer></script>
+
+    {# Script per aggiornare badge notifiche #}
+    {% if current_user.is_authenticated %}
+    <script>
+        // Funzione per aggiornare il badge notifiche
+        function updateNotificationBadge() {
+            fetch('{{ url_for("notifications_bp.unread_count") }}')
+                .then(response => response.json())
+                .then(data => {
+                    const badge = document.getElementById('notification-badge');
+                    if (data.count > 0) {
+                        badge.textContent = data.count > 99 ? '99+' : data.count;
+                        badge.classList.remove('hidden');
+                    } else {
+                        badge.classList.add('hidden');
+                    }
+                })
+                .catch(error => console.error('Errore aggiornamento notifiche:', error));
+        }
+
+        // Aggiorna il badge al caricamento della pagina
+        document.addEventListener('DOMContentLoaded', function () {
+            updateNotificationBadge();
+            // Aggiorna ogni 30 secondi
+            setInterval(updateNotificationBadge, 30000);
+        });
+    </script>
+    {% endif %}
+
+    {# Script per gestire dismiss banner email verification #}
+    <script>
+        function dismissEmailBanner() {
+            const banner = document.getElementById('email-verification-banner');
+            if (banner) {
+                banner.style.display = 'none';
+                try {
+                    localStorage.setItem('email-banner-dismissed', 'true');
+                } catch (e) {
+                    // Fallback se localStorage non disponibile
+                    console.warn('localStorage non disponibile');
+                }
+            }
+        }
+
+        // Controlla se il banner è stato già chiuso
+        document.addEventListener('DOMContentLoaded', function () {
+            const banner = document.getElementById('email-verification-banner');
+            if (banner) {
+                try {
+                    const dismissed = localStorage.getItem('email-banner-dismissed');
+                    {% if current_user.is_authenticated and current_user.email_verified %}
+                    // Reset dismiss quando email viene verificata
+                    localStorage.removeItem('email-banner-dismissed');
+                    {% else %}
+                    // Nascondi banner se già chiuso dall'utente
+                    if (dismissed === 'true') {
+                        banner.style.display = 'none';
+                    }
+                    {% endif %}
+                } catch (e) {
+                    // Ignora errori localStorage
+                }
+            }
+        });
+    </script>
+
     {# Cookie Consent Script #}
     <script>
-        (function() {
+        (function () {
             const COOKIE_CONSENT_KEY = 'kickthisuss_cookie_consent';
             const banner = document.getElementById('cookie-banner');
             const acceptBtn = document.getElementById('cookie-accept');
             const declineBtn = document.getElementById('cookie-decline');
-            
+
             // Check if user has already made a choice
             function getCookieConsent() {
                 try {
@@ -262,7 +474,7 @@
                     return null;
                 }
             }
-            
+
             // Set cookie consent
             function setCookieConsent(value) {
                 try {
@@ -271,27 +483,28 @@
                     console.warn('Cannot save cookie preference:', e);
                 }
             }
-            
+
             // Show banner if no consent recorded
             const consent = getCookieConsent();
             if (!consent) {
                 banner.classList.remove('hidden');
             }
-            
+
             // Accept button handler
-            acceptBtn.addEventListener('click', function() {
+            acceptBtn.addEventListener('click', function () {
                 setCookieConsent('accepted');
                 banner.classList.add('hidden');
             });
-            
+
             // Decline button handler (only essential cookies)
-            declineBtn.addEventListener('click', function() {
+            declineBtn.addEventListener('click', function () {
                 setCookieConsent('declined');
                 banner.classList.add('hidden');
             });
         })();
     </script>
-    
+
     {% block scripts %}{% endblock %}
 </body>
+
 </html>

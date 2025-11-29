@@ -8,6 +8,8 @@ from flask_wtf.csrf import CSRFProtect
 from .config import Config
 from .extensions import db, login_manager, mail
 from flask_migrate import Migrate
+from . import errors  # Import error handlers
+from .cache import init_cache, cache  # Flask-Caching
 from .routes_projects import projects_bp
 from .routes_auth import auth_bp
 from .routes_tasks import tasks_bp
@@ -19,10 +21,19 @@ from .api_help import api_help_bp  # Nuova importazione per aiuto AI
 from .routes_invites import invites_bp  # Nuova importazione
 from .api_uploads import api_uploads_bp  # Nuova importazione per uploads
 from .routes_wiki import wiki_bp  # Nuova importazione per la Wiki
+from .routes_milestones import milestones_bp  # Blueprint per le milestone/roadmap
 from .routes_investments import investments_bp  # Nuova importazione per Investimenti
 from .routes_health import health_bp  # Health check endpoint
-# NOTE: free_proposals_bp importato dentro create_app() per evitare problemi nei test
-from . import errors
+from .hub_agents import hub_agents_bp # Nuova importazione per Hub Agents
+
+# GitHub API integration - import from root level api directory
+import sys
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(__file__)), 'api'))
+try:
+    from api.github_viewer import api_github_bp
+except ImportError:
+    api_github_bp = None  # GitHub integration not available
+
 from . import utils
 
 csrf = CSRFProtect()
@@ -139,6 +150,9 @@ def create_app(config_class=Config):
             raise
     
     app.logger.info(f"Application starting in {app.config.get('FLASK_ENV', 'development')} mode")
+    
+    # Log GitHub configuration for debugging
+    app.logger.info(f"GitHub Integration - ENABLED: {app.config.get('GITHUB_ENABLED')}, TOKEN exists: {bool(app.config.get('GITHUB_TOKEN'))}, ORG: {app.config.get('GITHUB_ORG')}")
 
     # Inizializza le estensioni con l'app
     db.init_app(app)
@@ -153,6 +167,27 @@ def create_app(config_class=Config):
     app.config.setdefault('RATELIMIT_STORAGE_URL', 'memory://')
     app.config.setdefault('RATELIMIT_DEFAULT', '200 per day;50 per hour')
     limiter.init_app(app)
+    
+    # Inizializza Flask-Caching per performance
+    init_cache(app)
+    
+    # Inizializza il servizio AI con la configurazione dell'app
+    from .ai_services import init_ai_service
+    with app.app_context():
+        init_ai_service(app)
+        from .ai_services import AI_SERVICE_AVAILABLE, CURRENT_MODEL, CURRENT_PROVIDER
+        if AI_SERVICE_AVAILABLE:
+            app.logger.info(f"AI Service initialized: Provider={CURRENT_PROVIDER}, Model={CURRENT_MODEL}")
+        else:
+            app.logger.warning("AI Service not available - check API keys configuration")
+
+    # Initialize Celery
+    try:
+        from tasks import init_celery
+        init_celery(app)
+        app.logger.info("Celery initialized successfully")
+    except ImportError as e:
+        app.logger.warning(f"Could not initialize Celery: {e}")
 
     login_manager.login_view = 'auth.login'
     login_manager.login_message = 'Effettua il login per accedere a questa pagina.'
@@ -169,6 +204,8 @@ def create_app(config_class=Config):
     from .routes_webhooks import webhooks_bp  # GitHub webhooks
     
     app.register_blueprint(auth_bp, url_prefix='/auth')
+    # Registra milestones_bp prima di projects_bp per evitare conflitti di route
+    app.register_blueprint(milestones_bp, url_prefix='/')  # Registrazione blueprint milestone
     app.register_blueprint(projects_bp, url_prefix='/')
     app.register_blueprint(tasks_bp, url_prefix='/tasks')
     app.register_blueprint(users_bp, url_prefix='/users')
@@ -186,7 +223,13 @@ def create_app(config_class=Config):
     app.register_blueprint(api_ai_wiki, url_prefix='/api')  # AI Wiki functionality
     app.register_blueprint(api_ai_projects, url_prefix='/api')  # AI Project guides
     app.register_blueprint(free_proposals_bp, url_prefix='/')  # Free proposals
-    app.register_blueprint(webhooks_bp)  # GitHub webhooks (già con url_prefix='/webhooks')
+    app.register_blueprint(hub_agents_bp, url_prefix='/')  # Registrazione blueprint Hub Agents
+    
+    # Register GitHub blueprints if available
+    if api_github_bp:
+        app.register_blueprint(api_github_bp)  # GitHub API (già con url_prefix='/api/github')
+    if 'webhooks_bp' in dir():
+        app.register_blueprint(webhooks_bp)  # GitHub webhooks (già con url_prefix='/webhooks')
 
     # Registra i gestori di errore
     app.register_error_handler(401, errors.unauthorized_error)
@@ -218,4 +261,13 @@ def create_app(config_class=Config):
             db.create_all()
             print("Database tables created successfully")
 
+        # Assicura la presenza delle nuove tabelle introdotte dopo DB già creati
+        try:
+            from .models import ProjectRepository
+            ProjectRepository.__table__.create(bind=db.engine, checkfirst=True)
+        except Exception as exc:
+            app.logger.warning("Unable to ensure project_repository table exists: %s", exc, exc_info=True)
+
     return app
+
+# Force reload

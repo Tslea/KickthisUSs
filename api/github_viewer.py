@@ -1,8 +1,10 @@
 from flask import Blueprint, jsonify, request, current_app
 from flask_login import login_required, current_user
-from models import Project, Solution
+from app.models import Project, Solution
 from services.github_service import get_github_service
-from config.github_config import GITHUB_ENABLED
+
+# GitHub integration status
+GITHUB_ENABLED = True
 
 api_github_bp = Blueprint('api_github', __name__, url_prefix='/api/github')
 
@@ -245,7 +247,7 @@ def connect_repo(project_id):
 def sync_all_tasks(project_id):
     """Sincronizza tutti i task del progetto con GitHub Issues"""
     from app import db
-    from models import Task
+    from app.models import Task
     from app.services.github_service import GitHubService
     
     project = Project.query.get_or_404(project_id)
@@ -270,8 +272,15 @@ def sync_all_tasks(project_id):
     try:
         github_service = GitHubService()
         
-        # Ottieni tutti i task del progetto
-        tasks = Task.query.filter_by(project_id=project_id).all()
+        # Ottieni solo i task pubblici (NULL o False) e non "suggested" del progetto
+        # NULL viene trattato come pubblico per retrocompatibilità
+        tasks = Task.query.filter_by(
+            project_id=project_id
+        ).filter(
+            (Task.is_private == False) | (Task.is_private.is_(None))  # Pubblici o NULL
+        ).filter(
+            Task.status.notin_(['suggested'])  # Escludi solo i "suggested" (non ancora approvati)
+        ).all()
         
         synced_count = 0
         failed_count = 0

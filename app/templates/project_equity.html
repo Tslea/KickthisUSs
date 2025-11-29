@@ -1,237 +1,222 @@
 {% extends "base.html" %}
 
-{% block title %}Equity Distribution - {{ project.name }}{% endblock %}
+{% block title %}Cap Table - {{ project.name }}{% endblock %}
 
 {% block content %}
-<div class="container mx-auto px-4 py-8 max-w-6xl">
-    <!-- Header -->
-    <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
-        <div class="flex items-center justify-between mb-4">
-            <div>
-                <h1 class="text-3xl font-bold text-gray-900 mb-2">
-                    🎯 Equity Distribution
-                </h1>
-                <p class="text-gray-600">
-                    <a href="{{ url_for('projects.project_detail', project_id=project.id) }}" class="text-mclaren-orange hover:underline">
-                        {{ project.name }}
-                    </a>
-                </p>
-            </div>
-            <div class="text-right">
-                <div class="text-sm text-gray-500 mb-1">Total Distributed</div>
-                <div class="text-4xl font-bold text-mclaren-orange">{{ "%.2f"|format(total_distributed) }}%</div>
+<main class="bg-black min-h-screen text-white py-8 md:py-12">
+    <div class="max-w-7xl mx-auto px-6">
+        
+        {# Header #}
+        <div class="mb-8 md:mb-12">
+            <div class="flex items-center justify-between mb-6">
+                <div>
+                    <h1 class="text-5xl md:text-7xl font-bold font-display mb-4">Cap Table</h1>
+                    <p class="text-xl text-gray-500">
+                        <a href="{{ url_for('projects.project_detail', project_id=project.id) }}" 
+                           class="text-white hover:text-accent transition-colors">
+                            {{ project.name }}
+                        </a>
+                    </p>
+                </div>
+                <div class="text-right">
+                    <div class="text-sm text-gray-500 mb-2 uppercase tracking-wider">Total Distributed</div>
+                    <div class="text-5xl font-bold text-accent font-display">{{ "%.2f"|format(total_distributed) }}%</div>
+                </div>
             </div>
         </div>
-    </div>
 
-    <!-- Equity Stats Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-        <!-- Total Distributed -->
-        <div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg p-6 text-white">
-            <div class="flex items-center justify-between mb-2">
-                <span class="text-blue-100 font-medium">Total Distributed</span>
-                <svg class="w-8 h-8 text-blue-100" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-                </svg>
+        {# Stats Cards #}
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="bg-gray-900 border border-gray-800 rounded-xl p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <span class="text-sm font-bold text-gray-400 uppercase tracking-wider">Total Distributed</span>
+                    <span class="material-icons text-blue-400">bar_chart</span>
+                </div>
+                <div class="text-4xl font-bold text-white font-display mb-2">{{ "%.2f"|format(total_distributed) }}%</div>
+                <div class="text-sm text-gray-500">to {{ cap_table|length }} members</div>
             </div>
-            <div class="text-3xl font-bold">{{ "%.2f"|format(total_distributed) }}%</div>
-            <div class="text-sm text-blue-100 mt-2">to {{ cap_table|length }} members</div>
-        </div>
 
-        <!-- Available Equity -->
-        <div class="bg-gradient-to-br from-green-500 to-green-600 rounded-xl shadow-lg p-6 text-white">
-            <div class="flex items-center justify-between mb-2">
-                <span class="text-green-100 font-medium">Available</span>
-                <svg class="w-8 h-8 text-green-100" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                </svg>
+            <div class="bg-gray-900 border border-gray-800 rounded-xl p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <span class="text-sm font-bold text-gray-400 uppercase tracking-wider">Available</span>
+                    <span class="material-icons text-green-400">account_balance_wallet</span>
+                </div>
+                <div class="text-4xl font-bold text-white font-display mb-2">{{ "%.2f"|format(available_equity) }}%</div>
+                <div class="text-sm {% if available_equity > 0 %}text-gray-500{% else %}text-yellow-500{% endif %}">
+                    {% if available_equity > 0 %}
+                        ready to distribute
+                    {% else %}
+                        ⚠️ No equity available
+                    {% endif %}
+                </div>
             </div>
-            <div class="text-3xl font-bold">{{ "%.2f"|format(available_equity) }}%</div>
-            <div class="text-sm text-green-100 mt-2">
-                {% if available_equity > 0 %}
-                    ready to distribute
+
+            <div class="bg-gray-900 border border-gray-800 rounded-xl p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <span class="text-sm font-bold text-gray-400 uppercase tracking-wider">Configuration</span>
+                    <span class="material-icons text-purple-400">settings</span>
+                </div>
+                {% if equity_config %}
+                    <div class="space-y-2 text-sm text-gray-400">
+                        <div>Team: <span class="text-white font-bold">{{ "%.1f"|format(equity_config.team_percentage) }}%</span></div>
+                        <div>Investors: <span class="text-white font-bold">{{ "%.1f"|format(equity_config.investors_percentage) }}%</span></div>
+                        <div>Platform: <span class="text-white font-bold">{{ "%.1f"|format(equity_config.kickthisuss_percentage) }}%</span></div>
+                    </div>
                 {% else %}
-                    <span class="text-yellow-200">⚠️ No equity available</span>
+                    <div class="text-sm text-gray-500">Default configuration</div>
                 {% endif %}
             </div>
         </div>
 
-        <!-- Equity Configuration -->
-        <div class="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl shadow-lg p-6 text-white">
-            <div class="flex items-center justify-between mb-2">
-                <span class="text-purple-100 font-medium">Configuration</span>
-                <svg class="w-8 h-8 text-purple-100" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                </svg>
+        {# Validation Alerts #}
+        {% if not validation_result.valid %}
+        <div class="bg-red-900/20 border border-red-800 rounded-xl p-6 mb-8">
+            <div class="flex items-start gap-4">
+                <span class="material-icons text-red-400">warning</span>
+                <div class="flex-1">
+                    <h3 class="text-red-400 font-bold mb-3">⚠️ Equity Distribution Issues</h3>
+                    <ul class="list-disc list-inside text-red-500 text-sm space-y-1">
+                        {% for issue in validation_result.issues %}
+                        <li>{{ issue }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
             </div>
-            {% if equity_config %}
-                <div class="text-sm text-purple-100">
-                    <div>Team: {{ "%.1f"|format(equity_config.team_percentage) }}%</div>
-                    <div>Investors: {{ "%.1f"|format(equity_config.investors_percentage) }}%</div>
-                    <div>Platform: {{ "%.1f"|format(equity_config.kickthisuss_percentage) }}%</div>
-                </div>
-            {% else %}
-                <div class="text-sm text-purple-100">
-                    Default configuration
-                </div>
+        </div>
+        {% endif %}
+
+        {# Cap Table #}
+        <div class="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden">
+            <div class="bg-gray-800 border-b border-gray-700 px-6 py-4">
+                <h2 class="text-2xl font-bold font-display text-white">Cap Table</h2>
+                <p class="text-sm text-gray-500 mt-1">Equity ownership breakdown</p>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-800">
+                    <thead class="bg-gray-800">
+                        <tr>
+                            <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">
+                                Rank
+                            </th>
+                            <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">
+                                Member
+                            </th>
+                            <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">
+                                Equity %
+                            </th>
+                            <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">
+                                Earned From
+                            </th>
+                            <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">
+                                Last Updated
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-gray-900 divide-y divide-gray-800">
+                        {% for equity in cap_table %}
+                        <tr class="hover:bg-gray-800 transition-colors">
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="text-2xl font-bold text-gray-500">#{{ loop.index }}</span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="flex items-center">
+                                    <div class="flex-shrink-0 h-10 w-10">
+                                        <div class="h-10 w-10 rounded-full bg-accent flex items-center justify-center text-white font-bold">
+                                            {{ equity.user.username[0].upper() }}
+                                        </div>
+                                    </div>
+                                    <div class="ml-4">
+                                        <div class="text-sm font-bold text-white">
+                                            <a href="{{ url_for('users.user_profile', username=equity.user.username) }}" 
+                                               class="hover:text-accent transition-colors">
+                                                {{ equity.user.username }}
+                                            </a>
+                                            {% if equity.user_id == project.creator_id %}
+                                                <span class="ml-2 px-2 py-1 text-xs font-bold rounded-full bg-yellow-900/30 border border-yellow-800 text-yellow-400">
+                                                    👑 Creator
+                                                </span>
+                                            {% endif %}
+                                        </div>
+                                        <div class="text-xs text-gray-500">
+                                            User ID: {{ equity.user_id }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="flex items-center">
+                                    <div class="w-32 bg-gray-800 rounded-full h-2 mr-3">
+                                        <div class="bg-accent h-2 rounded-full" 
+                                             style="width: {{ (equity.equity_percentage / total_distributed * 100) if total_distributed > 0 else 0 }}%">
+                                        </div>
+                                    </div>
+                                    <span class="text-lg font-bold text-white">{{ "%.2f"|format(equity.equity_percentage) }}%</span>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="text-sm">
+                                    {% if equity.earned_from == 'creator' %}
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-purple-900/30 border border-purple-800 text-purple-400">
+                                            🚀 Initial Allocation
+                                        </span>
+                                    {% else %}
+                                        {% set sources = equity.earned_from.split(',') %}
+                                        <div class="flex flex-wrap gap-1">
+                                            {% for source in sources[:3] %}
+                                                {% if source.strip() %}
+                                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-900/30 border border-blue-800 text-blue-400">
+                                                        ✓ {{ source.strip() }}
+                                                    </span>
+                                                {% endif %}
+                                            {% endfor %}
+                                            {% if sources|length > 3 %}
+                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-gray-800 border border-gray-700 text-gray-400">
+                                                    +{{ sources|length - 3 }} more
+                                                </span>
+                                            {% endif %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {{ equity.last_updated.strftime('%Y-%m-%d') if equity.last_updated else 'N/A' }}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot class="bg-gray-800 border-t border-gray-700">
+                        <tr>
+                            <td colspan="2" class="px-6 py-4 text-right font-bold text-white">
+                                TOTAL
+                            </td>
+                            <td class="px-6 py-4 font-bold text-white">
+                                <span class="text-xl">{{ "%.2f"|format(total_distributed) }}%</span>
+                            </td>
+                            <td colspan="2" class="px-6 py-4 text-sm text-gray-500">
+                                {{ cap_table|length }} equity holders
+                            </td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+
+        {# Actions #}
+        <div class="mt-8 flex justify-between items-center">
+            <a href="{{ url_for('projects.project_detail', project_id=project.id) }}" 
+               class="px-6 py-3 bg-gray-900 border border-gray-800 text-white rounded-lg hover:bg-gray-800 transition-colors font-medium flex items-center gap-2">
+                <span class="material-icons text-sm">arrow_back</span>
+                Torna al Progetto
+            </a>
+
+            {% if is_creator %}
+            <div class="text-sm text-gray-500 flex items-center gap-2">
+                <span class="material-icons text-sm">info</span>
+                Solo tu e i collaboratori possono vedere questa pagina
+            </div>
             {% endif %}
         </div>
     </div>
-
-    <!-- Validation Alerts -->
-    {% if not validation_result.valid %}
-    <div class="bg-red-50 border-l-4 border-red-500 p-6 mb-6 rounded-lg">
-        <div class="flex items-start">
-            <svg class="w-6 h-6 text-red-500 mr-3 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
-            </svg>
-            <div class="flex-1">
-                <h3 class="text-red-800 font-bold mb-2">⚠️ Equity Distribution Issues</h3>
-                <ul class="list-disc list-inside text-red-700 text-sm space-y-1">
-                    {% for issue in validation_result.issues %}
-                    <li>{{ issue }}</li>
-                    {% endfor %}
-                </ul>
-            </div>
-        </div>
-    </div>
-    {% endif %}
-
-    <!-- Cap Table -->
-    <div class="bg-white rounded-xl shadow-lg overflow-hidden">
-        <div class="bg-gradient-to-r from-mclaren-orange to-orange-600 px-6 py-4">
-            <h2 class="text-2xl font-bold text-white">📊 Cap Table</h2>
-            <p class="text-orange-100 text-sm mt-1">Equity ownership breakdown</p>
-        </div>
-
-        <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50">
-                    <tr>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Rank
-                        </th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Member
-                        </th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Equity %
-                        </th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Earned From
-                        </th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Last Updated
-                        </th>
-                    </tr>
-                </thead>
-                <tbody class="bg-white divide-y divide-gray-200">
-                    {% for equity in cap_table %}
-                    <tr class="hover:bg-gray-50 transition-colors">
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="text-2xl font-bold text-gray-400">#{{ loop.index }}</span>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="flex items-center">
-                                <div class="flex-shrink-0 h-10 w-10">
-                                    <div class="h-10 w-10 rounded-full bg-gradient-to-br from-mclaren-orange to-orange-600 flex items-center justify-center text-white font-bold">
-                                        {{ equity.user.username[0].upper() }}
-                                    </div>
-                                </div>
-                                <div class="ml-4">
-                                    <div class="text-sm font-medium text-gray-900">
-                                        <a href="{{ url_for('users.user_profile', username=equity.user.username) }}" class="hover:text-mclaren-orange">
-                                            {{ equity.user.username }}
-                                        </a>
-                                        {% if equity.user_id == project.creator_id %}
-                                            <span class="ml-2 px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">
-                                                👑 Creator
-                                            </span>
-                                        {% endif %}
-                                    </div>
-                                    <div class="text-xs text-gray-500">
-                                        User ID: {{ equity.user_id }}
-                                    </div>
-                                </div>
-                            </div>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="flex items-center">
-                                <div class="w-32 bg-gray-200 rounded-full h-2 mr-3">
-                                    <div class="bg-gradient-to-r from-mclaren-orange to-orange-600 h-2 rounded-full" 
-                                         style="width: {{ (equity.equity_percentage / total_distributed * 100) if total_distributed > 0 else 0 }}%">
-                                    </div>
-                                </div>
-                                <span class="text-lg font-bold text-gray-900">{{ "%.2f"|format(equity.equity_percentage) }}%</span>
-                            </div>
-                        </td>
-                        <td class="px-6 py-4">
-                            <div class="text-sm text-gray-900">
-                                {% if equity.earned_from == 'creator' %}
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                                        🚀 Initial Allocation
-                                    </span>
-                                {% else %}
-                                    {% set sources = equity.earned_from.split(',') %}
-                                    <div class="flex flex-wrap gap-1">
-                                        {% for source in sources[:3] %}
-                                            {% if source.strip() %}
-                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                                    ✓ {{ source.strip() }}
-                                                </span>
-                                            {% endif %}
-                                        {% endfor %}
-                                        {% if sources|length > 3 %}
-                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                                                +{{ sources|length - 3 }} more
-                                            </span>
-                                        {% endif %}
-                                    </div>
-                                {% endif %}
-                            </div>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {{ equity.last_updated.strftime('%Y-%m-%d') if equity.last_updated else 'N/A' }}
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-                <tfoot class="bg-gray-50">
-                    <tr>
-                        <td colspan="2" class="px-6 py-4 text-right font-bold text-gray-900">
-                            TOTAL
-                        </td>
-                        <td class="px-6 py-4 font-bold text-gray-900">
-                            <span class="text-xl">{{ "%.2f"|format(total_distributed) }}%</span>
-                        </td>
-                        <td colspan="2" class="px-6 py-4 text-sm text-gray-500">
-                            {{ cap_table|length }} equity holders
-                        </td>
-                    </tr>
-                </tfoot>
-            </table>
-        </div>
-    </div>
-
-    <!-- Actions -->
-    <div class="mt-6 flex justify-between items-center">
-        <a href="{{ url_for('projects.project_detail', project_id=project.id) }}" 
-           class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-mclaren-orange transition-colors">
-            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
-            </svg>
-            Back to Project
-        </a>
-
-        {% if is_creator %}
-        <div class="text-sm text-gray-500">
-            <svg class="w-5 h-5 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-            </svg>
-            Only you and collaborators can see this page
-        </div>
-        {% endif %}
-    </div>
-</div>
+</main>
 {% endblock %}

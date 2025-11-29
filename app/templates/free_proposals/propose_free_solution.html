@@ -1,959 +1,374 @@
 {% extends "base.html" %}
 
-{% block title %}Proponi Soluzione Libera - {{ project.name }}{% endblock %}
-
-{% block head_extra %}
-<style>
-/* Free Proposal Page – aligned with submit_solution aesthetics */
-.free-proposal-page {
-    min-height: 100vh;
-    background: linear-gradient(135deg, #f9fafb 0%, #eef2f7 100%);
-    padding-bottom: 4rem;
-}
-
-.fp-hero {
-    background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%);
-    padding: 3.5rem 1.5rem 6rem;
-    color: #fff;
-    position: relative;
-    overflow: hidden;
-}
-
-.fp-hero::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: url("data:image/svg+xml,%3Csvg width='80' height='80' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M48 45v-5h-3v5h-5v3h5v5h3v-5h5v-3h-5zm0-40V0h-3v5h-5v3h5v5h3V8h5V5h-5zM8 45v-5H5v5H0v3h5v5h3v-5h5v-3H8zM8 5V0H5v5H0v3h5v5h3V8h5V5H8z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
-    opacity: 0.85;
-}
-
-.fp-hero-content {
-    position: relative;
-    max-width: 960px;
-    margin: 0 auto;
-    text-align: center;
-    z-index: 1;
-}
-
-.fp-breadcrumb {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.6rem 1.1rem;
-    border-radius: 9999px;
-    background: rgba(255, 255, 255, 0.12);
-    backdrop-filter: blur(6px);
-    margin-bottom: 1.75rem;
-}
-
-.fp-breadcrumb a,
-.fp-breadcrumb span {
-    color: rgba(255, 255, 255, 0.9);
-    font-size: 0.9rem;
-    text-decoration: none;
-}
-
-.fp-breadcrumb a:hover {
-    color: #ffffff;
-}
-
-.fp-title {
-    font-size: 2.75rem;
-    font-weight: 900;
-    letter-spacing: -0.03em;
-    margin-bottom: 0.85rem;
-    text-shadow: 0 12px 32px rgba(15, 23, 42, 0.28);
-}
-
-.fp-subtitle {
-    font-size: 1.1rem;
-    color: rgba(255, 255, 255, 0.9);
-    margin-bottom: 1.75rem;
-}
-
-.fp-subtitle a {
-    color: #fff;
-    font-weight: 700;
-    text-decoration: underline;
-    text-decoration-thickness: 2px;
-    text-underline-offset: 4px;
-}
-
-.fp-hero-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-    gap: 1rem;
-}
-
-.fp-hero-card {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
-    padding: 1rem 1.25rem;
-    border-radius: 1rem;
-    background: rgba(15, 23, 42, 0.18);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-}
-
-.fp-hero-card h3 {
-    font-size: 0.95rem;
-    font-weight: 700;
-    margin: 0;
-    letter-spacing: 0.02em;
-}
-
-.fp-hero-card span {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.35rem;
-    font-size: 0.9rem;
-}
-
-.fp-container {
-    max-width: 960px;
-    margin: -4.5rem auto 0;
-    padding: 0 1.5rem;
-    position: relative;
-    z-index: 2;
-}
-
-.fp-card {
-    background: #fff;
-    border-radius: 1.75rem;
-    border: 1px solid rgba(15, 23, 42, 0.08);
-    box-shadow: 0 18px 60px rgba(15, 23, 42, 0.12);
-    overflow: hidden;
-}
-
-.fp-card-body {
-    padding: 3rem;
-}
-
-.fp-section {
-    margin-bottom: 3rem;
-    padding-bottom: 2.5rem;
-    border-bottom: 2px solid #f1f5f9;
-}
-
-.fp-section:last-child {
-    margin-bottom: 0;
-    padding-bottom: 0;
-    border-bottom: none;
-}
-
-.fp-step-header {
-    display: flex;
-    align-items: center;
-    gap: 1.25rem;
-    margin-bottom: 1.75rem;
-}
-
-.fp-step-number {
-    width: 56px;
-    height: 56px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%);
-    color: #fff;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 800;
-    font-size: 1.35rem;
-    box-shadow: 0 12px 26px rgba(37, 99, 235, 0.35);
-}
-
-.fp-step-title {
-    font-size: 1.55rem;
-    font-weight: 800;
-    color: #0f172a;
-    letter-spacing: -0.01em;
-}
-
-.fp-step-subtitle {
-    font-size: 0.95rem;
-    color: #64748b;
-    max-width: 560px;
-}
-
-.fp-type-grid {
-    display: grid;
-    gap: 1rem;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-}
-
-.fp-type-card {
-    position: relative;
-}
-
-.fp-type-input {
-    position: absolute;
-    opacity: 0;
-    pointer-events: none;
-}
-
-.fp-type-content {
-    border: 2px solid #e2e8f0;
-    border-radius: 1.25rem;
-    padding: 1.6rem;
-    background: #fff;
-    transition: all 0.3s ease;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-}
-
-.fp-type-title {
-    font-size: 1rem;
-    font-weight: 700;
-    color: #0f172a;
-}
-
-.fp-type-description {
-    font-size: 0.9rem;
-    color: #64748b;
-}
-
-.fp-type-card:hover .fp-type-content {
-    border-color: #2563eb;
-    box-shadow: 0 16px 32px rgba(37, 99, 235, 0.12);
-    transform: translateY(-4px);
-}
-
-.fp-type-input:checked + .fp-type-content {
-    border-color: #2563eb;
-    background: linear-gradient(135deg, rgba(37, 99, 235, 0.08) 0%, rgba(79, 70, 229, 0.06) 100%);
-    box-shadow: 0 16px 32px rgba(37, 99, 235, 0.14);
-}
-
-.fp-type-input:checked + .fp-type-content::after {
-    content: '✓';
-    position: absolute;
-    top: 14px;
-    right: 14px;
-    width: 26px;
-    height: 26px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%);
-    color: #fff;
-    font-size: 0.9rem;
-    font-weight: 700;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
-}
-
-.fp-task-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-    gap: 1.25rem;
-}
-
-.fp-task-card {
-    position: relative;
-    border: 1px solid #e2e8f0;
-    border-radius: 1.25rem;
-    padding: 1.25rem 1.5rem;
-    background: #fff;
-    transition: all 0.25s ease;
-    cursor: pointer;
-}
-
-.fp-task-card:hover {
-    border-color: #1d4ed8;
-    box-shadow: 0 12px 26px rgba(29, 78, 216, 0.12);
-    transform: translateY(-3px);
-}
-
-.task-checkbox {
-    position: absolute;
-    opacity: 0;
-    pointer-events: none;
-}
-
-.fp-task-content {
-    display: flex;
-    flex-direction: column;
-    gap: 0.65rem;
-}
-
-.fp-task-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: 0.75rem;
-}
-
-.fp-task-title {
-    font-weight: 700;
-    color: #0f172a;
-    font-size: 1rem;
-}
-
-.fp-task-equity {
-    display: inline-flex;
-    align-items: center;
-    font-weight: 700;
-    color: #1d4ed8;
-    background: rgba(29, 78, 216, 0.12);
-    border-radius: 9999px;
-    padding: 0.35rem 0.75rem;
-    font-size: 0.85rem;
-}
-
-.fp-task-description {
-    font-size: 0.9rem;
-    color: #64748b;
-}
-
-.fp-task-card.selected {
-    border-color: #2563eb;
-    box-shadow: 0 16px 35px rgba(37, 99, 235, 0.15);
-    background: linear-gradient(135deg, rgba(37, 99, 235, 0.08) 0%, rgba(79, 70, 229, 0.06) 100%);
-}
-
-.fp-task-card.selected::after {
-    content: '✓';
-    position: absolute;
-    top: 16px;
-    right: 16px;
-    width: 26px;
-    height: 26px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%);
-    color: #fff;
-    font-size: 0.9rem;
-    font-weight: 700;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
-}
-
-.fp-no-tasks {
-    border-radius: 1.25rem;
-    padding: 2rem;
-    background: rgba(37, 99, 235, 0.05);
-    border: 1px dashed rgba(37, 99, 235, 0.3);
-    text-align: center;
-    color: #1d4ed8;
-    font-weight: 600;
-}
-
-.fp-summary {
-    border-radius: 1.25rem;
-    border: 1px solid rgba(15, 23, 42, 0.08);
-    background: rgba(99, 102, 241, 0.07);
-    padding: 1.25rem 1.5rem;
-    margin-top: 1.5rem;
-    transition: all 0.3s ease;
-}
-
-.fp-summary strong {
-    color: #1d4ed8;
-}
-
-.fp-newtask-card {
-    border-radius: 1.25rem;
-    border: 1px solid #e2e8f0;
-    background: #f8fafc;
-    padding: 1.6rem;
-}
-
-.fp-form-label {
-    font-weight: 700;
-    color: #0f172a;
-    margin-bottom: 0.5rem;
-}
-
-.fp-form-control {
-    border-radius: 1rem;
-    border: 1px solid #cbd5f5;
-    padding: 0.9rem 1rem;
-    font-size: 1rem;
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
-}
-
-.fp-form-control:focus {
-    border-color: #2563eb;
-    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.15);
-}
-
-.fp-helper-text {
-    font-size: 0.85rem;
-    color: #64748b;
-    margin-top: 0.4rem;
-}
-
-#equity-preview {
-    border-radius: 1.25rem;
-    border: 1px solid rgba(37, 99, 235, 0.2);
-    background: linear-gradient(135deg, rgba(37, 99, 235, 0.08) 0%, rgba(79, 70, 229, 0.06) 100%);
-    padding: 1.25rem 1.5rem;
-    margin-top: 1.5rem;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 1rem;
-}
-
-#equity-value {
-    font-size: 1.75rem;
-    font-weight: 800;
-    color: #1d4ed8;
-}
-
-.fp-submit-actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 1rem;
-    justify-content: flex-end;
-}
-
-.fp-btn-secondary {
-    border-radius: 9999px;
-    padding: 0.9rem 1.75rem;
-    font-weight: 600;
-    border: 1px solid #cbd5f5;
-    background: transparent;
-    color: #475569;
-    transition: all 0.2s ease;
-}
-
-.fp-btn-secondary:hover {
-    border-color: #2563eb;
-    color: #1d4ed8;
-    box-shadow: 0 12px 24px rgba(37, 99, 235, 0.14);
-}
-
-.fp-btn-primary {
-    border-radius: 9999px;
-    padding: 0.9rem 2.5rem;
-    font-weight: 700;
-    background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%);
-    color: #fff;
-    border: none;
-    box-shadow: 0 22px 42px rgba(37, 99, 235, 0.28);
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.fp-btn-primary:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 28px 56px rgba(37, 99, 235, 0.32);
-}
-
-.fp-char-counter {
-    font-weight: 600;
-    margin-left: 0.35rem;
-}
-
-/* --- NUOVO: Sezione upload contenuti --- */
-.fpc-type-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-    gap: 1rem;
-    margin-bottom: 1.5rem;
-}
-
-.fpc-type-card {
-    position: relative;
-    border: 2px solid #e2e8f0;
-    border-radius: 1rem;
-    padding: 1.4rem 1rem;
-    text-align: center;
-    cursor: pointer;
-    transition: all 0.25s ease;
-    background: #fff;
-}
-
-.fpc-type-card:hover,
-.fpc-type-card.fpc-selected {
-    border-color: #2563eb;
-    box-shadow: 0 16px 32px rgba(37, 99, 235, 0.12);
-    background: linear-gradient(135deg, rgba(37, 99, 235, 0.08) 0%, rgba(79, 70, 229, 0.06) 100%);
-}
-
-.fpc-type-card input {
-    position: absolute;
-    inset: 0;
-    opacity: 0;
-    pointer-events: none;
-}
-
-.fpc-type-icon {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 44px;
-    height: 44px;
-    margin: 0 auto 0.75rem;
-    border-radius: 0.85rem;
-    background: rgba(37, 99, 235, 0.12);
-}
-
-.fpc-type-title {
-    font-weight: 700;
-    color: #0f172a;
-}
-
-.fpc-type-sub {
-    font-size: 0.8rem;
-    color: #64748b;
-}
-
-.fpc-tabs {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    background: #f1f5f9;
-    border-radius: 9999px;
-    padding: 0.35rem;
-    margin-bottom: 1.25rem;
-    flex-wrap: wrap;
-}
-
-.fpc-tab {
-    flex: 1;
-    border: none;
-    background: transparent;
-    padding: 0.65rem 1.2rem;
-    border-radius: 9999px;
-    font-weight: 600;
-    color: #64748b;
-    transition: all 0.2s ease;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.35rem;
-}
-
-.fpc-tab-active {
-    background: #fff;
-    color: #2563eb;
-    box-shadow: 0 12px 24px rgba(37, 99, 235, 0.14);
-}
-
-.fpc-tab-content {
-    display: none;
-}
-
-.fpc-tab-content.fpc-visible {
-    display: block;
-}
-
-.fpc-dropzone {
-    border: 2px dashed rgba(37, 99, 235, 0.4);
-    border-radius: 1.25rem;
-    padding: 2.25rem 1.75rem;
-    text-align: center;
-    background: rgba(248, 250, 252, 0.9);
-    transition: all 0.25s ease;
-    cursor: pointer;
-}
-
-.fpc-dropzone:hover,
-.fpc-dropzone.fpc-drag {
-    border-style: solid;
-    border-color: #2563eb;
-    background: linear-gradient(135deg, rgba(37, 99, 235, 0.05) 0%, rgba(79, 70, 229, 0.08) 100%);
-    box-shadow: 0 16px 42px rgba(37, 99, 235, 0.14);
-}
-
-.fpc-dropzone-title {
-    font-size: 1.1rem;
-    font-weight: 700;
-    color: #0f172a;
-}
-
-.fpc-dropzone-sub {
-    color: #64748b;
-    margin-bottom: 1rem;
-}
-
-.fpc-file-list {
-    margin-top: 1.5rem;
-    display: grid;
-    gap: 0.75rem;
-}
-
-.fpc-file-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 0.75rem;
-    border: 1px solid rgba(148, 163, 184, 0.4);
-    border-radius: 0.85rem;
-    padding: 0.75rem 1rem;
-}
-
-.fpc-file-name {
-    font-weight: 600;
-    color: #0f172a;
-}
-
-.fpc-file-size {
-    font-size: 0.8rem;
-    color: #64748b;
-}
-
-.fpc-remove-btn {
-    border: none;
-    background: transparent;
-    color: #ef4444;
-    font-weight: 600;
-    cursor: pointer;
-}
-
-.fpc-textarea {
-    width: 100%;
-    border-radius: 1rem;
-    border: 1px solid #cbd5f5;
-    padding: 0.85rem 1rem;
-    resize: vertical;
-    font-family: 'Fira Code', 'SFMono-Regular', Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
-}
-
-.fpc-code-counter {
-    margin-top: 0.35rem;
-    font-size: 0.8rem;
-    color: #64748b;
-}
-
-.fpc-helper {
-    font-size: 0.85rem;
-    color: #64748b;
-    margin-top: 0.5rem;
-}
-
-.fpc-hidden {
-    display: none;
-}
-
-@media (max-width: 768px) {
-    .fp-card-body {
-        padding: 2rem;
-    }
-
-    .fp-step-header {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-
-    .fp-hero-content {
-        text-align: left;
-    }
-
-    .fpc-tabs {
-        flex-direction: column;
-        align-items: stretch;
-    }
-}
-</style>
-{% endblock %}
+{% block title %}Proponi Modifiche - {{ project.name }}{% endblock %}
 
 {% block content %}
-<div class="free-proposal-page">
-    <section class="fp-hero">
-        <div class="fp-hero-content">
-            <nav aria-label="Percorso" class="fp-breadcrumb breadcrumb">
-                <a href="{{ url_for('projects.home') }}">Progetti</a>
-                <span>/</span>
-                <a href="{{ url_for('projects.project_detail', project_id=project.id) }}">{{ project.name }}</a>
-                <span>/</span>
-                <span>Proposta libera</span>
-            </nav>
+<main class="bg-black min-h-screen text-white py-8 md:py-12">
+    <div class="max-w-5xl mx-auto px-6">
+        
+        {# Breadcrumb #}
+        <nav aria-label="Breadcrumb" class="mb-8">
+            <ol class="flex items-center gap-2 text-sm text-gray-500">
+                <li><a class="hover:text-white transition-colors" href="{{ url_for('projects.home') }}">Home</a></li>
+                <li><span>/</span></li>
+                <li><a class="hover:text-white transition-colors" href="{{ url_for('projects.project_detail', project_id=project.id) }}">{{ project.name }}</a></li>
+                <li><span>/</span></li>
+                <li><span class="text-gray-400">Proponi Modifiche</span></li>
+            </ol>
+        </nav>
 
-            <h1 class="fp-title">Proponi Soluzione Libera</h1>
-            <p class="fp-subtitle">
-                Condividi un contributo strutturato per <a href="{{ url_for('projects.project_detail', project_id=project.id) }}">{{ project.name }}</a>
+        {# Header #}
+        <div class="mb-8 md:mb-12">
+            <h1 class="text-5xl md:text-7xl font-bold font-display mb-4">Proponi Modifiche</h1>
+            <p class="text-xl text-gray-500 mb-6">
+                Condividi un contributo per <a href="{{ url_for('projects.project_detail', project_id=project.id) }}" class="text-white hover:text-accent transition-colors">{{ project.name }}</a>
             </p>
-
-            <div class="fp-hero-grid">
-                <div class="fp-hero-card">
-                    <h3>Equity disponibile</h3>
-                    <span>{{ "%.2f"|format(available_equity) }}%</span>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="bg-gray-900 border border-gray-800 rounded-xl p-4">
+                    <div class="text-sm text-gray-500 mb-1">Equity Disponibile</div>
+                    <div class="text-2xl font-bold text-white font-display">{{ "%.2f"|format(available_equity) }}%</div>
                 </div>
-                <div class="fp-hero-card">
-                    <h3>Come funziona</h3>
-                    <span>Aggrega task esistenti o proponi una nuova iniziativa</span>
+                <div class="bg-gray-900 border border-gray-800 rounded-xl p-4">
+                    <div class="text-sm text-gray-500 mb-1">Come Funziona</div>
+                    <div class="text-sm text-gray-400">Aggrega task esistenti o proponi una nuova iniziativa</div>
                 </div>
             </div>
         </div>
-    </section>
 
-    <div class="fp-container">
-        <div class="fp-card">
-            <div class="fp-card-body">
-                                <form method="POST"
-                                            id="proposalForm"
-                                            action="{{ url_for('free_proposals.propose_free_solution', project_id=project.id) }}"
-                                            enctype="multipart/form-data"
-                                            onsubmit="return validateProposalForm(event)">
-                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        {# Form #}
+        <div class="bg-gray-900 border border-gray-800 rounded-2xl p-8 md:p-10">
+            <form method="POST" id="proposalForm" action="{{ url_for('free_proposals.propose_free_solution', project_id=project.id) }}" enctype="multipart/form-data" onsubmit="return validateProposalForm(event)">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
-                    <section class="fp-section">
-                        <div class="fp-step-header">
-                            <div class="fp-step-number">1</div>
-                            <div>
-                                <div class="fp-step-title">Scegli il tipo di proposta</div>
-                                <p class="fp-step-subtitle">Decidi se aggregare task esistenti o suggerirne uno nuovo costruito su misura per il progetto.</p>
-                            </div>
+                {# Step 1: Tipo Proposta #}
+                <section class="mb-10 pb-10 border-b border-gray-800">
+                    <div class="flex items-center gap-4 mb-6">
+                        <div class="w-12 h-12 bg-accent rounded-full flex items-center justify-center text-white font-bold text-xl">1</div>
+                        <div>
+                            <h2 class="text-2xl font-bold font-display text-white">Tipo di Proposta</h2>
+                            <p class="text-gray-500 text-sm mt-1">Scegli se aggregare task esistenti o proporre un nuovo task</p>
                         </div>
+                    </div>
 
-                        <div class="fp-type-grid">
-                            <label class="fp-type-card">
-                                <input class="fp-type-input" type="radio" name="proposal_type" id="multi_task" value="multi_task" checked onchange="switchProposalType('multi_task')">
-                                <div class="fp-type-content">
-                                    <span class="fp-type-title">Aggrega Task Esistenti</span>
-                                    <span class="fp-type-description">Seleziona più task correlati e presentali con un'unica soluzione coordinata.</span>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <label class="relative cursor-pointer">
+                            <input type="radio" name="proposal_type" value="multi_task" checked onchange="switchProposalType('multi_task')" class="peer sr-only">
+                            <div class="bg-black border-2 border-gray-800 rounded-xl p-6 hover:border-accent transition-all peer-checked:border-accent peer-checked:bg-gray-800">
+                                <div class="flex items-start justify-between mb-3">
+                                    <h3 class="text-lg font-bold text-white">Aggrega Task Esistenti</h3>
+                                    <span class="material-icons text-accent peer-checked:block hidden">check_circle</span>
                                 </div>
-                            </label>
+                                <p class="text-sm text-gray-500">Seleziona più task correlati e presentali con un'unica soluzione coordinata</p>
+                            </div>
+                        </label>
 
-                            <label class="fp-type-card">
-                                <input class="fp-type-input" type="radio" name="proposal_type" id="new_task" value="new_task" onchange="switchProposalType('new_task')">
-                                <div class="fp-type-content">
-                                    <span class="fp-type-title">Proponi Nuovo Task</span>
-                                    <span class="fp-type-description">Suggerisci un'attività che manca e spiegane l'impatto per il progetto.</span>
+                        <label class="relative cursor-pointer">
+                            <input type="radio" name="proposal_type" value="new_task" onchange="switchProposalType('new_task')" class="peer sr-only">
+                            <div class="bg-black border-2 border-gray-800 rounded-xl p-6 hover:border-accent transition-all peer-checked:border-accent peer-checked:bg-gray-800">
+                                <div class="flex items-start justify-between mb-3">
+                                    <h3 class="text-lg font-bold text-white">Proponi Nuovo Task</h3>
+                                    <span class="material-icons text-accent peer-checked:block hidden">check_circle</span>
                                 </div>
-                            </label>
-                        </div>
-                    </section>
-
-                    <section class="fp-section" id="multi-task-section">
-                        <div class="fp-step-header">
-                            <div class="fp-step-number">2</div>
-                            <div>
-                                <div class="fp-step-title">Seleziona i task da includere</div>
-                                <p class="fp-step-subtitle">Scegli i task che vuoi risolvere insieme. Calcoleremo automaticamente l'equity suggerita.</p>
+                                <p class="text-sm text-gray-500">Suggerisci un'attività che manca e spiegane l'impatto per il progetto</p>
                             </div>
+                        </label>
+                    </div>
+                </section>
+
+                {# Step 2: Multi-Task Section #}
+                <section id="multi-task-section" class="mb-10 pb-10 border-b border-gray-800">
+                    <div class="flex items-center gap-4 mb-6">
+                        <div class="w-12 h-12 bg-accent rounded-full flex items-center justify-center text-white font-bold text-xl">2</div>
+                        <div>
+                            <h2 class="text-2xl font-bold font-display text-white">Seleziona i Task</h2>
+                            <p class="text-gray-500 text-sm mt-1">Scegli i task che vuoi risolvere insieme</p>
                         </div>
+                    </div>
 
-                        {% if available_tasks %}
-                            <div class="fp-task-grid">
-                                {% for task in available_tasks %}
-                                <label class="fp-task-card" for="task_{{ task.id }}">
-                                    <input class="task-checkbox" type="checkbox" name="task_ids" value="{{ task.id }}" id="task_{{ task.id }}" data-equity="{{ task.equity_reward }}" onchange="updateTaskSummary()">
-                                    <div class="fp-task-content">
-                                        <div class="fp-task-header">
-                                            <span class="fp-task-title">{{ task.title }}</span>
-                                            <span class="fp-task-equity">{{ task.equity_reward }}%</span>
-                                        </div>
-                                        <p class="fp-task-description">
-                                            {{ task.description[:140] }}{% if task.description|length > 140 %}...{% endif %}
-                                        </p>
-                                    </div>
-                                </label>
-                                {% endfor %}
-                            </div>
-
-                            <div class="fp-summary d-none" id="task-summary">
-                                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
-                                    <span><strong id="selected-count">0</strong> task selezionati</span>
-                                    <span>Equity totale consigliata: <strong id="total-equity">0.00</strong>%</span>
+                    {% if available_tasks %}
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                        {% for task in available_tasks %}
+                        <label class="relative cursor-pointer">
+                            <input type="checkbox" name="task_ids" value="{{ task.id }}" id="task_{{ task.id }}" data-equity="{{ task.equity_reward }}" onchange="updateTaskSummary()" class="peer sr-only">
+                            <div class="bg-black border-2 border-gray-800 rounded-xl p-5 hover:border-accent transition-all peer-checked:border-accent peer-checked:bg-gray-800">
+                                <div class="flex items-start justify-between mb-3">
+                                    <h3 class="text-base font-bold text-white flex-1">{{ task.title }}</h3>
+                                    <span class="px-3 py-1 bg-blue-900/30 border border-blue-800 rounded-full text-xs font-bold text-blue-400 ml-2">{{ task.equity_reward }}%</span>
                                 </div>
+                                <p class="text-sm text-gray-500 line-clamp-2">
+                                    {{ task.description[:140] }}{% if task.description|length > 140 %}...{% endif %}
+                                </p>
                             </div>
-                        {% else %}
-                            <div class="fp-no-tasks">Al momento non ci sono task disponibili da aggregare.</div>
-                        {% endif %}
-                    </section>
+                        </label>
+                        {% endfor %}
+                    </div>
 
-                    <section class="fp-section d-none" id="new-task-section">
-                        <div class="fp-step-header">
-                            <div class="fp-step-number">2</div>
-                            <div>
-                                <div class="fp-step-title">Descrivi il nuovo task</div>
-                                <p class="fp-step-subtitle">Racconta cosa realizzerai, perché è utile al progetto e quali risultati porterai.</p>
+                    <div id="task-summary" class="hidden bg-gray-800 border border-gray-700 rounded-xl p-4">
+                        <div class="flex items-center justify-between">
+                            <span class="text-gray-400"><strong id="selected-count" class="text-white">0</strong> task selezionati</span>
+                            <span class="text-gray-400">Equity totale: <strong id="total-equity" class="text-accent">0.00</strong>%</span>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="bg-gray-800 border border-gray-700 rounded-xl p-6 text-center">
+                        <p class="text-gray-500">Al momento non ci sono task disponibili da aggregare.</p>
+                    </div>
+                    {% endif %}
+                </section>
+
+                {# Step 2: New Task Section #}
+                <section id="new-task-section" class="mb-10 pb-10 border-b border-gray-800 hidden">
+                    <div class="flex items-center gap-4 mb-6">
+                        <div class="w-12 h-12 bg-accent rounded-full flex items-center justify-center text-white font-bold text-xl">2</div>
+                        <div>
+                            <h2 class="text-2xl font-bold font-display text-white">Descrivi il Nuovo Task</h2>
+                            <p class="text-gray-500 text-sm mt-1">Racconta cosa realizzerai e perché è utile al progetto</p>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="new_task_details" class="block text-sm font-bold text-gray-400 mb-2 uppercase tracking-wider">
+                            Dettagli del Task Proposto <span class="text-accent">*</span>
+                        </label>
+                        <textarea id="new_task_details" name="new_task_details" rows="6" 
+                                  class="w-full bg-black border border-gray-800 rounded-lg px-4 py-3 text-white placeholder-gray-600 focus:border-accent focus:ring-1 focus:ring-accent transition-colors"
+                                  placeholder="Descrivi la proposta, gli obiettivi, le milestone e il valore per il progetto..."></textarea>
+                        <p class="text-xs text-gray-500 mt-2">Minimo 50 caratteri. Suggerisci deliverable concreti e spiegane l'impatto.</p>
+                    </div>
+                </section>
+
+                {# Step 3: Tipo Contenuto #}
+                <section class="mb-10 pb-10 border-b border-gray-800">
+                    <div class="flex items-center gap-4 mb-6">
+                        <div class="w-12 h-12 bg-accent rounded-full flex items-center justify-center text-white font-bold text-xl">3</div>
+                        <div>
+                            <h2 class="text-2xl font-bold font-display text-white">Tipo di Contenuto</h2>
+                            <p class="text-gray-500 text-sm mt-1">Scegli il tipo di contributo che vuoi proporre</p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
+                        <label class="relative cursor-pointer">
+                            <input type="radio" name="content_type" value="software" checked onclick="selectContentType(this)" class="peer sr-only">
+                            <div class="bg-black border-2 border-gray-800 rounded-xl p-4 text-center hover:border-accent transition-all peer-checked:border-accent peer-checked:bg-gray-800">
+                                <span class="material-icons text-3xl text-gray-600 peer-checked:text-accent mb-2 block">code</span>
+                                <div class="text-xs font-bold text-white">Software</div>
                             </div>
-                        </div>
-
-                        <div class="fp-newtask-card">
-                            <label for="new_task_details" class="fp-form-label">Dettagli del task proposto *</label>
-                            <textarea class="form-control fp-form-control" id="new_task_details" name="new_task_details" rows="6" placeholder="Descrivi la proposta, gli obiettivi, le milestone e il valore per il progetto..."></textarea>
-                            <p class="fp-helper-text">Minimo 50 caratteri. Suggerisci deliverable concreti e spiegane l'impatto.</p>
-                        </div>
-                    </section>
-
-                    <section class="fp-section">
-                        <div class="fp-step-header">
-                            <div class="fp-step-number">3</div>
-                            <div>
-                                <div class="fp-step-title">Definisci il contenuto della proposta</div>
-                                <p class="fp-step-subtitle">Scegli il tipo di contributo e allega file, codice o link GitHub proprio come nel flusso di pubblicazione delle soluzioni.</p>
+                        </label>
+                        <label class="relative cursor-pointer">
+                            <input type="radio" name="content_type" value="design" onclick="selectContentType(this)" class="peer sr-only">
+                            <div class="bg-black border-2 border-gray-800 rounded-xl p-4 text-center hover:border-accent transition-all peer-checked:border-accent peer-checked:bg-gray-800">
+                                <span class="material-icons text-3xl text-gray-600 peer-checked:text-accent mb-2 block">palette</span>
+                                <div class="text-xs font-bold text-white">Design</div>
                             </div>
-                        </div>
+                        </label>
+                        <label class="relative cursor-pointer">
+                            <input type="radio" name="content_type" value="hardware" onclick="selectContentType(this)" class="peer sr-only">
+                            <div class="bg-black border-2 border-gray-800 rounded-xl p-4 text-center hover:border-accent transition-all peer-checked:border-accent peer-checked:bg-gray-800">
+                                <span class="material-icons text-3xl text-gray-600 peer-checked:text-accent mb-2 block">memory</span>
+                                <div class="text-xs font-bold text-white">Hardware</div>
+                            </div>
+                        </label>
+                        <label class="relative cursor-pointer">
+                            <input type="radio" name="content_type" value="documentation" onclick="selectContentType(this)" class="peer sr-only">
+                            <div class="bg-black border-2 border-gray-800 rounded-xl p-4 text-center hover:border-accent transition-all peer-checked:border-accent peer-checked:bg-gray-800">
+                                <span class="material-icons text-3xl text-gray-600 peer-checked:text-accent mb-2 block">description</span>
+                                <div class="text-xs font-bold text-white">Doc</div>
+                            </div>
+                        </label>
+                        <label class="relative cursor-pointer">
+                            <input type="radio" name="content_type" value="media" onclick="selectContentType(this)" class="peer sr-only">
+                            <div class="bg-black border-2 border-gray-800 rounded-xl p-4 text-center hover:border-accent transition-all peer-checked:border-accent peer-checked:bg-gray-800">
+                                <span class="material-icons text-3xl text-gray-600 peer-checked:text-accent mb-2 block">videocam</span>
+                                <div class="text-xs font-bold text-white">Media</div>
+                            </div>
+                        </label>
+                        <label class="relative cursor-pointer">
+                            <input type="radio" name="content_type" value="mixed" onclick="selectContentType(this)" class="peer sr-only">
+                            <div class="bg-black border-2 border-gray-800 rounded-xl p-4 text-center hover:border-accent transition-all peer-checked:border-accent peer-checked:bg-gray-800">
+                                <span class="material-icons text-3xl text-gray-600 peer-checked:text-accent mb-2 block">apps</span>
+                                <div class="text-xs font-bold text-white">Misto</div>
+                            </div>
+                        </label>
+                    </div>
 
-                        <div class="fpc-type-grid" id="contentTypeGrid">
-                            <label class="fpc-type-card fpc-selected">
-                                <input type="radio" name="content_type" value="software" checked onclick="selectContentType(this)">
-                                <div class="fpc-type-icon"><i class="bi bi-code-slash"></i></div>
-                                <div class="fpc-type-title">Software</div>
-                                <div class="fpc-type-sub">Codice, script, backend</div>
+                    {# Tabs Upload/Codice/PR #}
+                    <div class="flex gap-2 mb-4 border-b border-gray-800">
+                        <button type="button" class="px-4 py-2 border-b-2 border-white text-white font-bold transition-colors content-tab active" data-tab="files" onclick="toggleContentTab(event, 'files')">
+                            Carica File
+                        </button>
+                        <button type="button" class="px-4 py-2 border-b-2 border-transparent text-gray-500 hover:text-white font-bold transition-colors content-tab" data-tab="code" onclick="toggleContentTab(event, 'code')">
+                            Incolla Codice
+                        </button>
+                        <button type="button" class="px-4 py-2 border-b-2 border-transparent text-gray-500 hover:text-white font-bold transition-colors content-tab" data-tab="pr" onclick="toggleContentTab(event, 'pr')">
+                            Link PR
+                        </button>
+                    </div>
+
+                    {# Tab Files #}
+                    <div id="fpc-tab-files" class="content-tab-panel">
+                        <div id="fpcDropzone" onclick="triggerProposalFileInput()" ondragover="handleProposalDrag(event)" ondragleave="handleProposalDragLeave(event)" ondrop="handleProposalDrop(event)" 
+                             class="border-2 border-dashed border-gray-700 rounded-xl p-12 text-center cursor-pointer hover:border-accent transition-colors bg-gray-800">
+                            <span class="material-icons text-5xl text-gray-600 mb-3 block">cloud_upload</span>
+                            <p class="text-white font-bold mb-1">Trascina qui i tuoi file</p>
+                            <p class="text-sm text-gray-500">oppure clicca per selezionarli</p>
+                        </div>
+                        <input type="file" name="files" id="fpcFileInput" class="hidden" multiple onchange="handleProposalFiles(this.files)">
+                        <div id="fpcFileList" class="mt-4 space-y-2"></div>
+                        <p class="text-xs text-gray-500 mt-3">Max 100MB per file. Formati: zip, immagini, documenti, file CAD</p>
+                    </div>
+
+                    {# Tab Code #}
+                    <div id="fpc-tab-code" class="content-tab-panel hidden">
+                        <label for="fpcCodeTextarea" class="block text-sm font-bold text-gray-400 mb-2 uppercase tracking-wider">
+                            Incolla il Codice <span class="text-accent">*</span>
+                        </label>
+                        <textarea id="fpcCodeTextarea" name="solution_code_auto" rows="12" 
+                                  class="w-full bg-black border border-gray-800 rounded-lg px-4 py-3 text-white placeholder-gray-600 focus:border-accent focus:ring-1 focus:ring-accent transition-colors font-mono text-sm"
+                                  placeholder="// Incolla qui il codice sorgente o lo snippet principale del tuo contributo"></textarea>
+                        <div id="fpcCodeCounter" class="text-xs text-gray-500 mt-2">0 caratteri</div>
+                        <p class="text-xs text-gray-500 mt-2">Se il progetto ha un repository GitHub, genereremo automaticamente fork, branch e Pull Request</p>
+                    </div>
+
+                    {# Tab PR #}
+                    <div id="fpc-tab-pr" class="content-tab-panel hidden">
+                        <label for="fpcPrInput" class="block text-sm font-bold text-gray-400 mb-2 uppercase tracking-wider">
+                            URL Pull Request GitHub
+                        </label>
+                        <input type="url" id="fpcPrInput" name="pull_request_url" 
+                               class="w-full bg-black border border-gray-800 rounded-lg px-4 py-3 text-white placeholder-gray-600 focus:border-accent focus:ring-1 focus:ring-accent transition-colors"
+                               placeholder="https://github.com/owner/repo/pull/123">
+                        <p class="text-xs text-gray-500 mt-2">Se hai già creato manualmente una PR, inserisci qui il link</p>
+                    </div>
+
+                    {# Note Tecniche #}
+                    <div class="mt-6">
+                        <label for="solution_content" class="block text-sm font-bold text-gray-400 mb-2 uppercase tracking-wider">
+                            Note Tecniche Aggiuntive <span class="text-gray-500 normal-case">(Opzionale)</span>
+                        </label>
+                        <textarea id="solution_content" name="solution_content" rows="5" 
+                                  class="w-full bg-black border border-gray-800 rounded-lg px-4 py-3 text-white placeholder-gray-600 focus:border-accent focus:ring-1 focus:ring-accent transition-colors"
+                                  placeholder="Dettaglia come vanno usati i file allegati, eventuali dipendenze o istruzioni di setup"></textarea>
+                    </div>
+                </section>
+
+                {# Step 4: Titolo e Descrizione #}
+                <section class="mb-10 pb-10 border-b border-gray-800">
+                    <div class="flex items-center gap-4 mb-6">
+                        <div class="w-12 h-12 bg-accent rounded-full flex items-center justify-center text-white font-bold text-xl">4</div>
+                        <div>
+                            <h2 class="text-2xl font-bold font-display text-white">Presenta la Proposta</h2>
+                            <p class="text-gray-500 text-sm mt-1">Definisci un titolo chiaro e una descrizione completa</p>
+                        </div>
+                    </div>
+
+                    <div class="space-y-6">
+                        <div>
+                            <label for="title" class="block text-sm font-bold text-gray-400 mb-2 uppercase tracking-wider">
+                                Titolo della Proposta <span class="text-accent">*</span>
                             </label>
-                            <label class="fpc-type-card">
-                                <input type="radio" name="content_type" value="design" onclick="selectContentType(this)">
-                                <div class="fpc-type-icon"><i class="bi bi-brush"></i></div>
-                                <div class="fpc-type-title">Design</div>
-                                <div class="fpc-type-sub">UI, logo, mockup</div>
+                            <input type="text" id="title" name="title" required minlength="5" maxlength="200" 
+                                   class="w-full bg-black border border-gray-800 rounded-lg px-4 py-3 text-white placeholder-gray-600 focus:border-accent focus:ring-1 focus:ring-accent transition-colors"
+                                   placeholder="Es: Refactoring completo API con copertura test">
+                            <p class="text-xs text-gray-500 mt-2">Un titolo conciso che descriva bene cosa farai (5-200 caratteri)</p>
+                        </div>
+
+                        <div>
+                            <label for="description" class="block text-sm font-bold text-gray-400 mb-2 uppercase tracking-wider">
+                                Descrizione Dettagliata <span class="text-accent">*</span>
                             </label>
-                            <label class="fpc-type-card">
-                                <input type="radio" name="content_type" value="hardware" onclick="selectContentType(this)">
-                                <div class="fpc-type-icon"><i class="bi bi-cpu"></i></div>
-                                <div class="fpc-type-title">Hardware</div>
-                                <div class="fpc-type-sub">CAD, PCB, prototipi</div>
-                            </label>
-                            <label class="fpc-type-card">
-                                <input type="radio" name="content_type" value="documentation" onclick="selectContentType(this)">
-                                <div class="fpc-type-icon"><i class="bi bi-journal-text"></i></div>
-                                <div class="fpc-type-title">Documentazione</div>
-                                <div class="fpc-type-sub">Guide, manuali</div>
-                            </label>
-                            <label class="fpc-type-card">
-                                <input type="radio" name="content_type" value="media" onclick="selectContentType(this)">
-                                <div class="fpc-type-icon"><i class="bi bi-camera-video"></i></div>
-                                <div class="fpc-type-title">Media</div>
-                                <div class="fpc-type-sub">Video, audio</div>
-                            </label>
-                            <label class="fpc-type-card">
-                                <input type="radio" name="content_type" value="mixed" onclick="selectContentType(this)">
-                                <div class="fpc-type-icon"><i class="bi bi-collection"></i></div>
-                                <div class="fpc-type-title">Misto</div>
-                                <div class="fpc-type-sub">Pacchetti combinati</div>
-                            </label>
+                            <textarea id="description" name="description" rows="8" required minlength="50" oninput="updateCharCount()" 
+                                      class="w-full bg-black border border-gray-800 rounded-lg px-4 py-3 text-white placeholder-gray-600 focus:border-accent focus:ring-1 focus:ring-accent transition-colors"
+                                      placeholder="Spiega come affronterai l'attività, quali tecnologie userai e quali risultati garantirai"></textarea>
+                            <p class="text-xs text-gray-500 mt-2">
+                                <span id="desc-char-count" class="font-bold">0</span><span class="text-gray-500">/ 50 caratteri minimi</span>
+                            </p>
                         </div>
+                    </div>
+                </section>
 
-                        <div class="fpc-tabs" role="tablist">
-                            <button type="button" class="fpc-tab fpc-tab-active" data-tab="files" onclick="toggleContentTab(event, 'files')">
-                                <i class="bi bi-upload"></i> Carica file
-                            </button>
-                            <button type="button" class="fpc-tab" data-tab="code" onclick="toggleContentTab(event, 'code')">
-                                <i class="bi bi-code"></i> Incolla codice
-                            </button>
-                            <button type="button" class="fpc-tab" data-tab="pr" onclick="toggleContentTab(event, 'pr')">
-                                <i class="bi bi-link-45deg"></i> Link Pull Request
-                            </button>
+                {# Step 5: Equity #}
+                <section class="mb-10">
+                    <div class="flex items-center gap-4 mb-6">
+                        <div class="w-12 h-12 bg-accent rounded-full flex items-center justify-center text-white font-bold text-xl">5</div>
+                        <div>
+                            <h2 class="text-2xl font-bold font-display text-white">Equity Richiesta</h2>
+                            <p class="text-gray-500 text-sm mt-1">Richiedi una quota proporzionata al valore della proposta (max {{ "%.2f"|format(available_equity) }}%)</p>
                         </div>
+                    </div>
 
-                        <div id="fpc-tab-files" class="fpc-tab-content fpc-visible">
-                            <div class="fpc-dropzone" id="fpcDropzone" onclick="triggerProposalFileInput()" ondragover="handleProposalDrag(event)" ondragleave="handleProposalDragLeave(event)" ondrop="handleProposalDrop(event)">
-                                <div class="fpc-dropzone-title">Trascina qui i tuoi file</div>
-                                <div class="fpc-dropzone-sub">oppure clicca per selezionarli dal dispositivo</div>
-                            </div>
-                            <input type="file" name="files" id="fpcFileInput" class="fpc-hidden" multiple onchange="handleProposalFiles(this.files)">
-                            <div id="fpcFileList" class="fpc-file-list"></div>
-                            <p class="fpc-helper">Formato consigliato: zip, immagini, documenti, file CAD o qualsiasi allegato rilevante (max 100MB per file).</p>
-                        </div>
-
-                        <div id="fpc-tab-code" class="fpc-tab-content">
-                            <label class="fp-form-label" for="fpcCodeTextarea">Incolla il tuo codice (per auto-PR) *</label>
-                            <textarea class="fpc-textarea" id="fpcCodeTextarea" name="solution_code_auto" rows="12" placeholder="// Incolla qui il codice sorgente o lo snippet principale del tuo contributo"></textarea>
-                            <div id="fpcCodeCounter" class="fpc-code-counter">0 caratteri</div>
-                            <p class="fpc-helper">Se il progetto ha un repository GitHub collegato, genereremo automaticamente il fork, il branch e la Pull Request per te.</p>
-                        </div>
-
-                        <div id="fpc-tab-pr" class="fpc-tab-content">
-                            <label class="fp-form-label" for="fpcPrInput">URL della Pull Request GitHub</label>
-                            <input type="url" class="form-control fp-form-control" id="fpcPrInput" name="pull_request_url" placeholder="https://github.com/owner/repo/pull/123">
-                            <p class="fpc-helper">Se hai già creato manualmente una PR, inserisci qui il link così il team potrà valutarla subito.</p>
-                        </div>
-
-                        <div class="mt-4">
-                            <label for="solution_content" class="fp-form-label">Note tecniche aggiuntive (opzionale)</label>
-                            <textarea class="form-control fp-form-control" id="solution_content" name="solution_content" rows="5" placeholder="Dettaglia come vanno usati i file allegati, eventuali dipendenze o istruzioni di setup."></textarea>
-                        </div>
-                    </section>
-
-                    <section class="fp-section">
-                        <div class="fp-step-header">
-                            <div class="fp-step-number">4</div>
-                            <div>
-                                <div class="fp-step-title">Presenta la tua proposta</div>
-                                <p class="fp-step-subtitle">Definisci un titolo chiaro e una descrizione completa della soluzione.</p>
+                    <div class="bg-gray-800 border border-gray-700 rounded-xl p-6">
+                        <label for="equity_requested" class="block text-sm font-bold text-gray-400 mb-2 uppercase tracking-wider">
+                            Equity Desiderata <span class="text-accent">*</span>
+                        </label>
+                        <div class="flex items-center gap-3">
+                            <input type="number" id="equity_requested" name="equity_requested" min="0.1" max="{{ available_equity }}" step="0.1" required value="5.0" oninput="updateEquityPreview()" 
+                                   class="w-32 bg-black border border-gray-800 rounded-lg px-4 py-3 text-white focus:border-accent focus:ring-1 focus:ring-accent transition-colors">
+                            <span class="text-gray-400 font-bold">%</span>
+                            <div class="flex-1 bg-gray-900 border border-gray-800 rounded-lg p-4">
+                                <div class="text-xs text-gray-500 mb-1">Con questa richiesta otterresti:</div>
+                                <div id="equity-value" class="text-2xl font-bold text-accent font-display">5.0%</div>
                             </div>
                         </div>
+                        <p class="text-xs text-gray-500 mt-3">Valore compreso tra 0.1% e {{ "%.2f"|format(available_equity) }}%</p>
+                    </div>
+                </section>
 
-                        <div class="mb-4">
-                            <label for="title" class="fp-form-label">Titolo della proposta *</label>
-                            <input type="text" class="form-control fp-form-control" id="title" name="title" required minlength="5" maxlength="200" placeholder="Es: Refactoring completo API con copertura test">
-                            <p class="fp-helper-text">Un titolo conciso che descriva bene cosa farai (5-200 caratteri).</p>
-                        </div>
-
-                        <div class="mb-0">
-                            <label for="description" class="fp-form-label">Descrizione dettagliata *</label>
-                            <textarea class="form-control fp-form-control" id="description" name="description" rows="8" required minlength="50" oninput="updateCharCount()" placeholder="Spiega come affronterai l'attività, quali tecnologie userai e quali risultati garantirai."></textarea>
-                            <p class="fp-helper-text"><span id="desc-char-count">0</span><span class="fp-char-counter">/ 50 caratteri minimi</span></p>
-                        </div>
-                    </section>
-
-                    <section class="fp-section">
-                        <div class="fp-step-header">
-                            <div class="fp-step-number">5</div>
-                            <div>
-                                <div class="fp-step-title">Definisci l'equity richiesta</div>
-                                <p class="fp-step-subtitle">Richiedi una quota proporzionata al valore della tua proposta (max {{ "%.2f"|format(available_equity) }}%).</p>
-                            </div>
-                        </div>
-
-                        <div class="row g-3 align-items-end">
-                            <div class="col-md-6">
-                                <label for="equity_requested" class="fp-form-label">Equity desiderata *</label>
-                                <div class="input-group">
-                                    <input type="number" class="form-control fp-form-control" id="equity_requested" name="equity_requested" min="0.1" max="{{ available_equity }}" step="0.1" required value="5.0" oninput="updateEquityPreview()">
-                                    <span class="input-group-text">%</span>
-                                </div>
-                                <p class="fp-helper-text">Valore compreso tra 0.1% e {{ "%.2f"|format(available_equity) }}%.</p>
-                            </div>
-                        </div>
-
-                        <div id="equity-preview">
-                            <span>Con questa richiesta otterresti:</span>
-                            <span id="equity-value">5.0%</span>
-                        </div>
-                    </section>
-
-                    <section>
-                        <div class="fp-submit-actions">
-                            <a href="{{ url_for('projects.project_detail', project_id=project.id) }}" class="fp-btn-secondary btn btn-outline-secondary">Annulla</a>
-                            <button type="submit" class="fp-btn-primary btn btn-primary" id="submit-btn">Invia Proposta</button>
-                        </div>
-                    </section>
-
-                </form>
-            </div>
+                {# Actions #}
+                <div class="pt-6 border-t border-gray-800 flex flex-col sm:flex-row justify-end gap-3">
+                    <a href="{{ url_for('projects.project_detail', project_id=project.id) }}" 
+                       class="px-6 py-3 bg-gray-800 border border-gray-700 text-white rounded-lg hover:bg-gray-700 transition-colors text-center font-medium">
+                        Annulla
+                    </a>
+                    <button type="submit" id="submit-btn" 
+                            class="px-6 py-3 bg-accent text-white rounded-lg hover:bg-red-600 transition-colors font-bold flex items-center justify-center gap-2">
+                        <span class="material-icons text-sm">rocket_launch</span>
+                        Invia Proposta
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
-</div>
+</main>
 
 <script>
-// ========================================
-// FREE PROPOSALS - JavaScript Functions
-// Pattern in linea con submit_solution.html
-// ========================================
-
 let proposalUploadedFiles = [];
 const PROPOSAL_MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB
 
-// Gestione tipo contenuto
 function selectContentType(radio) {
-    document.querySelectorAll('.fpc-type-card').forEach(card => card.classList.remove('fpc-selected'));
-    const card = radio.closest('.fpc-type-card');
-    if (card) card.classList.add('fpc-selected');
+    document.querySelectorAll('input[name="content_type"]').forEach(r => {
+        const card = r.closest('label').querySelector('div');
+        if (card) {
+            card.classList.remove('border-accent', 'bg-gray-800');
+            const icon = card.querySelector('.material-icons');
+            if (icon) icon.classList.remove('text-accent');
+        }
+    });
+    const card = radio.closest('label').querySelector('div');
+    if (card) {
+        card.classList.add('border-accent', 'bg-gray-800');
+        const icon = card.querySelector('.material-icons');
+        if (icon) icon.classList.add('text-accent');
+    }
     radio.checked = true;
 }
 
-// Tabs upload/code/PR
 function toggleContentTab(event, tab) {
-    if (event) {
-        event.preventDefault();
-        event.currentTarget?.blur();
+    if (event) event.preventDefault();
+    
+    document.querySelectorAll('.content-tab').forEach(btn => {
+        btn.classList.remove('border-white', 'text-white');
+        btn.classList.add('border-transparent', 'text-gray-500');
+    });
+    if (event?.currentTarget) {
+        event.currentTarget.classList.add('border-white', 'text-white');
+        event.currentTarget.classList.remove('border-transparent', 'text-gray-500');
     }
-    document.querySelectorAll('.fpc-tab').forEach(btn => btn.classList.remove('fpc-tab-active'));
-    if (event?.currentTarget) event.currentTarget.classList.add('fpc-tab-active');
-
-    document.querySelectorAll('.fpc-tab-content').forEach(block => block.classList.remove('fpc-visible'));
+    
+    document.querySelectorAll('.content-tab-panel').forEach(panel => panel.classList.add('hidden'));
     const target = document.getElementById(`fpc-tab-${tab}`);
-    if (target) target.classList.add('fpc-visible');
+    if (target) target.classList.remove('hidden');
 }
 
 function triggerProposalFileInput() {
@@ -963,7 +378,8 @@ function triggerProposalFileInput() {
 function handleProposalDrag(event) {
     event.preventDefault();
     event.stopPropagation();
-    document.getElementById('fpcDropzone')?.classList.add('fpc-drag');
+    const dropzone = document.getElementById('fpcDropzone');
+    if (dropzone) dropzone.classList.add('border-accent', 'bg-gray-700');
 }
 
 function handleProposalDragLeave(event) {
@@ -971,7 +387,7 @@ function handleProposalDragLeave(event) {
     event.stopPropagation();
     const dropzone = document.getElementById('fpcDropzone');
     if (dropzone && (event.target === dropzone || event.relatedTarget === null)) {
-        dropzone.classList.remove('fpc-drag');
+        dropzone.classList.remove('border-accent', 'bg-gray-700');
     }
 }
 
@@ -979,39 +395,35 @@ function handleProposalDrop(event) {
     event.preventDefault();
     event.stopPropagation();
     const dropzone = document.getElementById('fpcDropzone');
-    if (dropzone) dropzone.classList.remove('fpc-drag');
-
+    if (dropzone) dropzone.classList.remove('border-accent', 'bg-gray-700');
+    
     if (event.dataTransfer?.files?.length) {
         handleProposalFiles(event.dataTransfer.files);
     }
 }
 
 function handleProposalFiles(fileList) {
-    if (!fileList || !fileList.length) {
-        return;
-    }
-
+    if (!fileList || !fileList.length) return;
+    
     const warnings = [];
     Array.from(fileList).forEach(file => {
         if (file.size > PROPOSAL_MAX_FILE_SIZE) {
             warnings.push(`"${file.name}" supera il limite di 100MB e verrà ignorato.`);
             return;
         }
-
-        const duplicate = proposalUploadedFiles.some(existing => (
-            existing.name === file.name &&
-            existing.size === file.size &&
-            existing.lastModified === file.lastModified
-        ));
-
+        
+        const duplicate = proposalUploadedFiles.some(existing => 
+            existing.name === file.name && existing.size === file.size && existing.lastModified === file.lastModified
+        );
+        
         if (!duplicate) {
             proposalUploadedFiles.push(file);
         }
     });
-
+    
     syncProposalFileInput();
     renderProposalFiles();
-
+    
     if (warnings.length) {
         alert(warnings.join('\n'));
     }
@@ -1019,10 +431,8 @@ function handleProposalFiles(fileList) {
 
 function syncProposalFileInput() {
     const input = document.getElementById('fpcFileInput');
-    if (!input) {
-        return;
-    }
-
+    if (!input) return;
+    
     const dataTransfer = new DataTransfer();
     proposalUploadedFiles.forEach(file => dataTransfer.items.add(file));
     input.files = dataTransfer.files;
@@ -1030,26 +440,26 @@ function syncProposalFileInput() {
 
 function renderProposalFiles() {
     const container = document.getElementById('fpcFileList');
-    if (!container) {
-        return;
-    }
-
+    if (!container) return;
+    
     container.innerHTML = '';
-
+    
     if (proposalUploadedFiles.length === 0) {
-        container.innerHTML = '<div class="text-muted small">Nessun file selezionato al momento.</div>';
+        container.innerHTML = '<div class="text-gray-500 text-sm">Nessun file selezionato</div>';
         return;
     }
-
+    
     proposalUploadedFiles.forEach((file, index) => {
         const item = document.createElement('div');
-        item.className = 'fpc-file-item';
+        item.className = 'flex items-center justify-between bg-gray-800 border border-gray-700 rounded-lg p-3';
         item.innerHTML = `
-            <div>
-                <div class="fpc-file-name">${escapeHtml(file.name)}</div>
-                <div class="fpc-file-size">${formatFileSize(file.size)}</div>
+            <div class="flex-1">
+                <div class="text-sm font-bold text-white">${escapeHtml(file.name)}</div>
+                <div class="text-xs text-gray-500">${formatFileSize(file.size)}</div>
             </div>
-            <button type="button" class="fpc-remove-btn" onclick="removeProposalFile(${index})">Rimuovi</button>
+            <button type="button" onclick="removeProposalFile(${index})" class="text-red-400 hover:text-red-300 transition-colors">
+                <span class="material-icons text-sm">close</span>
+            </button>
         `;
         container.appendChild(item);
     });
@@ -1077,80 +487,64 @@ function escapeHtml(text) {
 function updateProposalCodeCounter() {
     const textarea = document.getElementById('fpcCodeTextarea');
     const counter = document.getElementById('fpcCodeCounter');
-    if (!textarea || !counter) {
-        return;
-    }
+    if (!textarea || !counter) return;
     const count = textarea.value.length;
     counter.textContent = `${count.toLocaleString()} caratteri`;
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-    renderProposalFiles();
-    updateEquityPreview();
-    updateCharCount();
-    updateProposalCodeCounter();
-
-    const codeTextarea = document.getElementById('fpcCodeTextarea');
-    if (codeTextarea) {
-        codeTextarea.addEventListener('input', updateProposalCodeCounter);
-    }
-});
-
-// Toggle tra sezioni multi-task e new-task
 function switchProposalType(type) {
     const multiSection = document.getElementById('multi-task-section');
     const newSection = document.getElementById('new-task-section');
     const summary = document.getElementById('task-summary');
-
+    
     if (type === 'multi_task') {
-        if (multiSection) multiSection.classList.remove('d-none');
-        if (newSection) newSection.classList.add('d-none');
+        if (multiSection) multiSection.classList.remove('hidden');
+        if (newSection) newSection.classList.add('hidden');
     } else if (type === 'new_task') {
-        if (multiSection) multiSection.classList.add('d-none');
-        if (newSection) newSection.classList.remove('d-none');
-        if (summary) summary.classList.add('d-none');
+        if (multiSection) multiSection.classList.add('hidden');
+        if (newSection) newSection.classList.remove('hidden');
+        if (summary) summary.classList.add('hidden');
     }
 }
 
-// Aggiorna summary dei task selezionati
 function updateTaskSummary() {
-    const allCheckboxes = document.querySelectorAll('.task-checkbox');
-    const checkedCheckboxes = document.querySelectorAll('.task-checkbox:checked');
+    const allCheckboxes = document.querySelectorAll('input[name="task_ids"]');
+    const checkedCheckboxes = document.querySelectorAll('input[name="task_ids"]:checked');
     const count = checkedCheckboxes.length;
     const summary = document.getElementById('task-summary');
     const selectedCount = document.getElementById('selected-count');
     const totalEquity = document.getElementById('total-equity');
     const equityInput = document.getElementById('equity_requested');
     const equityValue = document.getElementById('equity-value');
-
+    
     let total = 0;
     checkedCheckboxes.forEach(cb => {
         total += parseFloat(cb.dataset.equity || 0);
     });
-
+    
     allCheckboxes.forEach(cb => {
-        const card = cb.closest('.fp-task-card');
+        const card = cb.closest('label').querySelector('div');
         if (card) {
-            card.classList.toggle('selected', cb.checked);
+            card.classList.toggle('border-accent', cb.checked);
+            card.classList.toggle('bg-gray-800', cb.checked);
         }
     });
-
+    
     if (count > 0 && summary) {
-        summary.classList.remove('d-none');
+        summary.classList.remove('hidden');
         if (selectedCount) selectedCount.textContent = count;
         if (totalEquity) totalEquity.textContent = total.toFixed(2);
-
+        
         const multiTaskRadio = document.getElementById('multi_task');
         if (multiTaskRadio && multiTaskRadio.checked && equityInput) {
             equityInput.value = total.toFixed(1);
             if (equityValue) equityValue.textContent = total.toFixed(1) + '%';
         }
     } else if (summary) {
-        summary.classList.add('d-none');
+        summary.classList.add('hidden');
     }
 }
 
-// Aggiorna preview equity
 function updateEquityPreview() {
     const equityInput = document.getElementById('equity_requested');
     const equityValue = document.getElementById('equity-value');
@@ -1159,23 +553,17 @@ function updateEquityPreview() {
     }
 }
 
-// Conta caratteri descrizione
 function updateCharCount() {
     const textarea = document.getElementById('description');
     const charCount = document.getElementById('desc-char-count');
     if (textarea && charCount) {
         const count = textarea.value.length;
         charCount.textContent = count;
-
-        if (count < 50) {
-            charCount.style.color = '#dc3545';
-        } else {
-            charCount.style.color = '#198754';
-        }
+        charCount.classList.toggle('text-red-500', count < 50);
+        charCount.classList.toggle('text-white', count >= 50);
     }
 }
 
-// Validazione form prima del submit
 function validateProposalForm(event) {
     const title = document.getElementById('title');
     const description = document.getElementById('description');
@@ -1183,30 +571,30 @@ function validateProposalForm(event) {
     const proposalType = document.querySelector('input[name="proposal_type"]:checked');
     const codeValue = document.getElementById('fpcCodeTextarea')?.value.trim() || '';
     const prValue = document.getElementById('fpcPrInput')?.value.trim() || '';
-
+    
     if (!title || !title.value.trim()) {
         event.preventDefault();
         alert('⚠️ Il titolo è obbligatorio');
         title?.focus();
         return false;
     }
-
+    
     if (!description || description.value.length < 50) {
         event.preventDefault();
         alert('⚠️ La descrizione deve essere di almeno 50 caratteri');
         description?.focus();
         return false;
     }
-
+    
     if (!equity || equity.value <= 0) {
         event.preventDefault();
         alert('⚠️ Devi specificare l\'equity richiesta');
         equity?.focus();
         return false;
     }
-
+    
     if (proposalType && proposalType.value === 'multi_task') {
-        const checked = document.querySelectorAll('.task-checkbox:checked');
+        const checked = document.querySelectorAll('input[name="task_ids"]:checked');
         if (checked.length === 0) {
             event.preventDefault();
             alert('⚠️ Seleziona almeno un task da aggregare');
@@ -1221,21 +609,40 @@ function validateProposalForm(event) {
             return false;
         }
     }
-
+    
     const hasFileUploads = proposalUploadedFiles.length > 0;
     if (!hasFileUploads && !codeValue && !prValue) {
         event.preventDefault();
         alert('⚠️ Carica almeno un file, incolla del codice oppure fornisci un link alla Pull Request.');
         return false;
     }
-
+    
     const submitBtn = document.getElementById('submit-btn');
     if (submitBtn) {
         submitBtn.disabled = true;
-        submitBtn.textContent = 'Invio in corso...';
+        submitBtn.innerHTML = '<span class="material-icons text-sm animate-spin">hourglass_empty</span> Invio in corso...';
     }
-
+    
     return true;
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+    renderProposalFiles();
+    updateEquityPreview();
+    updateCharCount();
+    updateProposalCodeCounter();
+    
+    const codeTextarea = document.getElementById('fpcCodeTextarea');
+    if (codeTextarea) {
+        codeTextarea.addEventListener('input', updateProposalCodeCounter);
+    }
+    
+    // Inizializza radio buttons checked state
+    document.querySelectorAll('input[type="radio"]:checked').forEach(radio => {
+        if (radio.name === 'content_type') {
+            selectContentType(radio);
+        }
+    });
+});
 </script>
 {% endblock %}

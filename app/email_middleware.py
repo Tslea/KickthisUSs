@@ -30,8 +30,9 @@ def init_email_middleware(app):
         """Verifica che l'utente abbia l'email verificata per certe azioni."""
         
         # Lista delle route che richiedono email verificata
+        # NOTA: 'projects.create_project' rimosso per permettere creazione progetto senza verifica email
+        # Verifica email rimane richiesta per: task creation, wiki, workspace, investimenti
         email_required_endpoints = [
-            'projects.create_project',
             'tasks.add_task',
             'tasks.submit_solution',
             'api_projects.create_project',

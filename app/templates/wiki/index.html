@@ -2,66 +2,213 @@
 
 {% block title %}Wiki - {{ project.name }}{% endblock %}
 
+{% block head_extra %}
+<style>
+    .wiki-tree-item {
+        transition: all 0.2s ease;
+    }
+    
+    .wiki-tree-item:hover {
+        background-color: #f9fafb;
+    }
+    
+    .wiki-folder-icon {
+        transition: transform 0.2s ease;
+    }
+    
+    .wiki-folder-open .wiki-folder-icon {
+        transform: rotate(90deg);
+    }
+    
+    .wiki-children {
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.3s ease;
+    }
+    
+    .wiki-folder-open .wiki-children {
+        max-height: 2000px;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container mx-auto px-4 py-8">
     <!-- Header -->
-    <div class="flex justify-between items-center mb-8">
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
         <div>
             <h1 class="text-3xl font-bold text-gray-900">Wiki del Progetto</h1>
             <p class="text-gray-600 mt-2">{{ project.name }}</p>
         </div>
-        <div class="flex space-x-4">
+        <div class="flex flex-wrap gap-3">
             <a href="{{ url_for('projects.project_detail', project_id=project.id) }}" 
-               class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition-colors">
-                ← Torna al Progetto
+               class="inline-flex items-center px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2">
+                <span class="material-icons text-sm mr-1" aria-hidden="true">arrow_back</span>
+                Torna al Progetto
             </a>
             <a href="{{ url_for('wiki.create_wiki_page', project_id=project.id) }}" 
-               class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors">
-                + Nuova Pagina
+               class="inline-flex items-center px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                <span class="material-icons text-sm mr-1" aria-hidden="true">add</span>
+                Nuova Pagina
+            </a>
+            <a href="{{ url_for('wiki.create_wiki_page', project_id=project.id) }}?type=folder" 
+               class="inline-flex items-center px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2">
+                <span class="material-icons text-sm mr-1" aria-hidden="true">folder</span>
+                Nuova Cartella
             </a>
         </div>
     </div>
 
-    {% if wiki_pages %}
-    <!-- Lista delle pagine Wiki -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {% for page in wiki_pages %}
-        <div class="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow border border-gray-200">
-            <div class="p-6">
-                <h3 class="text-xl font-semibold text-gray-900 mb-2">
-                    <a href="{{ url_for('wiki.view_wiki_page', project_id=project.id, slug=page.slug) }}" 
-                       class="text-blue-600 hover:text-blue-800">
-                        {{ page.title }}
-                    </a>
-                </h3>
-                <p class="text-gray-600 text-sm mb-4">
-                    {{ page.content[:150] }}{% if page.content|length > 150 %}...{% endif %}
-                </p>
-                <div class="flex justify-between items-center text-sm text-gray-500">
-                    <span>di {{ page.creator.username }}</span>
-                    <span>{{ page.updated_at.strftime('%d/%m/%Y') }}</span>
-                </div>
+    {% if root_pages %}
+    <!-- Struttura ad albero Wiki -->
+    <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+        <div class="p-6">
+            <h2 class="text-xl font-semibold text-gray-900 mb-4">Struttura Wiki</h2>
+            
+            <div class="space-y-1">
+                {% for page in root_pages %}
+                    <div class="wiki-tree-item wiki-{{ 'folder' if page.is_folder else 'page' }}-item {% if page.is_folder %}wiki-folder-item{% endif %}">
+                        <div class="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-gray-50 group">
+                            <div class="flex items-center flex-1 min-w-0">
+                                {% if page.is_folder %}
+                                    <button class="wiki-folder-toggle flex items-center text-left flex-1 min-w-0 focus:outline-none focus:ring-2 focus:ring-primary-500 rounded"
+                                            aria-label="Espandi/Comprimi cartella {{ page.title }}"
+                                            aria-expanded="false">
+                                        <span class="material-icons text-yellow-600 mr-2 wiki-folder-icon flex-shrink-0" aria-hidden="true">chevron_right</span>
+                                        <span class="material-icons text-yellow-600 mr-2 flex-shrink-0" aria-hidden="true">folder</span>
+                                        <span class="font-semibold text-gray-900 truncate">{{ page.title }}</span>
+                                    </button>
+                                {% else %}
+                                    <a href="{{ url_for('wiki.view_wiki_page', project_id=project.id, slug=page.slug) }}" 
+                                       class="flex items-center flex-1 min-w-0 text-blue-600 hover:text-blue-800 focus:outline-none focus:ring-2 focus:ring-primary-500 rounded">
+                                        <span class="material-icons text-gray-400 mr-2 flex-shrink-0" aria-hidden="true">description</span>
+                                        <span class="truncate">{{ page.title }}</span>
+                                    </a>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="flex items-center gap-2 ml-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                                {% if page.is_folder %}
+                                    <a href="{{ url_for('wiki.create_wiki_page', project_id=project.id) }}?parent_id={{ page.id }}" 
+                                       class="p-1.5 text-gray-400 hover:text-blue-600 rounded focus:outline-none focus:ring-2 focus:ring-primary-500"
+                                       aria-label="Aggiungi elemento in {{ page.title }}"
+                                       title="Aggiungi elemento">
+                                        <span class="material-icons text-sm" aria-hidden="true">add</span>
+                                    </a>
+                                {% endif %}
+                                <a href="{{ url_for('wiki.edit_wiki_page', project_id=project.id, slug=page.slug) }}" 
+                                   class="p-1.5 text-gray-400 hover:text-green-600 rounded focus:outline-none focus:ring-2 focus:ring-primary-500"
+                                   aria-label="Modifica {{ page.title }}"
+                                   title="Modifica">
+                                    <span class="material-icons text-sm" aria-hidden="true">edit</span>
+                                </a>
+                                <form action="{{ url_for('wiki.delete_wiki_page', project_id=project.id, slug=page.slug) }}" 
+                                      method="POST" 
+                                      class="inline"
+                                      onsubmit="return confirm('Sei sicuro di voler eliminare {{ 'questa cartella' if page.is_folder else 'questa pagina' }}?');">
+                                    <button type="submit" 
+                                            class="p-1.5 text-gray-400 hover:text-red-600 rounded focus:outline-none focus:ring-2 focus:ring-red-500"
+                                            aria-label="Elimina {{ page.title }}"
+                                            title="Elimina">
+                                        <span class="material-icons text-sm" aria-hidden="true">delete</span>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                        
+                        {% if page.is_folder %}
+                            <div class="wiki-children">
+                                {% set children = page.get_children() %}
+                                {% if children %}
+                                    {% for child in children %}
+                                        <div class="wiki-tree-item wiki-{{ 'folder' if child.is_folder else 'page' }}-item {% if child.is_folder %}wiki-folder-item{% endif %}" style="padding-left: 24px;">
+                                            <div class="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-gray-50 group">
+                                                <div class="flex items-center flex-1 min-w-0">
+                                                    {% if child.is_folder %}
+                                                        <button class="wiki-folder-toggle flex items-center text-left flex-1 min-w-0 focus:outline-none focus:ring-2 focus:ring-primary-500 rounded"
+                                                                aria-label="Espandi/Comprimi cartella {{ child.title }}"
+                                                                aria-expanded="false">
+                                                            <span class="material-icons text-yellow-600 mr-2 wiki-folder-icon flex-shrink-0" aria-hidden="true">chevron_right</span>
+                                                            <span class="material-icons text-yellow-600 mr-2 flex-shrink-0" aria-hidden="true">folder</span>
+                                                            <span class="font-semibold text-gray-900 truncate">{{ child.title }}</span>
+                                                        </button>
+                                                    {% else %}
+                                                        <a href="{{ url_for('wiki.view_wiki_page', project_id=project.id, slug=child.slug) }}" 
+                                                           class="flex items-center flex-1 min-w-0 text-blue-600 hover:text-blue-800 focus:outline-none focus:ring-2 focus:ring-primary-500 rounded">
+                                                            <span class="material-icons text-gray-400 mr-2 flex-shrink-0" aria-hidden="true">description</span>
+                                                            <span class="truncate">{{ child.title }}</span>
+                                                        </a>
+                                                    {% endif %}
+                                                </div>
+                                                <div class="flex items-center gap-2 ml-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <a href="{{ url_for('wiki.edit_wiki_page', project_id=project.id, slug=child.slug) }}" 
+                                                       class="p-1.5 text-gray-400 hover:text-green-600 rounded focus:outline-none focus:ring-2 focus:ring-primary-500"
+                                                       aria-label="Modifica {{ child.title }}"
+                                                       title="Modifica">
+                                                        <span class="material-icons text-sm" aria-hidden="true">edit</span>
+                                                    </a>
+                                                    <form action="{{ url_for('wiki.delete_wiki_page', project_id=project.id, slug=child.slug) }}" 
+                                                          method="POST" 
+                                                          class="inline"
+                                                          onsubmit="return confirm('Sei sicuro di voler eliminare {{ 'questa cartella' if child.is_folder else 'questa pagina' }}?');">
+                                                        <button type="submit" 
+                                                                class="p-1.5 text-gray-400 hover:text-red-600 rounded focus:outline-none focus:ring-2 focus:ring-red-500"
+                                                                aria-label="Elimina {{ child.title }}"
+                                                                title="Elimina">
+                                                            <span class="material-icons text-sm" aria-hidden="true">delete</span>
+                                                        </button>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
             </div>
         </div>
-        {% endfor %}
     </div>
     {% else %}
     <!-- Messaggio quando non ci sono pagine -->
-    <div class="text-center py-12">
+    <div class="text-center py-12 bg-white rounded-xl shadow-md border border-gray-200">
         <div class="max-w-md mx-auto">
-            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 48 48">
+            <svg class="mx-auto h-16 w-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 48 48" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
             </svg>
-            <h3 class="mt-2 text-lg font-medium text-gray-900">Nessuna pagina Wiki</h3>
-            <p class="mt-1 text-sm text-gray-500">Inizia creando la prima pagina della Wiki del progetto.</p>
-            <div class="mt-6">
+            <h3 class="mt-4 text-lg font-medium text-gray-900">Nessuna pagina Wiki</h3>
+            <p class="mt-2 text-sm text-gray-500">Inizia creando la prima pagina o cartella della Wiki del progetto.</p>
+            <div class="mt-6 flex flex-wrap justify-center gap-3">
                 <a href="{{ url_for('wiki.create_wiki_page', project_id=project.id) }}" 
-                   class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors">
-                    + Crea Prima Pagina
+                   class="inline-flex items-center px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors">
+                    <span class="material-icons text-sm mr-1" aria-hidden="true">add</span>
+                    Crea Prima Pagina
+                </a>
+                <a href="{{ url_for('wiki.create_wiki_page', project_id=project.id) }}?type=folder" 
+                   class="inline-flex items-center px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors">
+                    <span class="material-icons text-sm mr-1" aria-hidden="true">folder</span>
+                    Crea Prima Cartella
                 </a>
             </div>
         </div>
     </div>
     {% endif %}
 </div>
+
+<script>
+    // Gestione apertura/chiusura cartelle
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.wiki-folder-toggle').forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.preventDefault();
+                const folderItem = this.closest('.wiki-folder-item');
+                folderItem.classList.toggle('wiki-folder-open');
+                const icon = this.querySelector('.wiki-folder-icon');
+                const isOpen = folderItem.classList.contains('wiki-folder-open');
+                this.setAttribute('aria-expanded', isOpen);
+            });
+        });
+    });
+</script>
 {% endblock %}

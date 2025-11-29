@@ -36,7 +36,7 @@
 /* Componenti personalizzati */
 @layer components {
   .btn {
-    @apply inline-flex items-center justify-center px-4 py-2 rounded-lg transition-all duration-200 font-medium focus:outline-none focus:ring-2 focus:ring-offset-2;
+    @apply inline-flex items-center justify-center px-4 py-2 rounded-lg transition-all duration-200 font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2;
   }
 
   .btn-primary {
@@ -88,7 +88,7 @@
 
   /* Navbar item */
   .nav-item {
-    @apply text-gray-600 hover:text-primary-500 transition-colors font-medium;
+    @apply text-gray-600 hover:text-primary-500 transition-colors font-medium rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2;
   }
 
   .nav-item-active {
@@ -107,6 +107,14 @@
 
 /* Utilities personalizzate */
 @layer utilities {
+  .focus-ring {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2;
+  }
+
+  .focus-ring-subtle {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-gray-400;
+  }
+
   .text-shadow {
     text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   }

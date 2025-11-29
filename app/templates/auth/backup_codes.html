@@ -47,7 +47,8 @@
                 </div>
                 
                 <div class="mt-4 text-center">
-                    <button onclick="downloadBackupCodes()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition duration-200">
+                    <button onclick="downloadBackupCodes()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition duration-200 focus-ring"
+                            aria-label="Scarica i codici di backup 2FA in un file di testo">
                         <i class="material-icons text-sm mr-1">download</i>
                         Scarica Codici
                     </button>
@@ -68,7 +69,7 @@
         </div>
 
         <div class="text-center">
-            <a href="{{ url_for('users.profile') }}" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-lg focus:outline-none focus:shadow-outline transition duration-200">
+            <a href="{{ url_for('users.profile') }}" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-lg focus-ring transition duration-200">
                 Torna al Profilo
             </a>
         </div>

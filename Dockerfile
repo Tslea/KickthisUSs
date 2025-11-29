@@ -1,6 +1,12 @@
 # Usa un'immagine ufficiale Python come base
 FROM python:3.12-slim
 
+# Installa git e unzip per git sync
+RUN apt-get update && apt-get install -y \
+    git \
+    unzip \
+    && rm -rf /var/lib/apt/lists/*
+
 # Imposta la directory di lavoro nel container
 WORKDIR /app
 

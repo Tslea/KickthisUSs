@@ -3,7 +3,7 @@ import mimetypes
 from typing import Dict, List, Tuple
 from werkzeug.datastructures import FileStorage
 
-from config.github_config import HARDWARE_FILE_FORMATS
+from utils.github_config_loader import HARDWARE_FILE_FORMATS
 
 
 class HardwareFileHandler:

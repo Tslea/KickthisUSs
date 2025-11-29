@@ -6,7 +6,9 @@ from datetime import datetime, timezone
 
 from . import db
 from .models import Task, Solution, Activity, Comment # Aggiunto Comment
+from .utils import clean_rich_text_field
 from .ai_services import AI_SERVICE_AVAILABLE, analyze_solution_content
+from .schemas import CommentCreateSchema, SolutionSubmitSchema, validate_request_data
 
 api_tasks_bp = Blueprint('api_tasks', __name__)
 
@@ -53,21 +55,11 @@ def add_solution_to_task(task_id):
         )
         db.session.add(activity)
 
-        # Notifica a tutti i collaboratori e al creatore
-        from .models import Collaborator, Notification, Project
+        # Notifica usando il servizio centralizzato
+        from .models import Project
+        from .services.notification_service import NotificationService
         project = db.session.get(Project, task.project_id)
-        collaborator_ids = [c.user_id for c in Collaborator.query.filter_by(project_id=project.id).all()]
-        if project.creator_id not in collaborator_ids:
-            collaborator_ids.append(project.creator_id)
-        for uid in set(collaborator_ids):
-            if uid != current_user.id:
-                notif = Notification(
-                    user_id=uid,
-                    project_id=project.id,
-                    type='solution_published',
-                    message=f"È stata pubblicata una nuova soluzione per il task '{task.title}' nel progetto '{project.name}'."
-                )
-                db.session.add(notif)
+        NotificationService.notify_solution_published(new_solution, task, project, current_user.id)
 
         db.session.commit()
         response_data = {"message": "Soluzione inviata con successo!", "solution_id": new_solution.id}
@@ -88,13 +80,20 @@ def add_comment_to_task(task_id):
         return jsonify({"error": "La richiesta deve essere JSON."}), 415
 
     data = request.get_json()
-    content = data.get('content')
-    if not content or not content.strip():
-        return jsonify({"error": "Il contenuto del commento non può essere vuoto."}), 400
+    
+    # Validazione con Pydantic
+    is_valid, result = validate_request_data(CommentCreateSchema, data)
+    if not is_valid:
+        return jsonify(result), 400
+
+    try:
+        sanitized_content = clean_rich_text_field('comment', 'content', result.content)
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 400
 
     try:
         new_comment = Comment(
-            content=content,
+            content=sanitized_content,
             author_id=current_user.id,
             task_id=task.id
         )

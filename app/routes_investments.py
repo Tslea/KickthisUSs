@@ -209,12 +209,45 @@ def make_investment(investment_project_id):
         )
         
         db.session.add(new_investment)
+        db.session.flush()  # Flush per ottenere l'ID
+        
+        # 🎯 DISTRIBUTE SHARES OR EQUITY (based on project system)
+        project = investment_project.project
+        try:
+            if project.uses_shares_system():
+                from app.services.share_service import ShareService
+                share_service = ShareService()
+                granted_shares = share_service.distribute_investment_shares(project, current_user.id, equity_percentage)
+                
+                if granted_shares:
+                    shares_count = float(granted_shares.shares_count)
+                    percentage = granted_shares.get_percentage()
+                    current_app.logger.info(
+                        f'✅ Granted {shares_count} shares ({percentage:.2f}%) to investor {current_user.id} for investment in project {project.id}'
+                    )
+            # Note: Old equity system is handled by Collaborator.equity_share (already exists in code)
+        except Exception as distribution_error:
+            current_app.logger.warning(
+                f'⚠️ Could not distribute shares for investment: {str(distribution_error)}'
+            )
+            # Non bloccare l'investimento se la distribuzione shares fallisce
+        
         db.session.commit()
         
         if investment_type == 'free':
-            flash(f'Grazie per il tuo contributo gratuito di {equity_percentage:.2f}%!', 'success')
+            if project.uses_shares_system():
+                shares_count = float(project.get_user_shares_count(current_user.id))
+                percentage = project.get_user_shares_percentage(current_user.id)
+                flash(f'Grazie per il tuo contributo gratuito! Hai ricevuto {shares_count:.0f} shares ({percentage:.2f}% partecipazione)', 'success')
+            else:
+                flash(f'Grazie per il tuo contributo gratuito di {equity_percentage:.2f}%!', 'success')
         else:
-            flash(f'Investimento completato! {equity_percentage:.2f}% per €{amount_paid:.2f}', 'success')
+            if project.uses_shares_system():
+                shares_count = float(project.get_user_shares_count(current_user.id))
+                percentage = project.get_user_shares_percentage(current_user.id)
+                flash(f'Investimento completato! Hai ricevuto {shares_count:.0f} shares ({percentage:.2f}% partecipazione) per €{amount_paid:.2f}', 'success')
+            else:
+                flash(f'Investimento completato! {equity_percentage:.2f}% per €{amount_paid:.2f}', 'success')
             
     except ValueError:
         flash('Dati di investimento non validi', 'error')

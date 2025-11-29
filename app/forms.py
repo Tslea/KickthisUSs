@@ -3,7 +3,7 @@ from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, BooleanField, SubmitField, TextAreaField, SelectField, FloatField
 from flask_wtf.file import FileField, FileAllowed
 from wtforms.validators import DataRequired, Length, Email, EqualTo, ValidationError, Optional, NumberRange
-from .models import User, ALLOWED_TASK_PHASES, ALLOWED_TASK_DIFFICULTIES, ALLOWED_TASK_TYPES
+from .models import User, ALLOWED_TASK_PHASES, ALLOWED_TASK_DIFFICULTIES, ALLOWED_TASK_TYPES, ALLOWED_PROJECT_CATEGORIES
 
 # Form di base che fornisce solo la protezione CSRF.
 # Utile per i form semplici che contengono solo un pulsante di invio.
@@ -64,6 +64,26 @@ class SolutionForm(FlaskForm):
                                      render_kw={"rows": 8, "class": "form-input block w-full rounded-lg border-gray-300 shadow-sm focus:border-mclaren-orange focus:ring focus:ring-mclaren-orange focus:ring-opacity-50", "placeholder": "Descrivi in dettaglio la tua implementazione, il tuo approccio e i risultati..."})
     solution_file = FileField('Allega un File (Opzionale)',
                               validators=[Optional(), FileAllowed(['png', 'jpg', 'jpeg', 'gif', 'txt', 'pdf', 'zip', 'rar'], 'Tipo di file non supportato!')])
+    
+    # 🔧 NUOVO: ZIP Upload per contributi completi
+    solution_zip = FileField('Upload Progetto Completo (ZIP)',
+                            validators=[Optional(), FileAllowed(['zip', 'tar', 'gz', 'tgz'], 'Solo file ZIP supportati!')])
+    
+    # 📊 NUOVO: Categoria contributo
+    contribution_category = SelectField('Categoria Contributo',
+                                       choices=[
+                                           ('code', '💻 CODE - Software Development'),
+                                           ('design', '🎨 DESIGN - UI/UX Design'),
+                                           ('content', '📝 CONTENT - Documentation/Writing'),
+                                           ('research', '📊 RESEARCH - Data Analysis'),
+                                           ('media', '🎬 MEDIA - Video/Audio/Graphics'),
+                                           ('strategy', '💡 STRATEGY - Business Strategy'),
+                                           ('testing', '🧪 TESTING - QA Testing'),
+                                           ('marketing', '📢 MARKETING - Promotion')
+                                       ],
+                                       validators=[Optional()],
+                                       default='code')
+    
     submit = SubmitField('Invia Soluzione')
 
 class AddTaskForm(FlaskForm):
@@ -72,7 +92,7 @@ class AddTaskForm(FlaskForm):
     task_type = SelectField('Tipo di Task', choices=list(ALLOWED_TASK_TYPES.items()), validators=[DataRequired()])
     phase = SelectField('Fase del Progetto', choices=list(ALLOWED_TASK_PHASES.items()), validators=[DataRequired()])
     difficulty = SelectField('Difficoltà', choices=list(ALLOWED_TASK_DIFFICULTIES.items()), validators=[DataRequired()])
-    equity_reward = FloatField('Ricompensa in Equity (%)', validators=[DataRequired(), NumberRange(min=0.01, max=10, message="L'equity deve essere tra 0.01% e 10%.")])
+    equity_reward = FloatField('Ricompensa in Shares (%)', validators=[DataRequired(), NumberRange(min=0.01, max=10, message="Le shares devono essere tra 0.01% e 10%.")])
     is_private = BooleanField('Task Privato', description='Solo il creatore del progetto e i collaboratori potranno vedere questo task')
     
     # Campi specifici per esperimenti di validazione
@@ -132,3 +152,15 @@ class DisableTwoFactorForm(FlaskForm):
                        validators=[DataRequired(message="Il codice è obbligatorio."),
                                    Length(min=6, max=8, message="Il codice deve essere di 6 cifre o un codice di backup.")])
     submit = SubmitField('Disabilita 2FA')
+
+class CreateProjectForm(FlaskForm):
+    name = StringField('Nome Progetto', validators=[DataRequired(), Length(min=3, max=100)])
+    pitch = TextAreaField('Pitch', validators=[DataRequired(), Length(max=500)])
+    description = TextAreaField('Descrizione', validators=[Optional()])
+    category = SelectField('Categoria', choices=[], validators=[DataRequired()])
+    private = BooleanField('Progetto Privato')
+    submit = SubmitField('Crea Progetto')
+
+    def __init__(self, *args, **kwargs):
+        super(CreateProjectForm, self).__init__(*args, **kwargs)
+        self.category.choices = [(k, v) for k, v in ALLOWED_PROJECT_CATEGORIES.items()]

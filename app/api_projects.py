@@ -8,11 +8,55 @@ from .extensions import db, limiter
 from .models import Project, Task, Collaborator, Activity, Endorsement, ALLOWED_TASK_TYPES, SolutionFile
 from .ai_services import AI_SERVICE_AVAILABLE, generate_project_details_from_pitch, generate_suggested_tasks
 from .services.github_service import GitHubService
+from .schemas import ProjectCreateSchema, validate_request_data
 
-# Inizializza GitHub service
-github_service = GitHubService()
+def get_github_service():
+    """Helper per ottenere GitHubService con contesto Flask"""
+    return GitHubService()
 
 api_projects_bp = Blueprint('api_projects', __name__)
+
+@api_projects_bp.route('/projects/generate-details', methods=['POST'])
+@login_required
+def generate_project_details_api():
+    """
+    Endpoint API per generare dettagli progetto con AI (pre-compilazione form).
+    Usa la funzione esistente generate_project_details_from_pitch().
+    """
+    if not request.is_json:
+        return jsonify({"error": "La richiesta deve essere in formato JSON."}), 415
+    
+    data = request.get_json()
+    
+    # Validazione con Pydantic
+    is_valid, result = validate_request_data(ProjectCreateSchema, data)
+    if not is_valid:
+        return jsonify(result), 400
+    
+    pitch = result.pitch
+    category = result.category
+    project_type = result.project_type
+    
+    try:
+        if not AI_SERVICE_AVAILABLE:
+            return jsonify({"error": "Il servizio AI non è disponibile."}), 503
+        
+        # Usa funzione esistente
+        details = generate_project_details_from_pitch(pitch.strip(), category, project_type)
+        
+        # Restituisce solo i dati generati (non crea progetto)
+        return jsonify({
+            "name": details.get('name', ''),
+            "description": details.get('description', ''),
+            "rewritten_pitch": details.get('rewritten_pitch', '')
+        }), 200
+        
+    except ConnectionError as e:
+        current_app.logger.error(f"Errore di connessione AI durante generazione dettagli: {e}", exc_info=True)
+        return jsonify({"error": f"Errore di comunicazione con il servizio AI: {e}"}), 502
+    except Exception as e:
+        current_app.logger.error(f"Errore imprevisto durante generazione dettagli: {e}", exc_info=True)
+        return jsonify({"error": "Errore interno del server durante la generazione dei dettagli."}), 500
 
 @api_projects_bp.route('/projects', methods=['POST'])
 @login_required
@@ -25,32 +69,23 @@ def create_project_api():
         return jsonify({"error": "La richiesta deve essere in formato JSON."}), 415
 
     data = request.get_json()
-    pitch = data.get('pitch')
-    category = data.get('category')
-    creator_equity = data.get('creator_equity')
+    
+    # Validazione con Pydantic
+    is_valid, result = validate_request_data(ProjectCreateSchema, data)
+    if not is_valid:
+        return jsonify(result), 400
+    
+    pitch = result.pitch
+    category = result.category
+    project_type = result.project_type
     cover_image_url = data.get('cover_image_url')
-    private = data.get('private', False)  # Nuovo campo per progetti privati, default a False
+    private = data.get('private', False)
     
-    # --- NUOVO: SUPPORTO TIPO PROGETTO ---
-    project_type = data.get('project_type', 'commercial')
-    
-    # Validazione basata sul tipo di progetto
+    # Sistema automatico: equity basata sul tipo di progetto
     if project_type == 'commercial':
-        if not all([pitch, category, creator_equity is not None]):
-            return jsonify({"error": "Dati mancanti: sono richiesti pitch, category e creator_equity per progetti commerciali."}), 400
-        
-        try:
-            creator_equity = float(creator_equity)
-            if not (0 <= creator_equity <= 100):
-                raise ValueError()
-        except (ValueError, TypeError):
-            return jsonify({"error": "Il valore di creator_equity non è valido (deve essere un numero tra 0 e 100)."}), 400
-    elif project_type == 'scientific':
-        if not all([pitch, category]):
-            return jsonify({"error": "Dati mancanti: sono richiesti pitch e category per ricerche scientifiche."}), 400
-        creator_equity = None  # Le ricerche scientifiche non hanno equity
+        creator_equity = 10.0  # 10% automatico per progetti commerciali
     else:
-        return jsonify({"error": "Tipo di progetto non valido. Deve essere 'commercial' o 'scientific'."}), 400
+        creator_equity = None  # Le ricerche scientifiche non hanno equity
 
     try:
         if AI_SERVICE_AVAILABLE:
@@ -94,6 +129,25 @@ def create_project_api():
         db.session.add(activity)
 
         db.session.commit()
+
+        # 🎯 INITIALIZE PHANTOM SHARES SYSTEM (NEW - for new projects)
+        # New projects use shares system, old projects keep using equity (backward compatibility)
+        try:
+            from app.services.share_service import ShareService
+            share_service = ShareService()
+            share_service.initialize_project_shares(new_project)
+            current_app.logger.info(f'Initialized phantom shares system for project {new_project.id} - User {current_user.id}')
+        except Exception as e:
+            current_app.logger.error(f'Failed to initialize shares system for project {new_project.id}: {str(e)}')
+            # Fallback: use old equity system
+            try:
+                from app.services.equity_service import EquityService
+                equity_service = EquityService()
+                equity_service.initialize_creator_equity(new_project)
+                current_app.logger.info(f'Fallback: Initialized creator equity (old system) for project {new_project.id}')
+            except Exception as e2:
+                current_app.logger.error(f'Failed to initialize equity system for project {new_project.id}: {str(e2)}')
+                # Non bloccare la creazione del progetto, ma logga l'errore
 
         current_app.logger.info(f"Nuovo progetto creato con ID: {new_project.id} da utente {current_user.username}")
 
@@ -420,7 +474,7 @@ def complete_task_api(task_id):
         
         # 🔄 SINCRONIZZAZIONE AUTOMATICA CON GITHUB - chiude l'issue
         try:
-            github_service.sync_task_to_github(task, project)
+            get_github_service().sync_task_to_github(task, project)
             db.session.commit()
         except Exception as e:
             current_app.logger.warning(f"GitHub sync failed for completed task {task.id}: {e}")

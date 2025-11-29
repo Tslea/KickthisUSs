@@ -5,6 +5,7 @@ from flask_login import login_required, current_user
 from .models import WikiPage, WikiRevision, Project, Collaborator
 from .decorators import role_required
 from .extensions import db
+from .utils import clean_plain_text_field, clean_rich_text_field
 import re
 
 wiki_bp = Blueprint('wiki', __name__)
@@ -36,37 +37,76 @@ def check_wiki_access(project_id):
 @wiki_bp.route('/projects/<int:project_id>/wiki')
 @login_required
 def wiki_index(project_id):
-    """Pagina principale della Wiki del progetto"""
+    """Pagina principale della Wiki del progetto con struttura ad albero"""
     if not check_wiki_access(project_id):
         flash('Non hai i permessi per accedere alla Wiki di questo progetto.', 'error')
         return redirect(url_for('projects.project_detail', project_id=project_id))
     
     project = Project.query.get_or_404(project_id)
-    wiki_pages = WikiPage.query.filter_by(project_id=project_id).order_by(WikiPage.title).all()
+    
+    # Ottieni la struttura ad albero
+    tree_structure = WikiPage.get_tree_structure(project_id)
+    root_pages = WikiPage.get_root_pages(project_id)
     
     # Se non ci sono pagine, creiamo una pagina di benvenuto
-    if not wiki_pages:
+    if not root_pages:
         return render_template('wiki/empty_wiki.html', project=project)
     
-    return render_template('wiki/index.html', project=project, wiki_pages=wiki_pages)
+    return render_template('wiki/index.html', 
+                         project=project, 
+                         root_pages=root_pages,
+                         tree_structure=tree_structure)
 
 @wiki_bp.route('/projects/<int:project_id>/wiki/new', methods=['GET', 'POST'])
 @login_required
 def create_wiki_page(project_id):
-    """Crea una nuova pagina Wiki"""
+    """Crea una nuova pagina Wiki o cartella"""
     if not check_wiki_access(project_id):
         flash('Non hai i permessi per accedere alla Wiki di questo progetto.', 'error')
         return redirect(url_for('projects.project_detail', project_id=project_id))
     
     project = Project.query.get_or_404(project_id)
     
+    # Ottieni tutte le cartelle per il selettore parent
+    all_folders = WikiPage.query.filter_by(
+        project_id=project_id,
+        is_folder=True
+    ).order_by(WikiPage.title).all()
+    
     if request.method == 'POST':
         title = request.form.get('title', '').strip()
-        content = request.form.get('content', '').strip()
+        # Assicura che content sia sempre una stringa, mai None
+        content_raw = request.form.get('content', '') or ''
+        content = content_raw.strip() if isinstance(content_raw, str) else ''
+        is_folder = request.form.get('is_folder') == 'true'
+        parent_id = request.form.get('parent_id', type=int) or None
+        display_order = request.form.get('display_order', type=int) or 0
         
-        if not title or not content:
-            flash('Titolo e contenuto sono obbligatori.', 'error')
-            return render_template('wiki/create.html', project=project)
+        try:
+            cleaned_title = clean_plain_text_field('wiki', 'title', title)
+        except ValueError as exc:
+            flash(str(exc), 'error')
+            return render_template('wiki/create.html', project=project, folders=all_folders)
+        
+        # Per le pagine normali, il contenuto è obbligatorio (le cartelle usano stringa vuota)
+        sanitized_content = ''
+        if not is_folder:
+            try:
+                sanitized_content = clean_rich_text_field('wiki', 'content', content)
+            except ValueError as exc:
+                flash(str(exc), 'error')
+                return render_template('wiki/create.html', project=project, folders=all_folders)
+        
+        # Verifica che il parent esista e sia una cartella
+        if parent_id:
+            parent = WikiPage.query.filter_by(
+                project_id=project_id,
+                id=parent_id,
+                is_folder=True
+            ).first()
+            if not parent:
+                flash('La cartella padre selezionata non esiste.', 'error')
+                return render_template('wiki/create.html', project=project, folders=all_folders)
         
         # Genera slug unico
         base_slug = slugify(title)
@@ -76,33 +116,45 @@ def create_wiki_page(project_id):
             slug = f"{base_slug}-{counter}"
             counter += 1
         
-        # Crea la pagina Wiki
         wiki_page = WikiPage(
             project_id=project_id,
-            title=title,
+            title=cleaned_title,
             slug=slug,
-            content=content,
+            content=sanitized_content if not is_folder else '',
+            is_folder=is_folder,
+            parent_id=parent_id,
+            display_order=display_order,
             created_by=current_user.id
         )
         
         db.session.add(wiki_page)
+        db.session.flush()  # Per ottenere l'ID
+        
+        # Crea la prima revisione solo per pagine (non cartelle)
+        if not is_folder:
+            revision = WikiRevision(
+                page_id=wiki_page.id,
+                content=sanitized_content,
+                edited_by=current_user.id,
+                edit_summary="Creazione pagina"
+            )
+            db.session.add(revision)
+        
+        # Notifica usando il servizio centralizzato
+        from .services.notification_service import NotificationService
+        NotificationService.notify_wiki_page_created(project, title, current_user.id)
+        
         db.session.commit()
         
-        # Crea la prima revisione
-        revision = WikiRevision(
-            page_id=wiki_page.id,
-            content=content,
-            edited_by=current_user.id,
-            edit_summary="Creazione pagina"
-        )
+        item_type = "cartella" if is_folder else "pagina"
+        flash(f'{item_type.capitalize()} Wiki creata con successo!', 'success')
         
-        db.session.add(revision)
-        db.session.commit()
-        
-        flash('Pagina Wiki creata con successo!', 'success')
-        return redirect(url_for('wiki.view_wiki_page', project_id=project_id, slug=slug))
+        if is_folder:
+            return redirect(url_for('wiki.wiki_index', project_id=project_id))
+        else:
+            return redirect(url_for('wiki.view_wiki_page', project_id=project_id, slug=slug))
     
-    return render_template('wiki/create.html', project=project)
+    return render_template('wiki/create.html', project=project, folders=all_folders)
 
 @wiki_bp.route('/projects/<int:project_id>/wiki/<slug>')
 @login_required
@@ -145,15 +197,18 @@ def edit_wiki_page(project_id, slug):
         content = request.form.get('content', '').strip()
         edit_summary = request.form.get('edit_summary', '').strip()
         
-        if not title or not content:
-            flash('Titolo e contenuto sono obbligatori.', 'error')
+        try:
+            cleaned_title = clean_plain_text_field('wiki', 'title', title)
+            sanitized_content = clean_rich_text_field('wiki', 'content', content)
+        except ValueError as exc:
+            flash(str(exc), 'error')
             return render_template('wiki/edit.html', project=project, wiki_page=wiki_page)
         
         # Aggiorna la pagina solo se ci sono modifiche
-        if wiki_page.title != title or wiki_page.content != content:
+        if wiki_page.title != cleaned_title or wiki_page.content != sanitized_content:
             # Genera nuovo slug se il titolo è cambiato
-            if wiki_page.title != title:
-                base_slug = slugify(title)
+            if wiki_page.title != cleaned_title:
+                base_slug = slugify(cleaned_title)
                 new_slug = base_slug
                 counter = 1
                 while (WikiPage.query.filter_by(project_id=project_id, slug=new_slug)
@@ -162,18 +217,23 @@ def edit_wiki_page(project_id, slug):
                     counter += 1
                 wiki_page.slug = new_slug
             
-            wiki_page.title = title
-            wiki_page.content = content
+            wiki_page.title = cleaned_title
+            wiki_page.content = sanitized_content
             
             # Crea revisione
             revision = WikiRevision(
                 page_id=wiki_page.id,
-                content=content,
+                content=sanitized_content,
                 edited_by=current_user.id,
                 edit_summary=edit_summary or "Modifica pagina"
             )
             
             db.session.add(revision)
+            
+            # Notifica usando il servizio centralizzato
+            from .services.notification_service import NotificationService
+            NotificationService.notify_wiki_page_updated(project, title, current_user.id)
+            
             db.session.commit()
             
             flash('Pagina Wiki aggiornata con successo!', 'success')
@@ -214,7 +274,7 @@ def view_wiki_revision(project_id, slug, revision_id):
 @wiki_bp.route('/projects/<int:project_id>/wiki/<slug>/delete', methods=['POST'])
 @login_required
 def delete_wiki_page(project_id, slug):
-    """Elimina una pagina Wiki"""
+    """Elimina una pagina Wiki o cartella"""
     if not check_wiki_access(project_id):
         flash('Non hai i permessi per accedere alla Wiki di questo progetto.', 'error')
         return redirect(url_for('projects.project_detail', project_id=project_id))
@@ -225,10 +285,19 @@ def delete_wiki_page(project_id, slug):
     # Solo il creatore della pagina o il proprietario del progetto possono eliminarla
     if wiki_page.created_by != current_user.id and project.creator_id != current_user.id:
         flash('Non hai i permessi per eliminare questa pagina.', 'error')
-        return redirect(url_for('wiki.view_wiki_page', project_id=project_id, slug=slug))
+        if wiki_page.is_folder:
+            return redirect(url_for('wiki.wiki_index', project_id=project_id))
+        else:
+            return redirect(url_for('wiki.view_wiki_page', project_id=project_id, slug=slug))
+    
+    # Verifica che la cartella non abbia figli
+    if wiki_page.is_folder and not wiki_page.can_delete():
+        flash('Non puoi eliminare una cartella che contiene pagine o altre cartelle.', 'error')
+        return redirect(url_for('wiki.wiki_index', project_id=project_id))
     
     db.session.delete(wiki_page)
     db.session.commit()
     
-    flash('Pagina Wiki eliminata con successo.', 'success')
+    item_type = "cartella" if wiki_page.is_folder else "pagina"
+    flash(f'{item_type.capitalize()} Wiki eliminata con successo.', 'success')
     return redirect(url_for('wiki.wiki_index', project_id=project_id))

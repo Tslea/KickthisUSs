@@ -6,54 +6,90 @@ from openai import OpenAI, APITimeoutError, APIConnectionError, RateLimitError, 
 from dotenv import load_dotenv
 from flask import current_app
 from datetime import datetime, timezone
+from .config import Config
 
 # Carica le variabili dal file .env
 load_dotenv()
 
-DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")
-DEEPSEEK_BASE_URL = "https://api.deepseek.com/v1"
-
 client = None
 AI_SERVICE_AVAILABLE = False
+CURRENT_PROVIDER = None
+CURRENT_MODEL = None
 
-if DEEPSEEK_API_KEY:
-    try:
-        client = OpenAI(
-            api_key=DEEPSEEK_API_KEY,
-            base_url=DEEPSEEK_BASE_URL,
-            http_client=httpx.Client(proxies={})
-        )
-        AI_SERVICE_AVAILABLE = True
-        print("--- Servizio AI (DeepSeek) inizializzato correttamente ---")
-    except Exception as e:
-        print(f"ERRORE: Inizializzazione client DeepSeek fallita: {e}")
-else:
-    print("--- AVVISO: DEEPSEEK_API_KEY non trovata in .env. Servizio AI non disponibile. ---")
+def init_ai_service(app=None):
+    """Inizializza il servizio AI basato sulla configurazione"""
+    global client, AI_SERVICE_AVAILABLE, CURRENT_PROVIDER, CURRENT_MODEL
+    
+    # Se chiamato senza app context (es. script standalone), usa os.environ o Config default
+    provider = os.environ.get('AI_PROVIDER', 'deepseek')
+    if app:
+        provider = app.config.get('AI_PROVIDER', 'deepseek')
+    
+    api_key = None
+    base_url = None
+    model = None
+    
+    if provider == 'grok':
+        api_key = os.environ.get('GROK_API_KEY')
+        base_url = "https://api.x.ai/v1"
+        model = os.environ.get('GROK_MODEL', 'grok-4-fast')  # ← CAMBIO: default a grok-4-fast
+        print(f"--- Configurazione AI: Provider=GROK, Model={model} ---")
+    else:
+        # Default to DeepSeek
+        provider = 'deepseek'
+        api_key = os.environ.get('DEEPSEEK_API_KEY')
+        base_url = "https://api.deepseek.com/v1"
+        model = os.environ.get('DEEPSEEK_MODEL', 'deepseek-chat')
+        print(f"--- Configurazione AI: Provider=DEEPSEEK, Model={model} ---")
+        
+    if api_key:
+        try:
+            client = OpenAI(
+                api_key=api_key,
+                base_url=base_url,
+                http_client=httpx.Client(proxies={})
+            )
+            AI_SERVICE_AVAILABLE = True
+            CURRENT_PROVIDER = provider
+            CURRENT_MODEL = model
+            print(f"--- Servizio AI ({provider.upper()}) inizializzato correttamente ---")
+        except Exception as e:
+            print(f"ERRORE: Inizializzazione client AI ({provider}) fallita: {e}")
+            AI_SERVICE_AVAILABLE = False
+    else:
+        print(f"--- AVVISO: API KEY per {provider} non trovata. Servizio AI non disponibile. ---")
+        AI_SERVICE_AVAILABLE = False
+
+# Inizializzazione immediata (per retrocompatibilità)
+init_ai_service()
 
 def analyze_with_ai(prompt: str, max_tokens: int = 1000, temperature: float = 0.7) -> str:
     """Funzione generica per analisi con AI"""
     if not AI_SERVICE_AVAILABLE or client is None:
-        current_app.logger.warning("AI Service not available for analysis")
+        if current_app:
+            current_app.logger.warning("AI Service not available for analysis")
         return ""
 
     try:
         chat_completion = client.chat.completions.create(
-            model="deepseek-chat",
+            model=CURRENT_MODEL,
             messages=[{"role": "user", "content": prompt}],
             max_tokens=max_tokens,
             temperature=temperature
         )
         return chat_completion.choices[0].message.content.strip()
     except (APITimeoutError, APIConnectionError, RateLimitError, APIStatusError) as api_err:
-        current_app.logger.error(f"Errore API DeepSeek (analisi generica): {api_err}", exc_info=True)
+        if current_app:
+            current_app.logger.error(f"Errore API AI ({CURRENT_PROVIDER}): {api_err}", exc_info=True)
         return ""
     except Exception as e:
-        current_app.logger.error(f"Errore imprevisto chiamata DeepSeek (analisi generica): {e}", exc_info=True)
+        if current_app:
+            current_app.logger.error(f"Errore imprevisto chiamata AI ({CURRENT_PROVIDER}): {e}", exc_info=True)
         return ""
 
 def generate_project_details_from_pitch(pitch: str, category: str, project_type: str = None) -> dict:
     if not AI_SERVICE_AVAILABLE or client is None:
-        raise ConnectionError("DeepSeek AI Service non disponibile o non configurato.")
+        raise ConnectionError(f"{CURRENT_PROVIDER} AI Service non disponibile o non configurato.")
 
     if project_type == "scientific":
         system_prompt = (
@@ -78,23 +114,28 @@ Categoria: "{category}"'''
 
     try:
         chat_completion = client.chat.completions.create(
-            model="deepseek-chat",
+            model=CURRENT_MODEL,
             messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": user_prompt}],
             max_tokens=2000,
             temperature=0.7
         )
         response_content = chat_completion.choices[0].message.content
         
+        # Pulizia eventuale markdown code blocks
+        if "```json" in response_content:
+            response_content = response_content.split("```json")[1].split("```")[0].strip()
+        elif "```" in response_content:
+            response_content = response_content.split("```")[0].strip()
+
         # Controllo se la risposta è vuota o non valida
         if not response_content or not response_content.strip():
-            current_app.logger.error("Risposta DeepSeek vuota")
+            if current_app:
+                current_app.logger.error(f"Risposta {CURRENT_PROVIDER} vuota")
             # Restituisce un fallback con dati di base
             return {
-                "title": "Nuovo Progetto",
+                "name": "Nuovo Progetto",
                 "description": pitch,
-                "requirements": ["Definire requisiti specifici"],
-                "timeline": "Da definire",
-                "budget_estimate": "Da valutare"
+                "rewritten_pitch": pitch
             }
         
         return json.loads(response_content)
@@ -124,22 +165,22 @@ def generate_suggested_tasks(pitch: str, category: str, description: str, existi
     if existing_tasks:
         existing_context = f"\n\nTask già esistenti nel progetto:\n"
         for task in existing_tasks:
-            existing_context += f"- {task.get('title', 'N/A')} (Tipo: {task.get('task_type', 'N/A')}, Equity: {task.get('equity_reward', 'N/A')}%)\n"
+            existing_context += f"- {task.get('title', 'N/A')} (Tipo: {task.get('task_type', 'N/A')}, Shares: {task.get('equity_reward', 'N/A')})\n"
     
     system_prompt = f"""Sei un esperto Product Manager e Business Analyst specializzato nella creazione di backlog di task per progetti innovativi.
 Il tuo obiettivo è definire task strategici, concreti e ben bilanciati per un progetto, considerando il contesto completo.
 
 CONTESTO PROGETTI SIMILI:
-- Progetti Tech: spesso richiedono task di architettura (5-8% equity), implementazione core (3-6% equity), testing (2-4% equity)
-- Progetti Social: focus su community building (4-7% equity), user research (3-5% equity), content strategy (2-4% equity)
-- Progetti Business: analisi di mercato (4-6% equity), business model validation (5-8% equity), prototyping (3-5% equity)
+- Progetti Tech: spesso richiedono task di architettura (50-80 shares), implementazione core (30-60 shares), testing (20-40 shares)
+- Progetti Social: focus su community building (40-70 shares), user research (30-50 shares), content strategy (20-40 shares)
+- Progetti Business: analisi di mercato (40-60 shares), business model validation (50-80 shares), prototyping (30-50 shares)
 
-REGOLE PER L'EQUITY:
-- Task 'proposal' (ideazione/design): 1-4% equity (basato su complessità strategica)
-- Task 'implementation' (sviluppo concreto): 3-8% equity (basato su complessità tecnica)
-- Task 'validation' (esperimenti): 2-5% equity (basato su importanza strategica)
-- Task critici per il successo del progetto: +1-2% equity bonus
-- Task che richiedono competenze specialistiche: +1-2% equity bonus
+REGOLE PER LE SHARES:
+- Task 'proposal' (ideazione/design): 10-40 shares (basato su complessità strategica)
+- Task 'implementation' (sviluppo concreto): 30-80 shares (basato su complessità tecnica)
+- Task 'validation' (esperimenti): 20-50 shares (basato su importanza strategica)
+- Task critici per il successo del progetto: +10-20 shares bonus
+- Task che richiedono competenze specialistiche: +10-20 shares bonus
 
 TIPI DI TASK:
 1. **'proposal'**: Ideazione, design, pianificazione, ricerca, definizione di strategie
@@ -150,7 +191,7 @@ Genera 4-6 task fondamentali e complementari che:
 - Coprano diverse fasi del progetto (Planning, Research, Design, Development, Testing, Marketing)
 - Abbiano un mix bilanciato di tipi (almeno 1 proposal, 2-3 implementation, 1 validation)
 - Evitino sovrapposizioni con task esistenti
-- Abbiano equity rewards realistici e proporzionati
+- Abbiano shares rewards realistici e proporzionati
 
 Per ogni task, fornisci:
 1. **title**: Titolo chiaro e azionabile (max 80 caratteri)
@@ -158,7 +199,7 @@ Per ogni task, fornisci:
 3. **task_type**: 'proposal', 'implementation', o 'validation'
 4. **phase**: Fase di sviluppo tra: Planning, Research, Design, Development, Testing, Marketing
 5. **difficulty**: Tra Very Easy, Easy, Medium, Hard, Very Hard
-6. **equity_reward**: Valore float tra 0.5 e 10.0 (proporzionato a difficoltà, importanza, tipo)
+6. **equity_reward**: Valore float tra 5.0 e 100.0 (proporzionato a difficoltà, importanza, tipo)
 7. **hypothesis** (solo per validation): Ipotesi testabile formulata come "Crediamo che..."
 8. **test_method** (solo per validation): Metodo concreto per testare l'ipotesi
 
@@ -171,7 +212,7 @@ Descrizione: "{description}"'''
 
     try:
         chat_completion = client.chat.completions.create(
-            model="deepseek-chat",
+            model=CURRENT_MODEL,  # ← CAMBIO: Usa il modello configurato (Grok o DeepSeek)
             messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": user_prompt}],
             max_tokens=1200,
             temperature=0.7,
@@ -258,7 +299,7 @@ Descrizione: "{project_description}"{focus_text}'''
 
     try:
         chat_completion = client.chat.completions.create(
-            model="deepseek-chat",
+            model=CURRENT_MODEL,  # ← CAMBIO: Usa Grok o DeepSeek
             messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": user_prompt}],
             max_tokens=600,
             temperature=0.7,
@@ -294,7 +335,7 @@ Contenuto Soluzione Proposta:
     
     try:
         chat_completion = client.chat.completions.create(
-            model="deepseek-chat",
+            model=CURRENT_MODEL,  # ← CAMBIO: Usa Grok o DeepSeek
             messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": user_prompt}],
             max_tokens=400,
             temperature=0.5,
@@ -389,7 +430,7 @@ Massimo 320 parole, tono incoraggiante e pratico."""
     
     try:
         chat_completion = client.chat.completions.create(
-            model="deepseek-chat",
+            model=CURRENT_MODEL,  # ← CAMBIO: Usa Grok o DeepSeek
             messages=[
                 {"role": "system", "content": prompt_config['system']},
                 {"role": "user", "content": prompt_config['user']}

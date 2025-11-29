@@ -38,6 +38,11 @@ class Config:
         'pool_size': 10,        # Connection pool size
         'max_overflow': 20      # Max overflow connections
     }
+    PROJECT_WORKSPACE_ROOT = os.environ.get('PROJECT_WORKSPACE_ROOT') or os.path.join(
+        os.path.abspath(os.path.dirname(__file__)),
+        'instance',
+        'project_uploads'
+    )
     
     # ============================================
     # API KEYS - MUST be set via environment
@@ -63,8 +68,19 @@ class Config:
     # FILE UPLOAD SECURITY
     # ============================================
     
-    # Maximum file size: 16MB (increase for larger files if needed)
-    MAX_CONTENT_LENGTH = 16 * 1024 * 1024
+    # Workspace upload limits (configurable via env)
+    PROJECT_WORKSPACE_MAX_ZIP_MB = int(os.environ.get('PROJECT_WORKSPACE_MAX_ZIP_MB') or 500)
+    PROJECT_WORKSPACE_MAX_FILE_MB = int(os.environ.get('PROJECT_WORKSPACE_MAX_FILE_MB') or 100)
+    PROJECT_WORKSPACE_MAX_FILES = int(os.environ.get('PROJECT_WORKSPACE_MAX_FILES') or 5000)
+    PROJECT_WORKSPACE_MAX_ZIP_BYTES = PROJECT_WORKSPACE_MAX_ZIP_MB * 1024 * 1024
+    PROJECT_WORKSPACE_MAX_FILE_BYTES = PROJECT_WORKSPACE_MAX_FILE_MB * 1024 * 1024
+
+    # Maximum request size (must be >= largest workspace upload)
+    MAX_CONTENT_LENGTH = max(
+        16 * 1024 * 1024,
+        PROJECT_WORKSPACE_MAX_ZIP_BYTES,
+        PROJECT_WORKSPACE_MAX_FILE_BYTES
+    )
     
     # Allowed file extensions for uploads
     ALLOWED_EXTENSIONS = {
@@ -123,6 +139,28 @@ class Config:
             print("⚠️  WARNING: GitHub OAuth not configured! GitHub login will not work.")
         if GITHUB_ENABLED and not GITHUB_TOKEN:
             print("⚠️  WARNING: GITHUB_TOKEN not set! GitHub repository sync will not work.")
+    
+    # ============================================
+    # CELERY CONFIGURATION
+    # ============================================
+    
+    # Use SQLAlchemy as broker for simplicity in dev (no extra service needed)
+    # In production, use Redis: os.environ.get('REDIS_URL')
+    CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL') or 'sqla+sqlite:///instance/celery_broker.db'
+    CELERY_RESULT_BACKEND = os.environ.get('CELERY_RESULT_BACKEND') or 'db+sqlite:///instance/celery_results.db'
+    CELERY_ACCEPT_CONTENT = ['json']
+    CELERY_TASK_SERIALIZER = 'json'
+    CELERY_RESULT_SERIALIZER = 'json'
+    CELERY_TIMEZONE = 'Europe/Rome'
+    
+    # ============================================
+    # CACHING CONFIGURATION
+    # ============================================
+    
+    # Cache type: 'SimpleCache' for dev, 'RedisCache' for production
+    CACHE_TYPE = os.environ.get('CACHE_TYPE', 'SimpleCache')
+    CACHE_DEFAULT_TIMEOUT = int(os.environ.get('CACHE_DEFAULT_TIMEOUT', 300))  # 5 minutes
+    CACHE_REDIS_URL = os.environ.get('CACHE_REDIS_URL') or os.environ.get('REDIS_URL')
     
     # ============================================
     # CSRF PROTECTION (WTForms)

@@ -92,17 +92,12 @@ def send_project_invite(project_id):
         status='pending'
     )
     
-    # Crea una notifica per l'invitato
-    notification = Notification(
-        user_id=invitee.id,
-        project_id=project_id,
-        type='project_invite',
-        message=f"{current_user.username} ti ha invitato a collaborare al progetto '{project.name}'."
-    )
+    # Crea una notifica usando il servizio centralizzato
+    from .services.notification_service import NotificationService
+    NotificationService.notify_project_invite(project, invitee.id, current_user)
     
     try:
         db.session.add(new_invite)
-        db.session.add(notification)
         db.session.commit()
         flash("Invito inviato con successo.", "success")
     except IntegrityError:
@@ -173,17 +168,12 @@ def accept_project_invite(token):
         equity_share=0  # L'equity iniziale è 0, può essere modificata in seguito
     )
     
-    # Crea una notifica per il creatore del progetto
-    notification = Notification(
-        user_id=invite.project.creator_id,
-        project_id=invite.project_id,
-        type='project_invite_accepted',
-        message=f"{current_user.username} ha accettato l'invito a collaborare al progetto '{invite.project.name}'."
-    )
+    # Crea una notifica usando il servizio centralizzato
+    from .services.notification_service import NotificationService
+    NotificationService.notify_invite_accepted(invite.project, current_user)
     
     try:
         db.session.add(new_collab)
-        db.session.add(notification)
         db.session.commit()
         flash("Hai accettato l'invito con successo. Ora sei un collaboratore del progetto!", "success")
     except IntegrityError:

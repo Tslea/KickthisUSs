@@ -10,6 +10,7 @@ from datetime import datetime, timezone
 from flask import current_app
 from ..extensions import db
 from ..models import ProjectEquity, Project, Task, Solution, Collaborator, EquityHistory
+from ..utils import db_transaction
 
 
 class EquityService:
@@ -89,23 +90,21 @@ class EquityService:
             earned_from='creator'
         )
         
-        db.session.add(creator_equity)
-        
-        # 📊 LOG TO EQUITY HISTORY
-        EquityService._log_equity_change(
-            project_id=project.id,
-            user_id=project.creator_id,
-            action='initial',
-            equity_change=initial_equity,
-            equity_before=0.0,
-            equity_after=initial_equity,
-            reason=f'Initial creator allocation for project {project.name}',
-            source_type='initial',
-            source_id=None,
-            changed_by_user_id=project.creator_id
-        )
-        
-        db.session.commit()
+        with db_transaction():
+            db.session.add(creator_equity)
+            # 📊 LOG TO EQUITY HISTORY
+            EquityService._log_equity_change(
+                project_id=project.id,
+                user_id=project.creator_id,
+                action='initial',
+                equity_change=initial_equity,
+                equity_before=0.0,
+                equity_after=initial_equity,
+                reason=f'Initial creator allocation for project {project.name}',
+                source_type='initial',
+                source_id=None,
+                changed_by_user_id=project.creator_id
+            )
         
         current_app.logger.info(
             f'Initialized creator equity: {initial_equity}% for user {project.creator_id} in project {project.id}'
@@ -178,30 +177,29 @@ class EquityService:
         
         solver_equity.last_updated = datetime.now(timezone.utc)
         
-        # 📊 LOG TO EQUITY HISTORY
-        EquityService._log_equity_change(
-            project_id=project.id,
-            user_id=solver_id,
-            action='grant',
-            equity_change=equity_reward,
-            equity_before=equity_before,
-            equity_after=equity_after,
-            reason=f'Task "{task.title}" completed (solution #{solution.id})',
-            source_type='task_completion',
-            source_id=task.id,
-            changed_by_user_id=None  # Automatic system action
-        )
-        
-        # Also update Collaborator.equity_share for backward compatibility
-        collaborator = Collaborator.query.filter_by(
-            project_id=project.id,
-            user_id=solver_id
-        ).first()
-        
-        if collaborator:
-            collaborator.equity_share = solver_equity.equity_percentage
-        
-        db.session.commit()
+        with db_transaction():
+            # 📊 LOG TO EQUITY HISTORY
+            EquityService._log_equity_change(
+                project_id=project.id,
+                user_id=solver_id,
+                action='grant',
+                equity_change=equity_reward,
+                equity_before=equity_before,
+                equity_after=equity_after,
+                reason=f'Task "{task.title}" completed (solution #{solution.id})',
+                source_type='task_completion',
+                source_id=task.id,
+                changed_by_user_id=None  # Automatic system action
+            )
+            
+            # Also update Collaborator.equity_share for backward compatibility
+            collaborator = Collaborator.query.filter_by(
+                project_id=project.id,
+                user_id=solver_id
+            ).first()
+            
+            if collaborator:
+                collaborator.equity_share = solver_equity.equity_percentage
         
         current_app.logger.info(
             f'Distributed {equity_reward}% equity to user {solver_id} for completing task {task.id}'
@@ -248,7 +246,7 @@ class EquityService:
         equity_record.equity_percentage += equity_amount
         equity_after = equity_record.equity_percentage
         equity_record.last_updated = datetime.now(timezone.utc)
-
+        
         source = f'free_proposal_{proposal.id}'
         if equity_record.earned_from:
             existing_sources = [s for s in equity_record.earned_from.split(',') if s]
@@ -256,29 +254,28 @@ class EquityService:
                 equity_record.earned_from = equity_record.earned_from + f',{source}'
         else:
             equity_record.earned_from = source
-
-        EquityService._log_equity_change(
-            project_id=project.id,
-            user_id=developer_id,
-            action='grant',
-            equity_change=equity_amount,
-            equity_before=equity_before,
-            equity_after=equity_after,
-            reason=f'Free proposal "{proposal.title}" accepted',
-            source_type='free_proposal',
-            source_id=proposal.id,
-            changed_by_user_id=changed_by_user_id
-        )
-
-        collaborator = Collaborator.query.filter_by(
-            project_id=project.id,
-            user_id=developer_id
-        ).first()
-
-        if collaborator:
-            collaborator.equity_share = equity_record.equity_percentage
-
-        db.session.commit()
+        
+        with db_transaction():
+            EquityService._log_equity_change(
+                project_id=project.id,
+                user_id=developer_id,
+                action='grant',
+                equity_change=equity_amount,
+                equity_before=equity_before,
+                equity_after=equity_after,
+                reason=f'Free proposal "{proposal.title}" accepted',
+                source_type='free_proposal',
+                source_id=proposal.id,
+                changed_by_user_id=changed_by_user_id
+            )
+            
+            collaborator = Collaborator.query.filter_by(
+                project_id=project.id,
+                user_id=developer_id
+            ).first()
+            
+            if collaborator:
+                collaborator.equity_share = equity_record.equity_percentage
 
         current_app.logger.info(
             f'Distributed {equity_amount}% equity to user {developer_id} for free proposal {proposal.id}'
@@ -373,17 +370,16 @@ class EquityService:
         equity_records = ProjectEquity.query.filter_by(project_id=project_id).all()
         synced_count = 0
         
-        for equity in equity_records:
-            collaborator = Collaborator.query.filter_by(
-                project_id=project_id,
-                user_id=equity.user_id
-            ).first()
-            
-            if collaborator:
-                collaborator.equity_share = equity.equity_percentage
-                synced_count += 1
-        
-        db.session.commit()
+        with db_transaction():
+            for equity in equity_records:
+                collaborator = Collaborator.query.filter_by(
+                    project_id=project_id,
+                    user_id=equity.user_id
+                ).first()
+                
+                if collaborator:
+                    collaborator.equity_share = equity.equity_percentage
+                    synced_count += 1
         
         current_app.logger.info(
             f'Synced {synced_count} collaborator equity records for project {project_id}'

@@ -1,7 +1,7 @@
 # app/decorators.py
 
 from functools import wraps
-from flask import abort, redirect, url_for, flash
+from flask import abort, redirect, url_for, flash, request, jsonify
 from flask_login import current_user
 from .models import Collaborator, Project
 
@@ -54,3 +54,68 @@ def role_required(project_id_arg, roles):
             return f(*args, **kwargs)
         return decorated_function
     return decorator
+
+def project_member_required(f):
+    """
+    Decoratore per Hub Agents: consente accesso solo a creatori e collaboratori del progetto.
+    Il project_id può essere in kwargs o in request.json (per API POST).
+    """
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        # Helper per capire se è una API call
+        is_api_call = (
+            request.path.startswith('/hub-agents/api/') or
+            request.path.startswith('/hub-agents/load/') or
+            request.path.startswith('/hub-agents/save/') or
+            request.path.startswith('/hub-agents/generate/') or
+            request.path.startswith('/hub-agents/chat/') or
+            'api' in request.path or
+            request.is_json or
+            request.accept_mimetypes.accept_json
+        )
+        
+        if not current_user.is_authenticated:
+            if is_api_call:
+                return jsonify({"error": "Devi essere autenticato per accedere a questa risorsa.", "content": ""}), 403
+            abort(403, description="Devi essere autenticato per accedere a questa risorsa.")
+        
+        # Cerca project_id negli argomenti della route
+        project_id = kwargs.get('project_id')
+        
+        # Se non lo trova, prova nel JSON body (per API POST)
+        if not project_id and request.is_json:
+            project_id = request.json.get('project_id')
+        
+        # Se non lo trova, prova nei query params (per GET)
+        if not project_id:
+            project_id = request.args.get('project_id')
+        
+        if not project_id:
+            if is_api_call:
+                return jsonify({"error": "ID del progetto non fornito.", "content": ""}), 400
+            abort(400, description="ID del progetto non fornito.")
+        
+        # Verifica che l'utente sia creatore o collaboratore
+        project = Project.query.get(project_id)
+        if not project:
+            if is_api_call:
+                return jsonify({"error": "Progetto non trovato.", "content": ""}), 404
+            abort(404, description="Progetto non trovato.")
+        
+        # Creatore ha sempre accesso
+        if project.creator_id == current_user.id:
+            return f(*args, **kwargs)
+        
+        # Controlla se è collaboratore
+        collaboration = Collaborator.query.filter_by(
+            project_id=project_id,
+            user_id=current_user.id
+        ).first()
+        
+        if not collaboration:
+            if is_api_call:
+                return jsonify({"error": "Non hai i permessi per accedere a questo progetto.", "content": ""}), 403
+            abort(403, description="Non hai i permessi per accedere a questo progetto. Solo creatori e collaboratori possono usare Hub Agents.")
+        
+        return f(*args, **kwargs)
+    return decorated_function

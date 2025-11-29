@@ -1,5 +1,5 @@
 from datetime import datetime
-from your_application import db
+from app.extensions import db
 
 class Project(db.Model):
     __tablename__ = 'projects'

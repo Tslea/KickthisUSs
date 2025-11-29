@@ -4,6 +4,7 @@ import humanize
 import markdown
 from markupsafe import escape, Markup
 from datetime import datetime, timezone
+from contextlib import contextmanager
 from .models import (
     ALLOWED_PROJECT_CATEGORIES,
     ALLOWED_TASK_PHASES,
@@ -12,6 +13,23 @@ from .models import (
     ALLOWED_TASK_TYPES,
     Task 
 )
+from .validation_rules import VALIDATION_RULES
+from .extensions import db
+
+# Try to import bleach for HTML sanitization, fallback to basic escaping
+try:
+    import bleach
+    BLEACH_AVAILABLE = True
+except ImportError:
+    BLEACH_AVAILABLE = False
+
+# Allowed HTML tags and attributes for user-generated content
+ALLOWED_HTML_TAGS = ['p', 'br', 'strong', 'em', 'u', 'ul', 'ol', 'li', 'a', 'code', 'pre', 'blockquote', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6']
+ALLOWED_HTML_ATTRIBUTES = {
+    'a': ['href', 'title', 'target', 'rel'],
+    'code': ['class'],
+    'pre': ['class']
+}
 
 # Correzione: Sostituiti i newline letterali con le loro sequenze di escape (\n, \r\n, \r)
 _nl_re = re.compile(r'(\r\n|\n|\r)')
@@ -34,7 +52,8 @@ def register_helpers(app):
             ALLOWED_TASK_PHASES=ALLOWED_TASK_PHASES,
             ALLOWED_TASK_STATUS=ALLOWED_TASK_STATUS,
             ALLOWED_TASK_DIFFICULTIES=ALLOWED_TASK_DIFFICULTIES,
-            ALLOWED_TASK_TYPES=ALLOWED_TASK_TYPES
+            ALLOWED_TASK_TYPES=ALLOWED_TASK_TYPES,
+            validation_rules=VALIDATION_RULES
         )
 
     @app.template_filter('format_datetime')
@@ -123,3 +142,138 @@ def get_pending_invite(project_id, user_id):
         invitee_id=user_id,
         status='pending'
     ).first()
+
+
+def sanitize_html(content, allow_markdown=False):
+    """
+    Sanitizza HTML user-generated per prevenire XSS attacks.
+    
+    Args:
+        content: Stringa HTML da sanitizzare
+        allow_markdown: Se True, permette conversione da Markdown a HTML sicuro
+    
+    Returns:
+        Markup: HTML sanitizzato e sicuro
+    """
+    if not content:
+        return Markup("")
+    
+    # Se bleach è disponibile, usalo per sanitizzazione completa
+    if BLEACH_AVAILABLE:
+        # Se è markdown, convertilo prima
+        if allow_markdown:
+            md = markdown.Markdown(extensions=['markdown.extensions.fenced_code', 'markdown.extensions.tables'])
+            content = md.convert(content)
+        
+        # Sanitizza HTML
+        cleaned = bleach.clean(
+            content,
+            tags=ALLOWED_HTML_TAGS,
+            attributes=ALLOWED_HTML_ATTRIBUTES,
+            strip=True
+        )
+        return Markup(cleaned)
+    else:
+        # Fallback: escape tutto se bleach non è disponibile
+        if allow_markdown:
+            md = markdown.Markdown(extensions=['markdown.extensions.fenced_code', 'markdown.extensions.tables'])
+            content = md.convert(content)
+        
+        # Escape HTML per sicurezza
+        return Markup(escape(content))
+
+
+def _get_field_label(section: str, field: str, rules: dict | None = None) -> str:
+    rules = rules or VALIDATION_RULES.get(section, {}).get(field, {})
+    default_label = f"{section}.{field}".replace('_', ' ').title()
+    return rules.get('label', default_label)
+
+
+def clean_plain_text_field(section: str, field: str, value: str | None) -> str:
+    """
+    Applica le regole di validazione per un campo testuale semplice.
+    Restituisce la stringa ripulita o solleva ValueError con messaggio user-friendly.
+    """
+    rules = VALIDATION_RULES.get(section, {}).get(field, {})
+    label = _get_field_label(section, field, rules)
+    raw_value = '' if value is None else str(value)
+    cleaned = raw_value.strip()
+    
+    min_length = rules.get('min_length')
+    max_length = rules.get('max_length')
+    pattern = rules.get('pattern')
+    required = rules.get('required', True if min_length else False)
+    
+    if required and not cleaned:
+        raise ValueError(f"{label} è obbligatorio.")
+    if cleaned and min_length and len(cleaned) < min_length:
+        raise ValueError(f"{label} deve contenere almeno {min_length} caratteri.")
+    if cleaned and max_length and len(cleaned) > max_length:
+        raise ValueError(f"{label} non può superare {max_length} caratteri.")
+    if cleaned and pattern and not re.fullmatch(pattern, cleaned):
+        raise ValueError(f"{label} contiene caratteri non ammessi.")
+    
+    return cleaned
+
+
+def clean_rich_text_field(section: str, field: str, value: str | None) -> str:
+    """
+    Applica le regole di validazione a un campo che supporta HTML/Markdown
+    e restituisce la stringa sanitizzata pronta per l'archiviazione.
+    """
+    rules = VALIDATION_RULES.get(section, {}).get(field, {})
+    label = _get_field_label(section, field, rules)
+    raw_value = '' if value is None else str(value)
+    cleaned_input = raw_value.strip()
+    
+    required = rules.get('required', False)
+    max_length = rules.get('max_length')
+    allow_markdown = rules.get('allow_markdown', False)
+    
+    if required and not cleaned_input:
+        raise ValueError(f"{label} è obbligatorio.")
+    if cleaned_input and max_length and len(cleaned_input) > max_length:
+        raise ValueError(f"{label} non può superare {max_length} caratteri.")
+    
+    if not cleaned_input:
+        return ''
+    
+    return str(sanitize_html(cleaned_input, allow_markdown=allow_markdown))
+
+
+def validate_no_html(text):
+    """
+    Valida che una stringa non contenga tag HTML.
+    Utile per campi che devono contenere solo testo semplice.
+    
+    Args:
+        text: Stringa da validare
+    
+    Returns:
+        bool: True se non contiene HTML, False altrimenti
+    
+    Raises:
+        ValueError: Se il testo contiene HTML
+    """
+    if not text:
+        return True
+    
+    # Pattern per rilevare tag HTML
+    html_pattern = re.compile(r'<[^>]+>')
+    if html_pattern.search(text):
+        raise ValueError('Il campo non può contenere tag HTML.')
+    return True
+
+
+@contextmanager
+def db_transaction():
+    """
+    Context manager per gestire transazioni database atomiche.
+    Esegue commit automatico se tutto va a buon fine, rollback in caso di eccezioni.
+    """
+    try:
+        yield db.session
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        raise

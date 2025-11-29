@@ -123,7 +123,7 @@ def validate_mime_type(file: FileStorage, allowed_mime_types: set = None) -> str
         raise FileValidationError(f"Error detecting file MIME type: {str(e)}")
 
 
-def validate_filename(filename: str) -> bool:
+def validate_filename(filename: str, allowed_extensions: set[str] | None = None) -> bool:
     """
     Validate filename for security issues.
     
@@ -147,14 +147,28 @@ def validate_filename(filename: str) -> bool:
     if '\x00' in filename:
         raise FileValidationError("Filename contains null bytes")
     
-    # Check for extension
     if '.' not in filename:
-        raise FileValidationError("Filename must have an extension")
+        raise FileValidationError("Filename must have un'estensione valida")
+    
+    ext = filename.rsplit('.', 1)[1].lower()
+    if allowed_extensions is None:
+        allowed_extensions = current_app.config.get('ALLOWED_EXTENSIONS', set())
+    if allowed_extensions and ext not in allowed_extensions:
+        raise FileValidationError(
+            f"Estensione '.{ext}' non consentita. Estensioni permesse: {', '.join(sorted(allowed_extensions))}"
+        )
     
     return True
 
 
-def validate_file_upload(file: FileStorage, check_mime: bool = True, check_size: bool = True) -> dict:
+def validate_file_upload(
+    file: FileStorage,
+    check_mime: bool = True,
+    check_size: bool = True,
+    max_size: int | None = None,
+    allowed_mime_types: set[str] | None = None,
+    allowed_extensions: set[str] | None = None
+) -> dict:
     """
     Comprehensive file validation with multiple security checks.
     
@@ -179,16 +193,24 @@ def validate_file_upload(file: FileStorage, check_mime: bool = True, check_size:
         'valid': False,
         'mime_type': None,
         'size': 0,
+        'extension': None,
         'errors': []
     }
     
+    if allowed_extensions is None:
+        allowed_extensions = current_app.config.get('ALLOWED_EXTENSIONS', set())
+    if allowed_mime_types is None:
+        allowed_mime_types = current_app.config.get('ALLOWED_MIME_TYPES', set())
+    if max_size is None:
+        max_size = current_app.config.get('MAX_CONTENT_LENGTH', 16 * 1024 * 1024)
+    
     try:
         # Validate filename
-        validate_filename(file.filename)
+        validate_filename(file.filename, allowed_extensions=allowed_extensions)
         
         # Validate file size
         if check_size:
-            validate_file_size(file)
+            validate_file_size(file, max_size=max_size)
         
         # Get file size
         file.seek(0, os.SEEK_END)
@@ -197,7 +219,10 @@ def validate_file_upload(file: FileStorage, check_mime: bool = True, check_size:
         
         # Validate MIME type
         if check_mime:
-            result['mime_type'] = validate_mime_type(file)
+            result['mime_type'] = validate_mime_type(file, allowed_mime_types=allowed_mime_types)
+        
+        if '.' in file.filename:
+            result['extension'] = file.filename.rsplit('.', 1)[1].lower()
         
         result['valid'] = True
         return result

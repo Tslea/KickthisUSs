@@ -26,7 +26,7 @@
             </button>
             <!-- Pulsante Genera Task da Wiki -->
             <button id="generateTasksFromWikiBtn"
-                    class="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white px-4 py-2 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg flex items-center font-semibold">
+                    class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg flex items-center font-semibold">
                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
                 </svg>
@@ -47,9 +47,24 @@
     <!-- Contenuto della pagina -->
     <div class="max-w-4xl mx-auto">
         <div class="bg-white rounded-lg shadow-md p-8">
-            <div class="prose prose-lg max-w-none">
-                {{ wiki_page.content | markdown }}
-            </div>
+            {% if wiki_page.is_folder %}
+                <div class="text-center py-12">
+                    <div class="inline-flex items-center justify-center w-20 h-20 bg-yellow-100 rounded-full mb-4">
+                        <span class="material-icons text-4xl text-yellow-600">folder</span>
+                    </div>
+                    <h2 class="text-2xl font-bold text-gray-900 mb-2">Questa è una cartella</h2>
+                    <p class="text-gray-600 mb-6">Le cartelle servono per organizzare le pagine Wiki. Naviga alla struttura Wiki per vedere il contenuto di questa cartella.</p>
+                    <a href="{{ url_for('wiki.wiki_index', project_id=project.id) }}" 
+                       class="inline-flex items-center px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-lg transition-colors">
+                        <span class="material-icons mr-2">folder_open</span>
+                        Vai alla Struttura Wiki
+                    </a>
+                </div>
+            {% else %}
+                <div class="prose prose-lg max-w-none">
+                    {{ wiki_page.content | markdown }}
+                </div>
+            {% endif %}
         </div>
 
         <!-- Informazioni pagina -->

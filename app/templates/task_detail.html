@@ -320,7 +320,7 @@
                     
                     <span class="status-badge" style="background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%); color: white;">
                         <span class="material-icons" style="font-size: 1rem;">paid</span>
-                        {{ "%.2f"|format(task.equity_reward) }}% Equity
+                        {{ task.equity_reward | int }} Shares
                     </span>
                 </div>
                 <h1 class="text-3xl md:text-4xl lg:text-5xl font-black text-white mb-2 tracking-tight">{{ task.title }}</h1>
@@ -416,7 +416,13 @@
                 <section id="propose-solution" class="task-main-card p-8 text-center animate-fade-in-up" style="animation-delay: 0.2s;">
                     <div class="mb-6">
                         <h2 class="text-3xl font-black text-gray-900 mb-2">Pronto a Contribuire?</h2>
-                        <p class="text-lg text-gray-600">Proponi la tua soluzione e guadagna equity nel progetto</p>
+                        <p class="text-lg text-gray-600">Proponi la tua soluzione e guadagna shares nel progetto</p>
+                        {% if user_solutions_count > 0 %}
+                        <div class="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-orange-50 border border-orange-200 rounded-lg">
+                            <span class="material-icons text-orange-600" style="font-size: 1.125rem;">info</span>
+                            <span class="text-sm font-semibold text-orange-800">Hai sottomesso <strong>{{ user_solutions_count }}/{{ max_solutions }}</strong> soluzioni per questo task</span>
+                        </div>
+                        {% endif %}
                     </div>
                     
                     {# Pulsante GitHub per flusso software #}
@@ -581,7 +587,7 @@
                                 <span class="material-icons text-4xl text-gray-400">lightbulb_outline</span>
                             </div>
                             <p class="text-xl font-bold text-gray-600 mb-2">Nessuna soluzione proposta per questo task.</p>
-                            <p class="text-base text-gray-500">Sii il primo a contribuire e guadagna equity! 🚀</p>
+                            <p class="text-base text-gray-500">Sii il primo a contribuire e guadagna shares! 🚀</p>
                         </div>
                     {% endif %}
                     </div>

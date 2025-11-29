@@ -1,0 +1,489 @@
+{% extends "base.html" %}
+
+{% block title %}Workspace · {{ project.name }}{% endblock %}
+
+{% block content %}
+<main class="bg-black min-h-screen text-white py-8 md:py-12">
+    <div class="max-w-7xl mx-auto px-6">
+
+        {# Header #}
+        <div class="mb-8">
+            <div class="flex items-center gap-3 mb-4">
+                <a href="{{ url_for('projects.project_detail', project_id=project.id) }}"
+                    class="text-gray-500 hover:text-white transition-colors">
+                    <span class="material-icons">arrow_back</span>
+                </a>
+                <h1 class="text-4xl md:text-5xl font-bold font-display">Workspace</h1>
+            </div>
+            <p class="text-gray-400 text-lg mb-6">{{ project.name }}</p>
+
+            {# Spiegazione Semplice #}
+            <div
+                class="bg-gradient-to-r from-blue-900/30 to-purple-900/30 border border-blue-800/50 rounded-2xl p-6 md:p-8">
+                <div class="flex items-start gap-4">
+                    <span class="material-icons text-4xl text-blue-400">info</span>
+                    <div>
+                        <h2 class="text-2xl font-bold text-white mb-3">Come funziona il Workspace</h2>
+                        <div class="space-y-3 text-gray-300">
+                            <p class="text-lg">📦 <strong>Hai del codice o dei file?</strong> Caricali qui sotto. Puoi:
+                            </p>
+                            <ul class="ml-8 space-y-2 text-base">
+                                <li>• Trascinare un file ZIP (tutto il progetto in un colpo)</li>
+                                <li>• Caricare file singoli uno alla volta</li>
+                                <li>• Connettere il tuo GitHub per sincronizzare automaticamente</li>
+                            </ul>
+                            <p class="text-lg mt-4">💻 <strong>Preferisci il terminale?</strong> Usa questo comando:</p>
+                            <pre
+                                class="bg-black/50 rounded-lg p-3 text-sm text-green-400 font-mono mt-2">python cli/kick_cli_stub.py upload-zip {{ project.id }} tuofile.zip</pre>
+                            <p class="text-base mt-4 text-gray-400">📁 Tutti i file caricati appariranno nella sezione
+                                "File del Progetto" qui sotto.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <div id="project-workspace" data-project-id="{{ project.id }}"
+            data-zip-url="{{ url_for('api_uploads.upload_project_zip', project_id=project.id) }}"
+            data-file-url="{{ url_for('api_uploads.upload_project_file', project_id=project.id) }}"
+            data-status-url="{{ url_for('api_uploads.get_sync_status', project_id=project.id) }}"
+            data-tree-url="{{ url_for('api_uploads.get_workspace_tree', project_id=project.id) }}"
+            data-sign-url="{{ url_for('api_uploads.sign_file_download', project_id=project.id) }}"
+            data-download-base="{{ url_for('api_uploads.download_workspace_file', project_id=project.id, file_path='') }}"
+            data-can-manage="true" data-enabled="true" data-zip-limit-mb="{{ config.PROJECT_WORKSPACE_MAX_ZIP_MB }}"
+            data-file-limit-mb="{{ config.PROJECT_WORKSPACE_MAX_FILE_MB }}">
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+                {# Main Area - File Upload & Management #}
+                <div class="lg:col-span-2 space-y-6">
+
+                    {# Upload Section #}
+                    <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 md:p-8">
+                        <h2 class="text-2xl font-bold mb-6 flex items-center gap-3">
+                            <span class="material-icons text-accent">cloud_upload</span>
+                            Carica File
+                        </h2>
+
+                        {# Upload Methods Tabs #}
+                        <div class="flex gap-2 mb-6 border-b border-gray-800">
+                            <button onclick="switchUploadTab('zip')" id="tab-zip"
+                                class="px-4 py-2 font-medium border-b-2 border-accent text-white">
+                                ZIP Upload
+                            </button>
+                            <button onclick="switchUploadTab('files')" id="tab-files"
+                                class="px-4 py-2 font-medium border-b-2 border-transparent text-gray-400 hover:text-white">
+                                File Singoli
+                            </button>
+                            <button onclick="switchUploadTab('github')" id="tab-github"
+                                class="px-4 py-2 font-medium border-b-2 border-transparent text-gray-400 hover:text-white">
+                                GitHub Sync
+                            </button>
+                        </div>
+
+                        {# ZIP Upload Panel #}
+                        <div id="panel-zip" class="upload-panel">
+                            <div class="border-2 border-dashed border-gray-700 rounded-xl p-8 text-center hover:border-accent transition-colors cursor-pointer"
+                                id="zip-drop-zone">
+                                <span class="material-icons text-6xl text-gray-600 mb-4">folder_zip</span>
+                                <p class="text-lg font-medium text-white mb-2">Trascina un file ZIP qui</p>
+                                <p class="text-sm text-gray-400 mb-4">oppure</p>
+                                <label for="zip-file-input"
+                                    class="inline-block px-6 py-3 bg-accent text-white font-bold rounded-lg hover:bg-red-700 cursor-pointer transition-colors">
+                                    Seleziona File ZIP
+                                </label>
+                                <input type="file" id="zip-file-input" accept=".zip" class="hidden">
+                                <p class="text-xs text-gray-500 mt-4">Dimensione massima: {{ workspace_limits.zip_mb if
+                                    workspace_limits else 500 }}MB</p>
+                            </div>
+                            <div id="zip-upload-progress" class="hidden mt-4">
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="text-sm text-gray-400" id="zip-filename"></span>
+                                    <span class="text-sm text-gray-400" id="zip-progress-text">0%</span>
+                                </div>
+                                <div class="w-full h-2 bg-gray-800 rounded-full overflow-hidden">
+                                    <div id="zip-progress-bar" class="h-full bg-accent transition-all duration-300"
+                                        style="width: 0%"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {# Individual Files Panel #}
+                        <div id="panel-files" class="upload-panel hidden">
+                            <div class="border-2 border-dashed border-gray-700 rounded-xl p-8 text-center hover:border-accent transition-colors cursor-pointer"
+                                id="files-drop-zone">
+                                <span class="material-icons text-6xl text-gray-600 mb-4">insert_drive_file</span>
+                                <p class="text-lg font-medium text-white mb-2">Trascina file qui</p>
+                                <p class="text-sm text-gray-400 mb-4">oppure</p>
+                                <label for="files-input"
+                                    class="inline-block px-6 py-3 bg-accent text-white font-bold rounded-lg hover:bg-red-700 cursor-pointer transition-colors">
+                                    Seleziona File
+                                </label>
+                                <input type="file" id="files-input" multiple class="hidden">
+                                <p class="text-xs text-gray-500 mt-4">Dimensione massima per file: {{
+                                    workspace_limits.file_mb if workspace_limits else 100 }}MB</p>
+                            </div>
+                            <div id="files-upload-list" class="mt-4 space-y-2"></div>
+                        </div>
+
+                        {# GitHub Sync Panel #}
+                        <div id="panel-github" class="upload-panel hidden">
+                            <div class="bg-gray-800 border border-gray-700 rounded-xl p-6">
+                                <div class="flex items-start gap-4 mb-6">
+                                    <span class="material-icons text-4xl text-purple-400">sync</span>
+                                    <div>
+                                        <h3 class="text-xl font-bold text-white mb-2">Sincronizza con GitHub</h3>
+                                        <p class="text-gray-400">Collega il tuo repository GitHub per sincronizzare
+                                            automaticamente i file</p>
+                                    </div>
+                                </div>
+
+                                {% if workspace_repo %}
+                                <div class="bg-gray-900 rounded-lg p-4 mb-4">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <span class="text-sm text-gray-400">Repository collegato:</span>
+                                        <span
+                                            class="px-3 py-1 bg-green-900/30 border border-green-800 rounded-full text-xs text-green-400">Attivo</span>
+                                    </div>
+                                    <p class="text-white font-mono text-sm">{{ workspace_repo.provider }}/{{
+                                        workspace_repo.repo_name }}</p>
+                                    <p class="text-gray-500 text-xs mt-1">Branch: {{ workspace_repo.branch }}</p>
+                                </div>
+                                <button
+                                    class="w-full px-6 py-3 bg-gray-800 border border-gray-700 text-white font-medium rounded-lg hover:border-gray-600 transition-colors">
+                                    Rimuovi Connessione
+                                </button>
+                                {% else %}
+                                <button
+                                    class="w-full px-6 py-3 bg-accent text-white font-bold rounded-lg hover:bg-red-700 transition-colors">
+                                    Connetti Repository GitHub
+                                </button>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    {# File Browser #}
+                    <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 md:p-8">
+                        <h2 class="text-2xl font-bold mb-6 flex items-center gap-3">
+                            <span class="material-icons text-blue-400">folder_open</span>
+                            File del Progetto
+                        </h2>
+
+                        <div id="file-tree" class="space-y-1">
+                            <div class="text-center py-12 text-gray-500">
+                                <span class="material-icons text-5xl mb-4">folder_off</span>
+                                <p>Nessun file caricato</p>
+                                <p class="text-sm mt-2">Carica il tuo primo file per iniziare</p>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                {# Sidebar - Info & History #}
+                <div class="space-y-6">
+
+                    {# Active Sessions #}
+                    <div class="bg-gray-900 border border-gray-800 rounded-xl p-6">
+                        <h3 class="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4">Sessioni Attive</h3>
+                        <div id="workspace-sessions-list" class="space-y-3">
+                            <p class="text-gray-500 text-sm">Nessuna sessione attiva.</p>
+                        </div>
+                    </div>
+
+                    {# Repository Status #}
+                    <div class="bg-gray-900 border border-gray-800 rounded-xl p-6">
+                        <h3 class="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4">Repository</h3>
+
+                        {% if project.repository %}
+                        <div class="space-y-4">
+                            <div class="flex items-center gap-3 p-4 bg-green-900/20 border border-green-800 rounded-lg">
+                                <span class="material-icons text-green-400">check_circle</span>
+                                <div class="flex-1">
+                                    <div class="text-sm font-bold text-white">Collegata</div>
+                                    <div class="text-xs text-gray-400">{{ project.repository.provider }}</div>
+                                </div>
+                            </div>
+
+                            <div class="space-y-2">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-xs text-gray-500">Nome repo:</span>
+                                    <span class="text-xs text-white font-mono">{{ project.repository.repo_name }}</span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-xs text-gray-500">Branch:</span>
+                                    <span class="text-xs text-white font-mono">{{ project.repository.branch or 'main'
+                                        }}</span>
+                                </div>
+                                {% if project.repository.last_sync_at %}
+                                <div class="flex justify-between items-center">
+                                    <span class="text-xs text-gray-500">Ultimo sync:</span>
+                                    <span class="text-xs text-white">{{ project.repository.last_sync_at |
+                                        format_datetime('%d/%m %H:%M') }}</span>
+                                </div>
+                                {% endif %}
+                            </div>
+
+                            {% if project.repository.url %}
+                            <a href="{{ project.repository.url }}" target="_blank"
+                                class="flex items-center justify-center gap-2 px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg hover:border-gray-600 transition-colors text-sm font-medium text-white">
+                                <span class="material-icons text-sm">open_in_new</span>
+                                Vedi su {{ project.repository.provider }}
+                            </a>
+                            {% else %}
+                            <div
+                                class="flex items-center justify-center gap-2 px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm font-medium text-gray-500 cursor-not-allowed">
+                                <span class="material-icons text-sm">link_off</span>
+                                URL non disponibile
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        {% elif project.github_repo_name %}
+                        <div class="space-y-4">
+                            <div
+                                class="flex items-center gap-3 p-4 bg-purple-900/20 border border-purple-800 rounded-lg">
+                                <span class="material-icons text-purple-400">check_circle</span>
+                                <div class="flex-1">
+                                    <div class="text-sm font-bold text-white">GitHub</div>
+                                    <div class="text-xs text-gray-400">Repository collegata</div>
+                                </div>
+                            </div>
+
+                            <div class="flex justify-between items-center">
+                                <span class="text-xs text-gray-500">Repository:</span>
+                                <span class="text-xs text-white font-mono">{{ project.github_repo_name }}</span>
+                            </div>
+
+                            <a href="https://github.com/{{ project.github_repo_name }}" target="_blank"
+                                class="flex items-center justify-center gap-2 px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg hover:border-gray-600 transition-colors text-sm font-medium text-white">
+                                <span class="material-icons text-sm">open_in_new</span>
+                                Vedi su GitHub
+                            </a>
+                        </div>
+
+                        {% elif project.repository_url %}
+                        <div class="space-y-4">
+                            <div class="flex items-center gap-3 p-4 bg-blue-900/20 border border-blue-800 rounded-lg">
+                                <span class="material-icons text-blue-400">link</span>
+                                <div class="flex-1">
+                                    <div class="text-sm font-bold text-white">Repository Esterna</div>
+                                    <div class="text-xs text-gray-400">URL impostato dall'utente</div>
+                                </div>
+                            </div>
+
+                            <a href="{{ project.repository_url }}" target="_blank"
+                                class="flex items-center justify-center gap-2 px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg hover:border-gray-600 transition-colors text-sm font-medium text-white break-all">
+                                <span class="material-icons text-sm">open_in_new</span>
+                                Apri Repository
+                            </a>
+                        </div>
+
+                        {% else %}
+                        <div class="space-y-4">
+                            <div class="flex items-center gap-3 p-4 bg-gray-800 border border-gray-700 rounded-lg">
+                                <span class="material-icons text-gray-500">cloud_off</span>
+                                <div class="flex-1">
+                                    <div class="text-sm font-bold text-white">Nessuna repository</div>
+                                    <div class="text-xs text-gray-400">Non ancora collegata</div>
+                                </div>
+                            </div>
+
+                            <p class="text-xs text-gray-500">
+                                Collega un repository GitHub tramite il tab "GitHub Sync" oppure imposta un URL
+                                repository nelle impostazioni del progetto.
+                            </p>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    {# Quick Stats #}
+                    <div class="bg-gray-900 border border-gray-800 rounded-xl p-6">
+                        <h3 class="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4">Statistiche</h3>
+                        <div class="space-y-4">
+                            <div>
+                                <div class="text-2xl font-bold text-white" id="total-files">0</div>
+                                <div class="text-sm text-gray-400">File totali</div>
+                            </div>
+                            <div>
+                                <div class="text-2xl font-bold text-white" id="total-size">0 MB</div>
+                                <div class="text-sm text-gray-400">Spazio utilizzato</div>
+                            </div>
+                            <div>
+                                <div class="text-2xl font-bold text-white" id="last-sync">Mai</div>
+                                <div class="text-sm text-gray-400">Ultimo sync</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {# Recent Activity #}
+                    <div class="bg-gray-900 border border-gray-800 rounded-xl p-6">
+                        <h3 class="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4">Attività Recente</h3>
+                        <div id="workspace-history-list" class="space-y-3">
+                            {% if workspace_history %}
+                            {% for entry in workspace_history %}
+                            <div class="flex items-start gap-3 pb-3 border-b border-gray-800 last:border-0">
+                                <span class="material-icons text-sm text-gray-500 mt-0.5">upload_file</span>
+                                <div class="flex-1">
+                                    <p class="text-sm text-white">{{ entry.file_count or 0 }} file caricati</p>
+                                    <p class="text-xs text-gray-500">{{ entry.timestamp | format_datetime('%d %b %Y,
+                                        %H:%M') if entry.timestamp else 'Data sconosciuta' }}</p>
+                                </div>
+                            </div>
+                            {% endfor %}
+                            {% else %}
+                            <p class="text-sm text-gray-500">Nessuna attività recente</p>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    {# CLI Help #}
+                    <div class="bg-gray-900 border border-gray-800 rounded-xl p-6">
+                        <h3 class="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4">Kick CLI</h3>
+                        <p class="text-sm text-gray-400 mb-3">Carica file da terminale:</p>
+                        <pre
+                            class="bg-black rounded-lg p-3 text-xs text-gray-300 overflow-x-auto">python cli/kick_cli_stub.py upload-zip {{ project.id }} build.zip</pre>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+</main>
+
+<script>
+    // Tab switching
+    function switchUploadTab(tab) {
+        // Hide all panels
+        document.querySelectorAll('.upload-panel').forEach(panel => panel.classList.add('hidden'));
+        // Show selected panel
+        document.getElementById('panel-' + tab).classList.remove('hidden');
+
+        // Update tab styles
+        document.querySelectorAll('[id^="tab-"]').forEach(btn => {
+            btn.classList.remove('border-accent', 'text-white');
+            btn.classList.add('border-transparent', 'text-gray-400');
+        });
+        document.getElementById('tab-' + tab).classList.add('border-accent', 'text-white');
+        document.getElementById('tab-' + tab).classList.remove('border-transparent', 'text-gray-400');
+    }
+
+    // ZIP Upload functionality
+    const zipDropZone = document.getElementById('zip-drop-zone');
+    const zipFileInput = document.getElementById('zip-file-input');
+
+    zipDropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        zipDropZone.classList.add('border-accent');
+    });
+
+    zipDropZone.addEventListener('dragleave', () => {
+        zipDropZone.classList.remove('border-accent');
+    });
+
+    zipDropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        zipDropZone.classList.remove('border-accent');
+        const files = e.dataTransfer.files;
+        if (files.length > 0 && files[0].name.endsWith('.zip')) {
+            handleZipUpload(files[0]);
+        }
+    });
+
+    zipFileInput.addEventListener('change', (e) => {
+        if (e.target.files.length > 0) {
+            handleZipUpload(e.target.files[0]);
+        }
+    });
+
+    function handleZipUpload(file) {
+        const progressDiv = document.getElementById('zip-upload-progress');
+        const filenameSpan = document.getElementById('zip-filename');
+        const progressBar = document.getElementById('zip-progress-bar');
+        const progressText = document.getElementById('zip-progress-text');
+
+        progressDiv.classList.remove('hidden');
+        filenameSpan.textContent = file.name;
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const xhr = new XMLHttpRequest();
+
+        xhr.upload.addEventListener('progress', (e) => {
+            if (e.lengthComputable) {
+                const percent = Math.round((e.loaded / e.total) * 100);
+                progressBar.style.width = percent + '%';
+                progressText.textContent = percent + '%';
+            }
+        });
+
+        xhr.addEventListener('load', () => {
+            if (xhr.status === 200) {
+                showToast('File ZIP caricato con successo!', 'success');
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                showToast('Errore durante l\'upload', 'error');
+                progressDiv.classList.add('hidden');
+            }
+        });
+
+        xhr.open('POST', '{{ url_for("api_uploads.upload_project_zip", project_id=project.id) if workspace_api_urls else "#" }}');
+        xhr.setRequestHeader('X-CSRFToken', '{{ csrf_token() }}');
+        xhr.send(formData);
+    }
+
+    // Individual files upload
+    const filesDropZone = document.getElementById('files-drop-zone');
+    const filesInput = document.getElementById('files-input');
+
+    filesDropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        filesDropZone.classList.add('border-accent');
+    });
+
+    filesDropZone.addEventListener('dragleave', () => {
+        filesDropZone.classList.remove('border-accent');
+    });
+
+    filesDropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        filesDropZone.classList.remove('border-accent');
+        handleMultipleFiles(e.dataTransfer.files);
+    });
+
+    filesInput.addEventListener('change', (e) => {
+        handleMultipleFiles(e.target.files);
+    });
+
+    function handleMultipleFiles(files) {
+        const uploadList = document.getElementById('files-upload-list');
+        uploadList.innerHTML = '';
+
+        Array.from(files).forEach(file => {
+            const div = document.createElement('div');
+            div.className = 'bg-gray-800 rounded-lg p-3 flex items-center justify-between';
+            div.innerHTML = `
+            <span class="text-sm text-white">${file.name}</span>
+            <span class="text-xs text-gray-400">${(file.size / 1024 / 1024).toFixed(2)} MB</span>
+        `;
+            uploadList.appendChild(div);
+        });
+
+        // Here you would implement the actual upload logic
+        showToast('Upload multiplo file in sviluppo', 'info');
+    }
+
+    function showToast(message, type) {
+        // Simple toast notification
+        const toast = document.createElement('div');
+        toast.className = `fixed bottom-4 right-4 px-6 py-3 rounded-lg text-white font-medium shadow-lg ${type === 'success' ? 'bg-green-600' :
+            type === 'error' ? 'bg-red-600' : 'bg-blue-600'
+            }`;
+        toast.textContent = message;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 3000);
+    }
+</script>
+{% endblock %}

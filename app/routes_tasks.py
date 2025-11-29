@@ -16,9 +16,10 @@ from .forms import SolutionForm, AddTaskForm, BaseForm
 from .decorators import role_required
 from .ai_services import generate_suggested_tasks, analyze_solution_content
 from .services.github_service import GitHubService
+from .utils import db_transaction
 
 tasks_bp = Blueprint('tasks', __name__, template_folder='templates')
-MAX_SOLUTIONS_PER_USER = 3
+MAX_SOLUTIONS_PER_USER = 10
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'txt', 'pdf', 'zip', 'rar'}
 
 # Estensioni specifiche per flusso hardware
@@ -29,8 +30,9 @@ HARDWARE_FILE_TYPES = {
     'visual': {'jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'mp4', 'webm', 'avi', 'mov'}
 }
 
-# Inizializza GitHub service
-github_service = GitHubService()
+def get_github_service():
+    """Helper per ottenere GitHubService con contesto Flask"""
+    return GitHubService()
 
 def allowed_file(filename: str) -> bool:
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -132,43 +134,19 @@ def add_task_form(project_id: int) -> Response | str:
             new_task.hypothesis = form.hypothesis.data if hasattr(form, 'hypothesis') else None
             new_task.test_method = form.test_method.data if hasattr(form, 'test_method') else None
         
-        db.session.add(new_task)
-        db.session.flush()
-        
-        # Notifica solo alle persone che possono vedere il task
-        from .models import Collaborator, Notification
-        notification_recipient_ids = []
-        
-        if new_task.is_private:
-            # Per task privati, notifica solo creatore progetto e collaboratori
-            collaborator_ids = [c.user_id for c in Collaborator.query.filter_by(project_id=project.id).all()]
-            if project.creator_id not in collaborator_ids:
-                collaborator_ids.append(project.creator_id)
-            notification_recipient_ids = collaborator_ids
-        else:
-            # Per task pubblici, notifica a tutti i collaboratori e al creatore
-            collaborator_ids = [c.user_id for c in Collaborator.query.filter_by(project_id=project.id).all()]
-            if project.creator_id not in collaborator_ids:
-                collaborator_ids.append(project.creator_id)
-            notification_recipient_ids = collaborator_ids
-        
-        # Crea le notifiche
-        task_type_text = "privato" if new_task.is_private else "pubblico"
-        for uid in set(notification_recipient_ids):
-            if uid != current_user.id:
-                notif = Notification(
-                    user_id=uid,
-                    project_id=project.id,
-                    type='task_created',
-                    message=f"È stato creato un nuovo task {task_type_text} '{new_task.title}' nel progetto '{project.name}'."
-                )
-                db.session.add(notif)
-        db.session.commit()
+        with db_transaction():
+            db.session.add(new_task)
+            db.session.flush()
+            
+            # Notifica solo alle persone che possono vedere il task
+            from .services.notification_service import NotificationService
+            NotificationService.notify_task_created(new_task, project, current_user.id)
         
         # 🔄 SINCRONIZZAZIONE AUTOMATICA CON GITHUB (invisibile all'utente)
         try:
-            github_service.sync_task_to_github(new_task, project)
-            db.session.commit()  # Salva github_issue_number e github_synced_at
+            get_github_service().sync_task_to_github(new_task, project)
+            with db_transaction():
+                pass  # Salva github_issue_number e github_synced_at
         except Exception as e:
             # Non bloccare la creazione del task se GitHub fallisce
             current_app.logger.warning(f"GitHub sync failed for task {new_task.id}: {e}")
@@ -223,13 +201,14 @@ def suggest_ai_task_api(project_id: int):
             new_task.test_method = task_data.get('test_method', '')
             new_task.results = task_data.get('results', '')
         
-        db.session.add(new_task)
-        db.session.commit()
+        with db_transaction():
+            db.session.add(new_task)
         
         # 🔄 SINCRONIZZAZIONE AUTOMATICA CON GITHUB (invisibile all'utente)
         try:
-            github_service.sync_task_to_github(new_task, project)
-            db.session.commit()  # Salva github_issue_number e github_synced_at
+            get_github_service().sync_task_to_github(new_task, project)
+            with db_transaction():
+                pass  # Salva github_issue_number e github_synced_at
         except Exception as e:
             # Non bloccare la creazione del task se GitHub fallisce
             current_app.logger.warning(f"GitHub sync failed for AI task {new_task.id}: {e}")
@@ -271,22 +250,21 @@ def update_task_results(task_id: int):
     
     results = request.form.get('results', '').strip()
     if results:
-        task.results = results
-        
-        # Se vengono inseriti i risultati, aggiorna lo status
-        if task.status == 'open':
-            task.status = 'in_progress'
-        elif task.status == 'in_progress' and results:
-            task.status = 'submitted'  # Pronto per la revisione
-        
-        db.session.commit()
+        with db_transaction():
+            task.results = results
+            
+            if task.status == 'open':
+                task.status = 'in_progress'
+            elif task.status == 'in_progress':
+                task.status = 'submitted'
         
         # 🔄 SINCRONIZZAZIONE AUTOMATICA CON GITHUB (invisibile all'utente)
         try:
             project = Project.query.get(task.project_id)
             if project:
-                github_service.sync_task_to_github(task, project)
-                db.session.commit()
+                get_github_service().sync_task_to_github(task, project)
+                with db_transaction():
+                    pass
         except Exception as e:
             current_app.logger.warning(f"GitHub sync failed for task {task.id}: {e}")
         
@@ -308,8 +286,8 @@ def delete_task(task_id: int):
         abort(403)
 
     project_id = task.project_id
-    db.session.delete(task)
-    db.session.commit()
+    with db_transaction():
+        db.session.delete(task)
 
     flash("Task eliminato con successo.", "success")
     return redirect(url_for('projects.project_detail', project_id=project_id))
@@ -343,7 +321,9 @@ def task_detail(task_id: int) -> Response | str:
                            task=task,
                            project=task.project,
                            all_solutions=all_solutions,
-                           can_submit_solution=can_submit_solution)
+                           can_submit_solution=can_submit_solution,
+                           user_solutions_count=user_solutions_count,
+                           max_solutions=MAX_SOLUTIONS_PER_USER)
 
 
 @tasks_bp.route('/task/<int:task_id>/activate_suggestion', methods=['POST'])
@@ -357,8 +337,8 @@ def activate_suggestion(task_id: int) -> Response:
             abort(403)
         
         if task.status == 'suggested':
-            task.status = 'open'
-            db.session.commit()
+            with db_transaction():
+                task.status = 'open'
             flash('Suggerimento attivato con successo!', 'success')
         else:
             flash('Questo task non è un suggerimento o è già attivo.', 'warning')
@@ -377,22 +357,168 @@ def submit_solution_form(task_id: int) -> Response | str:
     task: Task = Task.query.get_or_404(task_id)
     form = SolutionForm()
 
-    if task.status not in ['open', 'in_progress']:
-        flash(f"Questo task non è attualmente aperto a nuove soluzioni (stato: {task.status}).", "warning")
-        return redirect(url_for('tasks.task_detail', task_id=task.id))
-    
+    # Calcola contatore soluzioni utente
     user_solutions_count = Solution.query.filter_by(
         task_id=task_id, 
         submitted_by_user_id=current_user.id
     ).count()
 
+    if task.status not in ['open', 'in_progress']:
+        flash(f"Questo task non è attualmente aperto a nuove soluzioni (stato: {task.status}).", "warning")
+        return redirect(url_for('tasks.task_detail', task_id=task.id))
+
     if user_solutions_count >= MAX_SOLUTIONS_PER_USER:
         flash(f"Hai già sottomesso il numero massimo di soluzioni ({MAX_SOLUTIONS_PER_USER}) per questo task.", "warning")
         return redirect(url_for('tasks.task_detail', task_id=task.id))
+    
+    # Template context comune
+    template_context = {
+        'task': task,
+        'project': task.project,
+        'form': form,
+        'user_solutions_count': user_solutions_count,
+        'max_solutions': MAX_SOLUTIONS_PER_USER
+    }
 
     if form.validate_on_submit():
         solution_content = form.solution_content.data
         file = form.solution_file.data
+        
+        # 🔧 NUOVO: Gestione ZIP Upload (priorità massima)
+        zip_file = form.solution_zip.data if hasattr(form, 'solution_zip') else None
+        contribution_category = form.contribution_category.data if hasattr(form, 'contribution_category') else 'code'
+        
+        if zip_file and zip_file.filename:
+            # ========== NUOVO FLUSSO: ZIP → Auto-PR ==========
+            try:
+                from app.services.zip_processor import ZipProcessor, ZipProcessorError
+                from app.storage_helper import StorageHelper
+                
+                processor = ZipProcessor()
+                storage = StorageHelper()
+                
+                # Estrai e valida ZIP
+                try:
+                    extracted_files = processor.extract_zip(zip_file)
+                    current_app.logger.info(f"Extracted {len(extracted_files)} files from ZIP")
+                except ZipProcessorError as e:
+                    flash(f"❌ Errore ZIP: {str(e)}", "danger")
+                    return render_template('submit_solution.html', **template_context)
+                
+                # Rileva tipo progetto
+                project_type = processor.detect_project_type(extracted_files)
+                current_app.logger.info(f"Detected project type: {project_type}")
+                
+                # Calcola statistiche (per ora senza base_repo_files)
+                diff_stats = processor.calculate_diff_stats(extracted_files, base_files=None)
+                
+                # Crea Solution iniziale (senza PR ancora)
+                new_solution = Solution(
+                    task_id=task.id,
+                    submitted_by_user_id=current_user.id,
+                    solution_content=solution_content or f"Submission via ZIP upload ({len(extracted_files)} files)",
+                    contribution_category=contribution_category,
+                    files_modified=diff_stats['files_modified'],
+                    files_added=diff_stats['files_added'],
+                    lines_added=diff_stats['lines_added'],
+                    lines_deleted=diff_stats['lines_deleted']
+                )
+                
+                
+                db.session.add(new_solution)
+                db.session.flush()  # Ottieni solution.id
+                
+                # ⭐ NUOVO: AI Analysis del codice ZIP
+                try:
+                    code_summary = processor.extract_code_summary(extracted_files, max_chars=8000)
+                    
+                    if code_summary:
+                        from app.ai_services import analyze_solution_content
+                        
+                        analysis_results = analyze_solution_content(
+                            task.title,
+                            task.description,
+                            code_summary
+                        )
+                        
+                        if analysis_results and analysis_results.get('error') is None:
+                            new_solution.ai_coherence_score = analysis_results.get('coherence_score')
+                            new_solution.ai_completeness_score = analysis_results.get('completeness_score')
+                            current_app.logger.info(
+                                f"AI analysis completed for ZIP solution #{new_solution.id}: "
+                                f"coherence={new_solution.ai_coherence_score}, "
+                                f"completeness={new_solution.ai_completeness_score}"
+                            )
+                except Exception as ai_error:
+                    # Non bloccare se AI fallisce
+                    current_app.logger.warning(f"AI analysis failed for ZIP solution: {ai_error}")
+                
+                # Salva file estratti nel database
+
+                solution_files = []
+                for file_info in extracted_files:
+                    solution_file = SolutionFile(
+                        solution_id=new_solution.id,
+                        original_filename=os.path.basename(file_info['path']),
+                        stored_filename=file_info['path'],
+                        file_path=file_info['path'],
+                        file_type='source',  # TODO: categorizzare meglio
+                        content_type=contribution_category,
+                        file_size=file_info['size'],
+                        mime_type='text/plain' if file_info['type'] == 'text' else 'application/octet-stream'
+                    )
+                    solution_files.append(solution_file)
+                    db.session.add(solution_file)
+                
+                # Crea PR su GitHub se repository configurato
+                if task.project.github_repo_name:
+                    github_service = get_github_service()
+                    
+                    if github_service and github_service.is_enabled():
+                        user_info = {
+                            'username': current_user.username,
+                            'email': current_user.email,
+                            'github_username': getattr(current_user, 'github_username', None)
+                        }
+                        
+                        pr_result = github_service.create_pr_from_zip(
+                            project=task.project,
+                            solution=new_solution,
+                            zip_files=extracted_files,
+                            user_info=user_info
+                        )
+                        
+                        if pr_result['success']:
+                            # Aggiorna Solution con info GitHub
+                            new_solution.pull_request_url = pr_result['pr_url']
+                            new_solution.github_pr_number = pr_result['pr_number']
+                            new_solution.github_branch = pr_result['branch']
+                            new_solution.github_commit_sha = pr_result['commit_sha']
+                            new_solution.github_pr_status = 'open'
+                            
+                            flash(f"✅ Soluzione caricata con successo! Pull Request #{pr_result['pr_number']} creata.", "success")
+                        else:
+                            current_app.logger.warning(f"GitHub PR creation failed: {pr_result.get('error')}")
+                            flash(f"⚠️ Soluzione salvata ma PR GitHub fallita: {pr_result.get('error')}", "warning")
+                    else:
+                        current_app.logger.info("GitHub service not enabled - skipping PR creation")
+                
+                # Commit database
+                with db_transaction():
+                    pass
+                
+                # Cleanup
+                processor.cleanup()
+                
+                return redirect(url_for('tasks.task_detail', task_id=task.id))
+                
+            except Exception as e:
+                db.session.rollback()
+                current_app.logger.error(f"Error processing ZIP upload: {e}", exc_info=True)
+                flash(f"❌ Errore imprevisto durante l'upload ZIP: {str(e)}", "danger")
+                return render_template('submit_solution.html', task=task, project=task.project, form=form)
+        
+        # ========== FLUSSO ESISTENTE (fallback se no ZIP) ==========
         
         # Ottieni content_type dal form
         content_type = request.form.get('content_type', 'software')
@@ -451,7 +577,7 @@ def submit_solution_form(task_id: int) -> Response | str:
                     flash(f"✨ Pull Request creata automaticamente! {pull_request_url}", "success")
                 else:
                     flash(f"Errore nella creazione automatica PR: {result.get('error', 'Unknown error')}", "danger")
-                    return render_template('submit_solution.html', task=task, project=task.project, form=form)
+                    return render_template('submit_solution.html', **template_context)
                     
             except Exception as e:
                 current_app.logger.error(f"Error in auto-PR creation: {e}", exc_info=True)
@@ -520,15 +646,14 @@ def submit_solution_form(task_id: int) -> Response | str:
             current_app.logger.error(f"Errore durante l'analisi AI della soluzione: {e}", exc_info=True)
             flash("Si è verificato un errore durante l'analisi AI. La soluzione è stata salvata senza valutazione.", "warning")
 
-        db.session.add(new_solution)
-        db.session.flush()  # Per ottenere l'ID della soluzione
-        
         # Salva file hardware multipli
         solution_files = save_solution_files(hardware_files, new_solution.id, upload_folder)
-        for solution_file in solution_files:
-            db.session.add(solution_file)
         
-        db.session.commit()
+        with db_transaction():
+            db.session.add(new_solution)
+            db.session.flush()  # Per ottenere l'ID della soluzione
+            for solution_file in solution_files:
+                db.session.add(solution_file)
         
         # ========== NUOVO: GITHUB SYNC (NON BLOCCANTE) ==========
         # Sincronizza automaticamente con GitHub se abilitato GLOBALMENTE
@@ -618,6 +743,12 @@ def submit_solution_form(task_id: int) -> Response | str:
             for error in errors:
                 flash(f"Errore nel campo '{getattr(form, field).label.text}': {error}", 'danger')
 
-    return render_template('submit_solution.html', task=task, project=task.project, form=form)
+    return render_template('submit_solution.html', 
+                           task=task, 
+                           project=task.project, 
+                           form=form,
+                           user_solutions_count=user_solutions_count,
+                           max_solutions=MAX_SOLUTIONS_PER_USER)
+
 
 

@@ -4,15 +4,15 @@
 
 {% block head_extra %}
 <style>
-/* Submit Solution Page - Modern Design */
+/* Submit Solution Page - Dark Theme */
 .submit-solution-page {
     min-height: 100vh;
-    background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+    background: #000000;
 }
 
-/* Hero Header con Gradient */
+/* Hero Header */
 .solution-hero {
-    background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+    background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
     padding: 3rem 1.5rem;
     margin-bottom: 2rem;
     position: relative;
@@ -42,7 +42,7 @@
     font-weight: 900;
     color: white;
     margin-bottom: 1rem;
-    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
     letter-spacing: -0.025em;
 }
 
@@ -65,15 +65,6 @@
     text-decoration-color: rgba(255, 255, 255, 0.5);
 }
 
-.solution-hint {
-    font-size: 0.875rem;
-    color: rgba(255, 255, 255, 0.85);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-}
-
 /* Container */
 .ssp-container {
     max-width: 1024px;
@@ -81,18 +72,19 @@
     padding: 0 1.5rem 3rem;
 }
 
-/* Main Card con effetto elevato */
+/* Main Card */
 .ssp-card {
-    background: white;
-    border: 1px solid #e5e7eb;
+    background: #111827;
+    border: 1px solid #1f2937;
     border-radius: 1.5rem;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
     overflow: hidden;
     transition: all 0.3s ease;
 }
 
 .ssp-card:hover {
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.12), 0 4px 12px rgba(0, 0, 0, 0.06);
+    border-color: #374151;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7);
 }
 
 .ssp-card-body {
@@ -103,7 +95,7 @@
 .ssp-section {
     margin-bottom: 3rem;
     padding-bottom: 2rem;
-    border-bottom: 2px solid #f3f4f6;
+    border-bottom: 2px solid #1f2937;
 }
 
 .ssp-section:last-child {
@@ -112,7 +104,7 @@
     padding-bottom: 0;
 }
 
-/* Step Header con design migliorato */
+/* Step Header */
 .ssp-step-header {
     display: flex;
     align-items: center;
@@ -123,7 +115,7 @@
 .ssp-step-number {
     width: 48px;
     height: 48px;
-    background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+    background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
     color: white;
     border-radius: 50%;
     display: flex;
@@ -132,134 +124,31 @@
     font-weight: 800;
     font-size: 1.25rem;
     flex-shrink: 0;
-    box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3);
-    animation: pulse-soft 2s infinite;
-}
-
-@keyframes pulse-soft {
-    0%, 100% { transform: scale(1); box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3); }
-    50% { transform: scale(1.05); box-shadow: 0 6px 16px rgba(255, 107, 53, 0.4); }
+    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.4);
 }
 
 .ssp-step-title {
     font-size: 1.5rem;
     font-weight: 800;
-    color: #111827;
+    color: #ffffff;
     letter-spacing: -0.025em;
 }
 
-/* Content Type Grid - Design moderno */
+/* Content Type Grid */
 .ssp-type-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
     gap: 1rem;
 }
 
-.ssp-type-card {
-    position: relative;
-    padding: 1.5rem 1rem;
-    border: 2px solid #e5e7eb;
-    border-radius: 1rem;
-    text-align: center;
-    cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    background: white;
-}
-
-.ssp-type-card:hover {
-    border-color: #ff6b35;
-    background: linear-gradient(135deg, #fff5f0 0%, #ffe8d9 100%);
-    transform: translateY(-4px);
-    box-shadow: 0 8px 20px rgba(255, 107, 53, 0.2);
-}
-
-.ssp-type-card.selected {
-    border-color: #ff6b35;
-    background: linear-gradient(135deg, #fff5f0 0%, #ffe8d9 100%);
-    box-shadow: 0 0 0 4px rgba(255, 107, 53, 0.1), 0 8px 20px rgba(255, 107, 53, 0.2);
-}
-
-.ssp-type-card.selected::after {
-    content: '✓';
-    position: absolute;
-    top: 8px;
-    right: 8px;
-    width: 24px;
-    height: 24px;
-    background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
-    color: white;
-    border-radius: 50%;
-    font-size: 14px;
-    font-weight: bold;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 2px 8px rgba(255, 107, 53, 0.4);
-}
-
-.ssp-type-icon {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 48px;
-    height: 48px;
-    margin: 0 auto 0.75rem;
-    background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
-    border-radius: 12px;
-    transition: all 0.3s;
-}
-
-.ssp-type-card:hover .ssp-type-icon,
-.ssp-type-card.selected .ssp-type-icon {
-    background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
-}
-
-.ssp-type-icon svg {
-    width: 28px;
-    height: 28px;
-    stroke: #4b5563;
-    fill: none;
-    stroke-width: 2;
-    transition: all 0.3s;
-}
-
-.ssp-type-card:hover .ssp-type-icon svg,
-.ssp-type-card.selected .ssp-type-icon svg {
-    stroke: white;
-}
-
-.ssp-type-label {
-    font-weight: 700;
-    font-size: 0.875rem;
-    color: #111827;
-    margin-bottom: 2px;
-    transition: all 0.3s;
-}
-
-.ssp-type-card:hover .ssp-type-label,
-.ssp-type-card.selected .ssp-type-label {
-    color: #ff6b35;
-}
-
-.ssp-type-sublabel {
-    font-size: 0.75rem;
-    color: #6b7280;
-    transition: all 0.3s;
-}
-
-.ssp-type-card:hover .ssp-type-sublabel,
-.ssp-type-card.selected .ssp-type-sublabel {
-    color: #9ca3af;
-}
-
-/* Tabs con design moderno */
+/* Tabs */
 .ssp-tabs {
     display: flex;
-    background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+    background: #1f2937;
     padding: 6px;
     border-radius: 12px;
     margin-bottom: 1.5rem;
-    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.06);
+    border: 1px solid #374151;
 }
 
 .ssp-tab {
@@ -270,7 +159,7 @@
     border-radius: 8px;
     font-size: 0.875rem;
     font-weight: 600;
-    color: #6b7280;
+    color: #9ca3af;
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     display: flex;
@@ -280,59 +169,42 @@
 }
 
 .ssp-tab:hover {
-    color: #111827;
-    background: rgba(255, 255, 255, 0.5);
+    color: #ffffff;
+    background: #374151;
 }
 
 .ssp-tab.active {
-    background: white;
-    color: #ff6b35;
+    background: #dc2626;
+    color: white;
     font-weight: 700;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06);
-    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
 }
 
-/* Drop Zone con design attraente */
+/* Drop Zone */
 .ssp-dropzone {
-    border: 3px dashed #d1d5db;
+    border: 3px dashed #374151;
     border-radius: 1rem;
     padding: 3rem 2rem;
     text-align: center;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     cursor: pointer;
-    background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+    background: #1f2937;
     position: relative;
     overflow: hidden;
 }
 
-.ssp-dropzone::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: radial-gradient(circle at 50% 50%, rgba(255, 107, 53, 0.05) 0%, transparent 70%);
-    opacity: 0;
-    transition: opacity 0.3s;
-}
-
-.ssp-dropzone:hover::before {
-    opacity: 1;
-}
-
 .ssp-dropzone:hover {
-    border-color: #ff6b35;
-    background: linear-gradient(135deg, #fff5f0 0%, #ffe8d9 100%);
+    border-color: #dc2626;
+    background: #111827;
     transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(255, 107, 53, 0.15);
+    box-shadow: 0 8px 20px rgba(220, 38, 38, 0.2);
 }
 
 .ssp-dropzone.drag-over {
-    border-color: #ff6b35;
+    border-color: #dc2626;
     border-style: solid;
-    background: linear-gradient(135deg, #fff5f0 0%, #ffe8d9 100%);
-    box-shadow: 0 0 0 4px rgba(255, 107, 53, 0.1), 0 8px 20px rgba(255, 107, 53, 0.2);
+    background: #111827;
+    box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.1), 0 8px 20px rgba(220, 38, 38, 0.3);
 }
 
 .ssp-dropzone-icon {
@@ -346,19 +218,19 @@
 .ssp-dropzone-icon svg {
     width: 100%;
     height: 100%;
-    stroke: #9ca3af;
+    stroke: #6b7280;
     transition: all 0.3s;
 }
 
 .ssp-dropzone:hover .ssp-dropzone-icon svg {
-    stroke: #ff6b35;
+    stroke: #dc2626;
     transform: translateY(-4px);
 }
 
 .ssp-dropzone-title {
     font-size: 1.125rem;
     font-weight: 700;
-    color: #111827;
+    color: #ffffff;
     margin-bottom: 0.5rem;
     position: relative;
     z-index: 10;
@@ -366,7 +238,7 @@
 
 .ssp-dropzone-subtitle {
     font-size: 0.875rem;
-    color: #6b7280;
+    color: #9ca3af;
     margin-bottom: 1rem;
     position: relative;
     z-index: 10;
@@ -377,36 +249,36 @@
     align-items: center;
     gap: 0.5rem;
     padding: 0.75rem 1.5rem;
-    background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+    background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
     color: white;
     border-radius: 8px;
     font-size: 0.875rem;
     font-weight: 700;
     transition: all 0.3s;
-    box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3);
+    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
     position: relative;
     z-index: 10;
 }
 
 .ssp-dropzone:hover .ssp-btn-upload {
     transform: scale(1.05);
-    box-shadow: 0 6px 16px rgba(255, 107, 53, 0.4);
+    box-shadow: 0 6px 16px rgba(220, 38, 38, 0.4);
 }
 
 .ssp-dropzone-meta {
     font-size: 0.75rem;
-    color: #9ca3af;
+    color: #6b7280;
     margin-top: 1rem;
     position: relative;
     z-index: 10;
 }
 
-/* Form Controls moderni */
+/* Form Controls */
 .ssp-label {
     display: block;
     font-size: 0.875rem;
     font-weight: 700;
-    color: #374151;
+    color: #ffffff;
     margin-bottom: 0.5rem;
 }
 
@@ -414,20 +286,20 @@
 .ssp-textarea {
     width: 100%;
     padding: 0.875rem 1rem;
-    border: 2px solid #e5e7eb;
+    border: 2px solid #374151;
     border-radius: 10px;
     font-size: 0.875rem;
     font-family: inherit;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    background: white;
-    color: #111827;
+    background: #000000;
+    color: #ffffff;
 }
 
 .ssp-input:focus,
 .ssp-textarea:focus {
     outline: none;
-    border-color: #ff6b35;
-    box-shadow: 0 0 0 4px rgba(255, 107, 53, 0.1), 0 4px 12px rgba(255, 107, 53, 0.15);
+    border-color: #dc2626;
+    box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.1), 0 4px 12px rgba(220, 38, 38, 0.15);
     transform: translateY(-1px);
 }
 
@@ -447,97 +319,14 @@
 }
 
 .ssp-textarea.code:focus {
-    border-color: #ff6b35;
-    box-shadow: 0 0 0 4px rgba(255, 107, 53, 0.2), 0 4px 12px rgba(255, 107, 53, 0.15);
-}
-
-/* File List con design migliorato */
-.ssp-file-list {
-    margin-top: 1.5rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-}
-
-.ssp-file-item {
-    display: flex;
-    align-items: center;
-    padding: 1rem;
-    background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
-    border: 2px solid #e5e7eb;
-    border-radius: 12px;
-    gap: 1rem;
-    transition: all 0.3s;
-}
-
-.ssp-file-item:hover {
-    border-color: #ff6b35;
-    background: linear-gradient(135deg, #fff5f0 0%, #ffe8d9 100%);
-    transform: translateX(4px);
-    box-shadow: 0 4px 12px rgba(255, 107, 53, 0.15);
-}
-
-.ssp-file-icon {
-    width: 40px;
-    height: 40px;
-    background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-}
-
-.ssp-file-icon svg {
-    width: 22px;
-    height: 22px;
-    stroke: white;
-}
-
-.ssp-file-info {
-    flex: 1;
-    min-width: 0;
-}
-
-.ssp-file-name {
-    font-size: 0.875rem;
-    font-weight: 600;
-    color: #111827;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    margin-bottom: 0.125rem;
-}
-
-.ssp-file-size {
-    font-size: 0.75rem;
-    color: #6b7280;
-}
-
-.ssp-file-remove {
-    padding: 0.5rem 1rem;
-    background: white;
-    border: 2px solid #e5e7eb;
-    border-radius: 8px;
-    color: #dc2626;
-    font-size: 0.75rem;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.3s;
-    flex-shrink: 0;
-}
-
-.ssp-file-remove:hover {
-    background: #dc2626;
-    color: white;
     border-color: #dc2626;
-    transform: scale(1.05);
+    box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.2), 0 4px 12px rgba(220, 38, 38, 0.15);
 }
 
 /* Helper Text */
 .ssp-helper {
     font-size: 0.8125rem;
-    color: #6b7280;
+    color: #9ca3af;
     margin-top: 0.5rem;
     display: flex;
     align-items: center;
@@ -547,76 +336,50 @@
 .ssp-char-counter {
     text-align: right;
     font-size: 0.75rem;
-    color: #6b7280;
+    color: #9ca3af;
     margin-top: 0.5rem;
     font-weight: 600;
 }
 
 .ssp-char-counter.error {
-    color: #dc2626;
+    color: #ef4444;
     font-weight: 700;
 }
 
 .ssp-char-counter.success {
-    color: #16a34a;
+    color: #22c55e;
     font-weight: 700;
 }
 
-/* Info Banner con gradient moderno */
+/* Info Banner */
 .ssp-info-banner {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
     color: white;
     padding: 2rem;
     border-radius: 1rem;
     display: flex;
     gap: 1.25rem;
     align-items: flex-start;
-    box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
-    position: relative;
-    overflow: hidden;
-}
-
-.ssp-info-banner::before {
-    content: '';
-    position: absolute;
-    top: -50%;
-    right: -50%;
-    width: 200%;
-    height: 200%;
-    background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
-    animation: rotate 20s linear infinite;
-}
-
-@keyframes rotate {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
+    box-shadow: 0 10px 30px rgba(30, 58, 138, 0.3);
+    border: 1px solid #3b82f6;
 }
 
 .ssp-info-icon {
     width: 32px;
     height: 32px;
     flex-shrink: 0;
-    position: relative;
-    z-index: 10;
 }
 
 .ssp-info-icon svg {
     width: 100%;
     height: 100%;
     fill: white;
-    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
-}
-
-.ssp-info-content {
-    position: relative;
-    z-index: 10;
 }
 
 .ssp-info-content h3 {
     font-size: 1.125rem;
     font-weight: 800;
     margin-bottom: 0.5rem;
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .ssp-info-content p {
@@ -625,17 +388,17 @@
     line-height: 1.6;
 }
 
-/* Footer con design premium */
+/* Footer */
 .ssp-footer {
     padding: 2rem;
-    background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
-    border-top: 2px solid #e5e7eb;
+    background: #1f2937;
+    border-top: 2px solid #374151;
 }
 
 .ssp-submit-btn {
     width: 100%;
     padding: 1.125rem 1.5rem;
-    background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+    background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
     color: white;
     border: none;
     border-radius: 12px;
@@ -647,29 +410,12 @@
     align-items: center;
     justify-content: center;
     gap: 0.75rem;
-    box-shadow: 0 10px 30px rgba(255, 107, 53, 0.3);
-    position: relative;
-    overflow: hidden;
-}
-
-.ssp-submit-btn::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
-    transition: left 0.5s;
-}
-
-.ssp-submit-btn:hover:not(:disabled)::before {
-    left: 100%;
+    box-shadow: 0 10px 30px rgba(220, 38, 38, 0.3);
 }
 
 .ssp-submit-btn:hover:not(:disabled) {
     transform: translateY(-2px);
-    box-shadow: 0 15px 40px rgba(255, 107, 53, 0.4);
+    box-shadow: 0 15px 40px rgba(220, 38, 38, 0.4);
 }
 
 .ssp-submit-btn:active:not(:disabled) {
@@ -687,14 +433,20 @@
     display: none !important;
 }
 
-/* Animazioni */
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
+.ssp-tab-content {
+    display: block;
 }
 
-.animate-fade-in {
-    animation: fadeIn 0.4s ease-out;
+.ssp-tab-content.ssp-hidden {
+    display: none !important;
+}
+
+/* File Info */
+.ssp-file-info {
+    margin-top: 1.5rem;
+    padding: 1.5rem;
+    border-radius: 12px;
+    border: 2px solid;
 }
 
 /* Responsive */
@@ -750,14 +502,10 @@
         <p class="solution-subtitle">
             Task: <a href="{{ url_for('tasks.task_detail', task_id=task.id) }}">{{ task.title }}</a>
         </p>
-        <p class="solution-hint">
-            <span class="material-icons" style="font-size: 1rem;">info</span>
-            Carica i tuoi file o incolla il codice per pubblicare automaticamente su GitHub
-        </p>
     </div>
 </div>
 
-<div class="ssp-container animate-fade-in">
+<div class="ssp-container">
 
 <!-- Main Form -->
 <div class="ssp-card">
@@ -768,69 +516,43 @@
         {{ form.hidden_tag() }}
         
         <div class="ssp-card-body">
+            <!-- Contatore Soluzioni -->
+            {% if user_solutions_count > 0 %}
+            <div class="mb-6 p-4 bg-yellow-500/10 border-l-4 border-yellow-500 rounded-lg">
+                <div class="flex items-center gap-3">
+                    <span class="material-icons text-yellow-400">info</span>
+                    <div>
+                        <p class="text-sm font-semibold text-yellow-300">
+                            Soluzioni sottomesse: <strong>{{ user_solutions_count }}/{{ max_solutions }}</strong>
+                        </p>
+                        <p class="text-xs text-yellow-400/80 mt-1">
+                            Puoi sottomettere fino a {{ max_solutions }} soluzioni per questo task
+                        </p>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
             
-            <!-- Step 1: Content Type -->
+            <!-- Area Feedback per Messaggi Inline -->
+            <div id="form-feedback" class="mb-6 hidden" role="alert" aria-live="polite"></div>
+            
+            <!-- Step 1: Contribution Category -->
             <section class="ssp-section">
                 <div class="ssp-step-header">
                     <span class="ssp-step-number">1</span>
-                    <h2 class="ssp-step-title">Seleziona il tipo di soluzione</h2>
+                    <h2 class="ssp-step-title">Categoria Contributo</h2>
                 </div>
                 
-                <div class="ssp-type-grid">
-                    <div class="ssp-type-card selected" onclick="selectType(this, 'software')">
-                        <input type="radio" name="content_type" value="software" checked class="ssp-hidden">
-                        <div class="ssp-type-icon">
-                            <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/><line x1="9" y1="9" x2="15" y2="9"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
-                        </div>
-                        <div class="ssp-type-label">Software</div>
-                        <div class="ssp-type-sublabel">Codice</div>
-                    </div>
-                    
-                    <div class="ssp-type-card" onclick="selectType(this, 'design')">
-                        <input type="radio" name="content_type" value="design" class="ssp-hidden">
-                        <div class="ssp-type-icon">
-                            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 2v20M2 12h20"/></svg>
-                        </div>
-                        <div class="ssp-type-label">Design</div>
-                        <div class="ssp-type-sublabel">Logo, UI</div>
-                    </div>
-                    
-                    <div class="ssp-type-card" onclick="selectType(this, 'hardware')">
-                        <input type="radio" name="content_type" value="hardware" class="ssp-hidden">
-                        <div class="ssp-type-icon">
-                            <svg viewBox="0 0 24 24"><rect x="5" y="7" width="14" height="10" rx="1"/><line x1="8" y1="21" x2="8" y2="17"/><line x1="16" y1="21" x2="16" y2="17"/></svg>
-                        </div>
-                        <div class="ssp-type-label">Hardware</div>
-                        <div class="ssp-type-sublabel">CAD, PCB</div>
-                    </div>
-                    
-                    <div class="ssp-type-card" onclick="selectType(this, 'documentation')">
-                        <input type="radio" name="content_type" value="documentation" class="ssp-hidden">
-                        <div class="ssp-type-icon">
-                            <svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="12" y2="16"/></svg>
-                        </div>
-                        <div class="ssp-type-label">Docs</div>
-                        <div class="ssp-type-sublabel">Guide</div>
-                    </div>
-                    
-                    <div class="ssp-type-card" onclick="selectType(this, 'media')">
-                        <input type="radio" name="content_type" value="media" class="ssp-hidden">
-                        <div class="ssp-type-icon">
-                            <svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21"/></svg>
-                        </div>
-                        <div class="ssp-type-label">Media</div>
-                        <div class="ssp-type-sublabel">Video</div>
-                    </div>
-                    
-                    <div class="ssp-type-card" onclick="selectType(this, 'mixed')">
-                        <input type="radio" name="content_type" value="mixed" class="ssp-hidden">
-                        <div class="ssp-type-icon">
-                            <svg viewBox="0 0 24 24"><path d="M2 12h6l2-9 4 18 2-9h6"/></svg>
-                        </div>
-                        <div class="ssp-type-label">Misto</div>
-                        <div class="ssp-type-sublabel">Vari</div>
-                    </div>
-                </div>
+                <label class="ssp-label">Che tipo di contributo stai fornendo?</label>
+                {{ form.contribution_category(class="ssp-input", id="contributionCategorySelect", style="font-size: 0.9375rem; padding: 0.75rem 1rem;") }}
+                
+                <p class="ssp-helper" style="margin-top: 0.75rem;">
+                    <span class="material-icons" style="font-size: 1rem;">category</span>
+                    Seleziona la categoria che meglio descrive il tuo contributo
+                </p>
+                
+                <!-- Hidden field per compatibilità backend -->
+                <input type="hidden" name="content_type" id="contentTypeHidden" value="software">
             </section>
             
             <!-- Step 2: Upload Content -->
@@ -840,51 +562,96 @@
                     <h2 class="ssp-step-title">Carica il tuo contenuto</h2>
                 </div>
                 
+                <!-- Box Informativo: Come Scegliere -->
+                <div class="mb-6 p-4 bg-blue-500/10 border-l-4 border-blue-500 rounded-lg">
+                    <div class="flex items-start gap-3">
+                        <span class="material-icons text-blue-400 flex-shrink-0" style="margin-top: 0.125rem;">help_outline</span>
+                        <div class="flex-1">
+                            <p class="text-sm font-semibold text-blue-300 mb-2">Come scegliere?</p>
+                            <div class="grid md:grid-cols-2 gap-4 text-xs text-blue-400/90">
+                                <div>
+                                    <p class="font-semibold mb-1 flex items-center gap-1 text-blue-300">
+                                        <span class="material-icons" style="font-size: 1rem;">folder_zip</span>
+                                        Upload ZIP (Consigliato)
+                                    </p>
+                                    <ul class="list-disc list-inside space-y-1 ml-4">
+                                        <li>Progetto completo con file multipli</li>
+                                        <li>Prima volta che contribuisci</li>
+                                        <li>PR creata automaticamente</li>
+                                    </ul>
+                                </div>
+                                <div>
+                                    <p class="font-semibold mb-1 flex items-center gap-1 text-blue-300">
+                                        <span class="material-icons" style="font-size: 1rem;">link</span>
+                                        Link PR (Esperti)
+                                    </p>
+                                    <ul class="list-disc list-inside space-y-1 ml-4">
+                                        <li>PR già creata manualmente</li>
+                                        <li>Workflow GitHub avanzato</li>
+                                        <li>Hai già il link della PR</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
                 <!-- Tabs -->
                 <div class="ssp-tabs">
-                    <button type="button" class="ssp-tab active" onclick="showTab(event, 'files')">
-                        <span class="material-icons" style="font-size: 1.125rem;">upload_file</span>
-                        Carica File
+                    <button type="button" class="ssp-tab active" onclick="showTab(event, 'zip')" 
+                            title="Carica un file ZIP con il tuo progetto completo. La PR verrà creata automaticamente.">
+                        <span class="material-icons" style="font-size: 1.125rem;">folder_zip</span>
+                        📦 Upload ZIP
+                        <span class="material-icons ml-1" style="font-size: 0.875rem; opacity: 0.7;">help_outline</span>
                     </button>
-                    <button type="button" class="ssp-tab" onclick="showTab(event, 'code')">
-                        <span class="material-icons" style="font-size: 1.125rem;">code</span>
-                        Incolla Codice
-                    </button>
-                    <button type="button" class="ssp-tab" onclick="showTab(event, 'pr')">
+                    <button type="button" class="ssp-tab" onclick="showTab(event, 'pr')"
+                            title="Incolla l'URL della Pull Request che hai già creato manualmente su GitHub.">
                         <span class="material-icons" style="font-size: 1.125rem;">link</span>
                         Link Pull Request
+                        <span class="material-icons ml-1" style="font-size: 0.875rem; opacity: 0.7;">help_outline</span>
                     </button>
                 </div>
                 
-                <!-- Tab: Files -->
-                <div id="tab-files" class="ssp-tab-content">
-                    <div class="ssp-dropzone" id="dropZone" 
-                         ondrop="handleDrop(event)" 
+                <!-- Tab: ZIP Upload -->
+                <div id="tab-zip" class="ssp-tab-content">
+                    <div class="ssp-dropzone" id="zipDropZone" 
+                         ondrop="handleZipDrop(event)" 
                          ondragover="handleDragOver(event)" 
                          ondragleave="handleDragLeave(event)"
-                         onclick="document.getElementById('fileInput').click()">
+                         onclick="document.getElementById('zipInput').click()">
                         <div class="ssp-dropzone-icon">
-                            <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" stroke-linecap="round" stroke-linejoin="round"/>
+                                <polyline points="14 2 14 8 20 8" stroke-linecap="round" stroke-linejoin="round"/>
+                                <line x1="12" y1="18" x2="12" y2="12" stroke-linecap="round"/>
+                                <line x1="9" y1="15" x2="15" y2="15" stroke-linecap="round"/>
+                            </svg>
                         </div>
-                        <div class="ssp-dropzone-title">Trascina i file qui</div>
-                        <div class="ssp-dropzone-subtitle">oppure clicca per selezionarli</div>
-                        <div class="ssp-btn-upload">Scegli File</div>
-                        <p class="ssp-dropzone-meta">Max 100MB • Tutti i formati supportati</p>
+                        <div class="ssp-dropzone-title">📦 Carica Progetto Completo</div>
+                        <div class="ssp-dropzone-subtitle">Trascina il file ZIP qui o clicca per selezionarlo</div>
+                        <div class="ssp-btn-upload">
+                            <span class="material-icons" style="font-size: 1.125rem;">folder_zip</span>
+                            Scegli ZIP
+                        </div>
+                        <p class="ssp-dropzone-meta">Max 50MB • Formati: .zip, .tar, .tar.gz, .tgz</p>
                     </div>
-                    <input type="file" name="files" id="fileInput" multiple class="ssp-hidden" onchange="handleFiles(this.files)">
-                    <div id="fileList" class="ssp-file-list"></div>
-                </div>
-                
-                <!-- Tab: Code -->
-                <div id="tab-code" class="ssp-tab-content ssp-hidden">
-                    <label class="ssp-label">Incolla il tuo codice sorgente</label>
-                    <textarea name="solution_code_auto" id="codeTextarea" rows="15" 
-                              class="ssp-textarea code"
-                              placeholder="// Incolla qui il tuo codice
-function myAwesomeSolution() {
-    return 'Awesome!';
-}"></textarea>
-                    <div class="ssp-char-counter" id="codeCounter">0 caratteri</div>
+                    {{ form.solution_zip(id="zipInput", class="ssp-hidden", accept=".zip,.tar,.gz,.tgz", onchange="handleZipFile(this.files[0])") }}
+                    
+                    <div id="zipFileInfo" class="ssp-file-info" style="display: none; background: linear-gradient(135deg, #064e3b 0%, #065f46 100%); border-color: #22c55e;">
+                        <div style="display: flex; align-items: center; gap: 1rem;">
+                            <div style="width: 48px; height: 48px; background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                <span class="material-icons" style="color: white; font-size: 28px;">check_circle</span>
+                            </div>
+                            <div style="flex: 1;">
+                                <div style="font-weight: 700; font-size: 1.125rem; color: #86efac; margin-bottom: 0.25rem;" id="zipFileName">file.zip</div>
+                                <div style="font-size: 0.875rem; color: #6ee7b7;" id="zipFileSize">0 MB</div>
+                            </div>
+                            <button type="button" onclick="clearZipFile()" style="padding: 0.5rem 1rem; background: #1f2937; border: 2px solid #22c55e; border-radius: 8px; color: #86efac; font-weight: 600; cursor: pointer; transition: all 0.2s;">
+                                <span class="material-icons" style="font-size: 1rem; vertical-align: middle;">close</span>
+                                Rimuovi
+                            </button>
+                        </div>
+                    </div>
                 </div>
                 
                 <!-- Tab: PR -->
@@ -920,17 +687,6 @@ function myAwesomeSolution() {
                 <div id="descCounter" class="ssp-char-counter">0 / 50 caratteri</div>
             </section>
             
-            <!-- Info Banner -->
-            <div class="ssp-info-banner">
-                <div class="ssp-info-icon">
-                    <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
-                </div>
-                <div class="ssp-info-content">
-                    <h3>✨ Pubblicazione Automatica su GitHub</h3>
-                    <p>Il sistema crea automaticamente fork, commit e Pull Request. Non serve avere un account GitHub né conoscere Git. Ti occuperemo noi di tutto! 🚀</p>
-                </div>
-            </div>
-            
         </div>
         
         <!-- Submit Footer -->
@@ -951,11 +707,35 @@ function myAwesomeSolution() {
 </div>
 
 <script>
-function selectType(el, type) {
-    document.querySelectorAll('.ssp-type-card').forEach(c => c.classList.remove('selected'));
-    el.classList.add('selected');
-    el.querySelector('input[type="radio"]').checked = true;
-}
+// Mapping contribution_category → content_type per compatibilità backend
+const categoryToContentType = {
+    'code': 'software',
+    'design': 'design',
+    'content': 'documentation',
+    'research': 'documentation',
+    'media': 'media',
+    'strategy': 'documentation',
+    'testing': 'software',
+    'marketing': 'media'
+};
+
+// Aggiorna content_type quando cambia contribution_category
+document.addEventListener('DOMContentLoaded', function() {
+    const categorySelect = document.getElementById('contributionCategorySelect');
+    const contentTypeHidden = document.getElementById('contentTypeHidden');
+    
+    if (categorySelect && contentTypeHidden) {
+        categorySelect.addEventListener('change', function() {
+            const category = this.value;
+            contentTypeHidden.value = categoryToContentType[category] || 'software';
+        });
+        
+        // Inizializza al caricamento
+        if (categorySelect.value) {
+            contentTypeHidden.value = categoryToContentType[categorySelect.value] || 'software';
+        }
+    }
+});
 
 function showTab(event, tab) {
     event.preventDefault();
@@ -968,88 +748,148 @@ function showTab(event, tab) {
 function handleDragOver(e) {
     e.preventDefault();
     e.stopPropagation();
-    document.getElementById('dropZone').classList.add('drag-over');
+    const dropZone = document.getElementById('zipDropZone');
+    if (dropZone) dropZone.classList.add('drag-over');
 }
 
 function handleDragLeave(e) {
     e.preventDefault();
     e.stopPropagation();
-    if (e.target.id === 'dropZone') {
-        document.getElementById('dropZone').classList.remove('drag-over');
-    }
+    const dropZone = document.getElementById('zipDropZone');
+    if (dropZone) dropZone.classList.remove('drag-over');
 }
 
-function handleDrop(e) {
-    e.preventDefault();
-    e.stopPropagation();
-    document.getElementById('dropZone').classList.remove('drag-over');
-    const files = e.dataTransfer.files;
-    document.getElementById('fileInput').files = files;
-    handleFiles(files);
-}
-
-let uploadedFiles = [];
-
-function handleFiles(files) {
-    uploadedFiles = Array.from(files);
-    displayFiles();
-}
-
-function displayFiles() {
-    const fileList = document.getElementById('fileList');
-    fileList.innerHTML = '';
-    if (uploadedFiles.length === 0) return;
+// Funzione per mostrare messaggi inline invece di alert
+function showFormError(message, fieldId = null, type = 'error') {
+    const feedbackDiv = document.getElementById('form-feedback');
+    if (!feedbackDiv) return;
     
-    uploadedFiles.forEach((file, index) => {
-        const size = formatFileSize(file.size);
-        const fileItem = document.createElement('div');
-        fileItem.className = 'ssp-file-item';
-        fileItem.innerHTML = `
-            <div class="ssp-file-icon">
-                <svg viewBox="0 0 24 24" stroke="currentColor" fill="none">
-                    <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
-                    <polyline points="14 2 14 8 20 8"/>
-                </svg>
+    const icon = type === 'error' ? 'error' : type === 'warning' ? 'warning' : 'info';
+    const bgColor = type === 'error' ? 'bg-red-500/10 border-red-500 text-red-300' : 
+                    type === 'warning' ? 'bg-yellow-500/10 border-yellow-500 text-yellow-300' : 
+                    'bg-blue-500/10 border-blue-500 text-blue-300';
+    
+    feedbackDiv.className = `mb-6 p-4 border-l-4 rounded-lg ${bgColor}`;
+    feedbackDiv.innerHTML = `
+        <div class="flex items-start gap-3">
+            <span class="material-icons flex-shrink-0">${icon}</span>
+            <div class="flex-1">
+                <p class="text-sm font-semibold">${message}</p>
             </div>
-            <div class="ssp-file-info">
-                <div class="ssp-file-name">${escapeHtml(file.name)}</div>
-                <div class="ssp-file-size">${size}</div>
-            </div>
-            <button type="button" class="ssp-file-remove" onclick="removeFile(${index})">Rimuovi</button>
-        `;
-        fileList.appendChild(fileItem);
-    });
-}
-
-function removeFile(index) {
-    uploadedFiles.splice(index, 1);
-    const dataTransfer = new DataTransfer();
-    uploadedFiles.forEach(file => dataTransfer.items.add(file));
-    document.getElementById('fileInput').files = dataTransfer.files;
-    displayFiles();
+            <button type="button" onclick="this.closest('#form-feedback').classList.add('hidden')" 
+                    class="text-gray-400 hover:text-white">
+                <span class="material-icons" style="font-size: 1.125rem;">close</span>
+            </button>
+        </div>
+    `;
+    feedbackDiv.classList.remove('hidden');
+    
+    // Scroll al feedback
+    feedbackDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    
+    // Evidenzia campo se specificato
+    if (fieldId) {
+        const field = document.getElementById(fieldId);
+        if (field) {
+            field.classList.add('border-red-500', 'ring-2', 'ring-red-200');
+            field.focus();
+            field.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            
+            // Rimuovi evidenziazione dopo 3 secondi
+            setTimeout(() => {
+                field.classList.remove('border-red-500', 'ring-2', 'ring-red-200');
+            }, 3000);
+        }
+    }
 }
 
 function formatFileSize(bytes) {
     if (bytes < 1024) return bytes + ' B';
-    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
-    if (bytes < 1024 * 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
-    return (bytes / (1024 * 1024 * 1024)).toFixed(1) + ' GB';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
 }
 
-function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
+// Funzioni per gestione ZIP
+function handleZipDrop(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    const dropZone = document.getElementById('zipDropZone');
+    if (dropZone) dropZone.classList.remove('drag-over');
+    
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+        const file = files[0];
+        const validExtensions = ['.zip', '.tar', '.gz', '.tgz'];
+        const isValid = validExtensions.some(ext => file.name.toLowerCase().endsWith(ext));
+        
+        if (isValid) {
+            document.getElementById('zipInput').files = files;
+            handleZipFile(file);
+        } else {
+            showFormError('⚠️ Per favore, carica solo file ZIP, TAR, o GZ.', 'zipDropZone', 'warning');
+        }
+    }
 }
 
-const codeTextarea = document.getElementById('codeTextarea');
-if (codeTextarea) {
-    codeTextarea.addEventListener('input', function() {
-        const counter = document.getElementById('codeCounter');
-        const count = this.value.length;
-        counter.textContent = `${count.toLocaleString()} caratteri`;
-        counter.className = count > 0 ? 'ssp-char-counter success' : 'ssp-char-counter';
-    });
+function handleZipFile(file) {
+    if (!file) return;
+    
+    const maxSize = 50 * 1024 * 1024; // 50MB
+    const fileSizeMB = file.size / (1024 * 1024);
+    const maxSizeMB = 50;
+    
+    // Validazione dimensione real-time
+    if (file.size > maxSize) {
+        showFormError(
+            `❌ File troppo grande: ${formatFileSize(file.size)}. Dimensione massima: 50MB. Riduci il file o usa un compressore.`,
+            'zipDropZone',
+            'error'
+        );
+        clearZipFile();
+        // Evidenzia dropzone
+        const dropZone = document.getElementById('zipDropZone');
+        if (dropZone) {
+            dropZone.style.borderColor = '#ef4444';
+            dropZone.style.borderWidth = '3px';
+        }
+        return;
+    }
+    
+    // File valido - mostra info con dimensione
+    const zipFileInfo = document.getElementById('zipFileInfo');
+    const zipFileName = document.getElementById('zipFileName');
+    const zipFileSize = document.getElementById('zipFileSize');
+    
+    zipFileInfo.style.display = 'block';
+    zipFileName.textContent = file.name;
+    zipFileSize.textContent = `${formatFileSize(file.size)} / 50 MB`;
+    
+    // Stile verde se OK
+    zipFileInfo.style.background = 'linear-gradient(135deg, #064e3b 0%, #065f46 100%)';
+    zipFileInfo.style.borderColor = '#22c55e';
+    
+    document.getElementById('zipDropZone').style.opacity = '0.6';
+    document.getElementById('zipDropZone').style.pointerEvents = 'none';
+    
+    // Reset dropzone border
+    const dropZone = document.getElementById('zipDropZone');
+    if (dropZone) {
+        dropZone.style.borderColor = '';
+        dropZone.style.borderWidth = '';
+    }
+    
+    // Nascondi eventuali errori precedenti
+    const feedbackDiv = document.getElementById('form-feedback');
+    if (feedbackDiv && feedbackDiv.textContent.includes('troppo grande')) {
+        feedbackDiv.classList.add('hidden');
+    }
+}
+
+function clearZipFile() {
+    document.getElementById('zipInput').value = '';
+    document.getElementById('zipFileInfo').style.display = 'none';
+    document.getElementById('zipDropZone').style.opacity = '1';
+    document.getElementById('zipDropZone').style.pointerEvents = 'auto';
 }
 
 const descTextarea = document.getElementById('descriptionTextarea');
@@ -1069,24 +909,51 @@ if (descTextarea) {
 }
 
 document.getElementById('solutionForm').addEventListener('submit', function(e) {
-    const files = uploadedFiles;
-    const code = document.getElementById('codeTextarea')?.value.trim() || '';
+    const zipFile = document.getElementById('zipInput')?.files[0];
     const pr = document.getElementById('prInput')?.value.trim() || '';
     const description = document.getElementById('descriptionTextarea').value.trim();
     
-    if (files.length === 0 && !code && !pr) {
+    // Nascondi eventuali errori precedenti
+    const feedbackDiv = document.getElementById('form-feedback');
+    if (feedbackDiv) feedbackDiv.classList.add('hidden');
+    
+    // Validazione: ZIP o PR richiesti
+    if (!zipFile && !pr) {
         e.preventDefault();
-        alert('Devi caricare almeno un file, incollare codice o inserire un link PR.');
+        showFormError(
+            'Devi caricare un file ZIP o inserire un link PR. Scegli uno dei due metodi per procedere.',
+            'zipDropZone',
+            'error'
+        );
         return;
     }
     
+    // Validazione: descrizione minimo 50 caratteri
     if (description.length < 50) {
         e.preventDefault();
-        alert(`La descrizione deve essere di almeno 50 caratteri. Attualmente: ${description.length} caratteri`);
-        document.getElementById('descriptionTextarea').focus();
+        showFormError(
+            `La descrizione deve essere di almeno 50 caratteri. Attualmente: ${description.length} caratteri. Aggiungi ancora ${50 - description.length} caratteri.`,
+            'descriptionTextarea',
+            'error'
+        );
         return;
     }
     
+    // Validazione: dimensione ZIP (doppio check)
+    if (zipFile) {
+        const maxSize = 50 * 1024 * 1024; // 50MB
+        if (zipFile.size > maxSize) {
+            e.preventDefault();
+            showFormError(
+                `File ZIP troppo grande: ${formatFileSize(zipFile.size)}. Dimensione massima: 50MB. Riduci il file o usa un compressore.`,
+                'zipDropZone',
+                'error'
+            );
+            return;
+        }
+    }
+    
+    // Tutto OK - procedi con submit
     const btn = document.getElementById('submitBtn');
     btn.disabled = true;
     btn.innerHTML = `
