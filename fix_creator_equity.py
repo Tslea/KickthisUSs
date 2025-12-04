@@ -1,6 +1,11 @@
 """Fix incorrect creator equity for all projects - use project.creator_equity"""
 from app import create_app
 from app.models import db, Project, ProjectEquity, EquityHistory
+from app.utils.db_utils import (
+    create_app_context,
+    get_project_equity_status,
+    print_project_equity_summary
+)
 
 app = create_app()
 with app.app_context():
@@ -13,20 +18,23 @@ with app.app_context():
     fixed_count = 0
     
     for project in projects:
-        creator_equity_record = ProjectEquity.query.filter_by(
-            project_id=project.id,
-            earned_from='creator'
-        ).first()
+        status = get_project_equity_status(project)
         
-        if creator_equity_record:
-            current_equity = creator_equity_record.equity_percentage
-            correct_equity = project.creator_equity  # Value set by creator at project creation
+        if status['has_creator_equity']:
+            current_equity = status['creator_equity_percentage']
+            correct_equity = status['project_creator_equity']
             
             print(f"\n📁 Project {project.id}: {project.name}")
             print(f"   Current ProjectEquity: {current_equity}%")
             print(f"   Project.creator_equity: {correct_equity}%")
             
-            if abs(current_equity - correct_equity) > 0.01:  # Allow for floating point errors
+            # Allow for floating point errors
+            if abs(current_equity - correct_equity) > 0.01:
+                creator_equity_record = ProjectEquity.query.filter_by(
+                    project_id=project.id,
+                    earned_from='creator'
+                ).first()
+                
                 # Update equity record
                 creator_equity_record.equity_percentage = correct_equity
                 
@@ -50,8 +58,7 @@ with app.app_context():
             else:
                 print(f"   ✅ Already correct")
         else:
-            print(f"\n📁 Project {project.id}: {project.name}")
-            print(f"   ⚠️  No creator equity record found!")
+            print_project_equity_summary(project, status)
     
     db.session.commit()
     

@@ -6,46 +6,38 @@ from app import create_app
 from app.models import Project, ProjectEquity, EquityHistory
 from app.services.equity_service import EquityService
 from app.extensions import db
+from app.utils.db_utils import (
+    create_app_context,
+    find_projects_without_equity,
+    print_project_equity_summary,
+    confirm_action
+)
 
 app = create_app()
 
 with app.app_context():
     equity_service = EquityService()
     
-    # Get all projects
-    all_projects = Project.query.all()
+    # Find projects without equity
+    projects_without_equity = find_projects_without_equity()
+    
     print(f"\n{'='*80}")
-    print(f"CHECKING {len(all_projects)} PROJECTS FOR MISSING EQUITY INITIALIZATION")
+    print(f"CHECKING {Project.query.count()} PROJECTS FOR MISSING EQUITY INITIALIZATION")
     print(f"{'='*80}\n")
-    
-    projects_without_equity = []
-    
-    for project in all_projects:
-        # Check if creator has equity record
-        creator_equity = ProjectEquity.query.filter_by(
-            project_id=project.id,
-            user_id=project.creator_id
-        ).first()
-        
-        if not creator_equity:
-            projects_without_equity.append(project)
-            print(f"❌ Project {project.id}: {project.name}")
-            print(f"   Creator: User {project.creator_id}")
-            print(f"   Creator Equity Field: {project.creator_equity}%")
-            print(f"   Status: MISSING ProjectEquity record")
-            print()
     
     if not projects_without_equity:
         print("✅ All projects have proper equity initialization!")
         print("No action needed.")
     else:
+        # Print details for each project
+        for project in projects_without_equity:
+            print_project_equity_summary(project)
+        
         print(f"\n{'='*80}")
         print(f"FOUND {len(projects_without_equity)} PROJECTS WITHOUT EQUITY INITIALIZATION")
         print(f"{'='*80}\n")
         
-        response = input(f"Do you want to initialize equity for these {len(projects_without_equity)} projects? (yes/no): ")
-        
-        if response.lower() in ['yes', 'y']:
+        if confirm_action(f"Do you want to initialize equity for these {len(projects_without_equity)} projects?"):
             print("\nInitializing equity...")
             for project in projects_without_equity:
                 try:
