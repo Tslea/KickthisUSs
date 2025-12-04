@@ -12,17 +12,23 @@ def create_app_context(app_factory=None):
     
     Args:
         app_factory: Optional app factory function. If None, uses default.
+                    To avoid circular imports, pass the factory explicitly:
+                    from app import create_app
+                    app, ctx = create_app_context(create_app)
         
     Returns:
         Tuple of (app, app_context)
         
     Usage:
-        >>> app, ctx = create_app_context()
+        >>> from app import create_app
+        >>> app, ctx = create_app_context(create_app)
         >>> with ctx:
         ...     # Perform database operations here
         ...     pass
     """
     if app_factory is None:
+        # Import here to avoid circular dependency at module level
+        # This is only used as a fallback when no factory is provided
         from app import create_app
         app_factory = create_app
     

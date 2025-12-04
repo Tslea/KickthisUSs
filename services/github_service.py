@@ -22,10 +22,15 @@ from utils.github_config_loader import (
 )
 
 # Import common utilities
-import sys
-import os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
-from app.common_utils.github_utils import sanitize_repo_name, generate_simple_pr_body
+# Note: Using absolute import from app package
+try:
+    from app.common_utils.github_utils import sanitize_repo_name, generate_simple_pr_body
+except ImportError:
+    # Fallback for environments where app package is not in path
+    import sys
+    import os
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+    from app.common_utils.github_utils import sanitize_repo_name, generate_simple_pr_body
 
 logger = logging.getLogger(__name__)
 
