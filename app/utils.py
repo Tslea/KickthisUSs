@@ -35,12 +35,20 @@ ALLOWED_HTML_ATTRIBUTES = {
 _nl_re = re.compile(r'(\r\n|\n|\r)')
 
 def calculate_project_equity(project):
-    """Calcola l'equity totale distribuita per un progetto."""
+    """
+    Calculate total equity distributed for a project.
+    Optimized to use database aggregation instead of loading all tasks.
+    """
     if not project:
         return 0.0
-    approved_tasks = project.tasks.filter_by(status='approved').all()
-    distributed_equity = sum(task.equity_reward for task in approved_tasks)
-    return distributed_equity
+    # Use database aggregation for better performance
+    total = db.session.query(
+        db.func.coalesce(db.func.sum(Task.equity_reward), 0)
+    ).filter(
+        Task.project_id == project.id,
+        Task.status == 'approved'
+    ).scalar()
+    return float(total) if total else 0.0
 
 def register_helpers(app):
     """Registra funzioni helper e filtri per i template Jinja2."""

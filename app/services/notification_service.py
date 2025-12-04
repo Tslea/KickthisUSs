@@ -99,7 +99,11 @@ class NotificationService:
         project = Project.query.get_or_404(project_id)
         
         # Raccogli tutti gli ID dei collaboratori
-        collaborator_ids = [c.user_id for c in Collaborator.query.filter_by(project_id=project_id).all()]
+        # Optimize: Use database query to get only user_ids instead of loading full objects
+        collaborator_ids = db.session.query(Collaborator.user_id).filter_by(
+            project_id=project_id
+        ).all()
+        collaborator_ids = [user_id for (user_id,) in collaborator_ids]
         
         # Aggiungi il creatore se non è già nella lista
         if project.creator_id not in collaborator_ids:

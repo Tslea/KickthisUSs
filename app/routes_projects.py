@@ -18,8 +18,12 @@ from .utils import calculate_project_equity, clean_plain_text_field, clean_rich_
 from .email_middleware import email_verification_required
 from .decorators import role_required
 from .services.managed_repo_service import ManagedRepoService
+from .services.share_service import ShareService
+from .services.equity_service import EquityService
+from .services.reporting_service import ReportingService
 from .workspace_utils import load_history_entries, list_session_metadata, synced_repo_dir
 from .cache import cache
+from app.ai_services import analyze_with_ai, generate_project_details_from_pitch, AI_SERVICE_AVAILABLE
 
 import requests
 import shutil
@@ -31,25 +35,28 @@ projects_bp = Blueprint('projects', __name__, template_folder='templates')
 
 @projects_bp.route('/')
 def home() -> Response | str:
-    # Filtra i progetti privati
-    recent_projects = Project.query.filter_by(private=False).order_by(Project.created_at.desc()).limit(8).all()
+    # Filter private projects and use eager loading for better performance
+    recent_projects = Project.query.options(
+        joinedload(Project.creator)
+    ).filter_by(private=False).order_by(Project.created_at.desc()).limit(8).all()
     
-    # Se l'utente è autenticato, recupera i suoi voti (tutti i voti, non mensili)
+    # If user is authenticated, retrieve votes more efficiently
+    # Only load project_id to avoid loading entire vote objects
     user_votes = {}
     if current_user.is_authenticated:
-        votes = ProjectVote.query.filter(
+        voted_project_ids = db.session.query(ProjectVote.project_id).filter(
             ProjectVote.user_id == current_user.id
         ).all()
         
-        user_votes = {vote.project_id: True for vote in votes}
+        user_votes = {project_id: True for (project_id,) in voted_project_ids}
     
-    # Calcola le metriche con caching (costose da calcolare)
+    # Calculate metrics with caching (expensive to calculate)
     cached_metrics = cache.get('home_metrics')
     if cached_metrics is None:
         projects_count = Project.query.filter_by(private=False).count()
         collaborators_count = Collaborator.query.count()
         
-        # Conta tutti i task di progetti pubblici (task pubblici o senza flag is_private)
+        # Count all tasks from public projects (public tasks or without is_private flag)
         public_tasks_count = Task.query.join(Project).filter(
             Project.private == False,
             db.or_(Task.is_private == False, Task.is_private == None)
@@ -81,6 +88,9 @@ def projects_list() -> Response | str:
     category: str | None = request.args.get('category')
     project_type: str | None = request.args.get('project_type')  # Nuovo filtro
     
+    # Build query with eager loading for better performance
+    base_query = Project.query.options(joinedload(Project.creator))
+    
     # Creiamo una subquery usando un'espressione SQL diretta
     # Questa espressione restituisce i progetti pubblici e privati a cui l'utente ha accesso
     if current_user.is_authenticated:
@@ -98,10 +108,10 @@ def projects_list() -> Response | str:
                 )
             )
         )
-        query = Project.query.filter(visible_projects_condition)
+        query = base_query.filter(visible_projects_condition)
     else:
         # Per gli utenti non autenticati, mostra solo i progetti pubblici
-        query = Project.query.filter(Project.private == False)
+        query = base_query.filter(Project.private == False)
     
     # Applica il filtro per categoria se presente
     if category:
@@ -117,14 +127,14 @@ def projects_list() -> Response | str:
     # Pagina i risultati
     projects_pagination = query.paginate(page=page, per_page=per_page, error_out=False)
     
-    # Se l'utente è autenticato, recupera i suoi voti (tutti i voti, non mensili)
+    # If user is authenticated, retrieve votes more efficiently (only project IDs)
     user_votes = {}
     if current_user.is_authenticated:
-        votes = ProjectVote.query.filter(
+        voted_project_ids = db.session.query(ProjectVote.project_id).filter(
             ProjectVote.user_id == current_user.id
         ).all()
         
-        user_votes = {vote.project_id: True for vote in votes}
+        user_votes = {project_id: True for (project_id,) in voted_project_ids}
     
     return render_template('projects.html',
                            projects=projects_pagination.items,
@@ -174,9 +184,8 @@ def create_project_form() -> Response | str:
         # 🤖 GENERA NOME, REWRITTEN_PITCH E DESCRIZIONE CON AI
         project_name = None
         rewritten_pitch = None
-        try:
-            from app.ai_services import generate_project_details_from_pitch, AI_SERVICE_AVAILABLE
-            if AI_SERVICE_AVAILABLE:
+        if AI_SERVICE_AVAILABLE:
+            try:
                 details = generate_project_details_from_pitch(cleaned_pitch, category, project_type)
                 project_name = details.get('name', 'Nuovo Progetto')
                 rewritten_pitch = details.get('rewritten_pitch', cleaned_pitch)
@@ -213,7 +222,6 @@ def create_project_form() -> Response | str:
         # 🎯 INITIALIZE PHANTOM SHARES SYSTEM (NEW - for new projects)
         # New projects use shares system, old projects keep using equity (backward compatibility)
         try:
-            from app.services.share_service import ShareService
             share_service = ShareService()
             share_service.initialize_project_shares(new_project)
             current_app.logger.info(f'Initialized phantom shares system for project {new_project.id} - User {current_user.id}')
@@ -221,7 +229,6 @@ def create_project_form() -> Response | str:
             current_app.logger.error(f'Failed to initialize shares system for project {new_project.id}: {str(e)}')
             # Fallback: use old equity system
             try:
-                from app.services.equity_service import EquityService
                 equity_service = EquityService()
                 equity_service.initialize_creator_equity(new_project)
                 current_app.logger.info(f'Fallback: Initialized creator equity (old system) for project {new_project.id}')
@@ -231,8 +238,6 @@ def create_project_form() -> Response | str:
         
         # 🤖 GENERAZIONE AUTOMATICA GUIDE AI
         try:
-            from app.ai_services import analyze_with_ai
-            from datetime import datetime, timezone
             
             # Prepara informazioni del progetto per AI
             project_info = f"""
@@ -421,18 +426,17 @@ def project_detail(project_id: int) -> Response | str:
             flash("Non sei autorizzato ad accedere a questo progetto privato.", "error")
             return redirect(url_for('projects.projects_list'))
     
-    # Correzione: Passa l'intero oggetto 'project'
-    distributed_equity = calculate_project_equity(project)
-    
+    # Calculate distributed equity using database aggregation (more efficient)
     creator_equity = project.creator_equity
-    distributed_equity = sum([c.equity_share for c in project.collaborators])
+    distributed_equity = db.session.query(
+        func.coalesce(func.sum(Collaborator.equity_share), 0)
+    ).filter(Collaborator.project_id == project.id).scalar()
     platform_fee = getattr(project, 'platform_fee', 1.0)
     remaining_equity = 100 - creator_equity - distributed_equity - platform_fee
     
     # Auto-initialize shares system for commercial projects if missing
     if project.is_commercial and not project.uses_shares_system():
         try:
-            from .services.share_service import ShareService
             share_service = ShareService()
             share_service.initialize_project_shares(project)
             db.session.commit()
@@ -444,7 +448,6 @@ def project_detail(project_id: int) -> Response | str:
     # Get transparency data for public section
     transparency_data = None
     try:
-        from .services.reporting_service import ReportingService
         reporting_service = ReportingService()
         transparency_data = reporting_service.get_transparency_data(project, anonymize_holders=False)
     except Exception as e:
@@ -483,16 +486,29 @@ def project_detail(project_id: int) -> Response | str:
 
     tasks_by_phase = {phase_key: [] for phase_key in ALLOWED_TASK_PHASES.keys()}
     
-    # Filtra i task in base ai permessi di visualizzazione
-    all_active_tasks = project.tasks.filter(Task.status.in_(['open', 'in_progress', 'submitted', 'suggested'])).all()
-    active_tasks = [task for task in all_active_tasks if task.can_view(current_user)]
+    # More efficient: filter tasks in database query instead of in Python
+    # For private tasks, filter based on user permissions in the query
+    if current_user.is_authenticated and (is_creator or is_collaborator):
+        # Collaborators and creators can see all tasks
+        active_tasks_query = project.tasks.filter(Task.status.in_(['open', 'in_progress', 'submitted', 'suggested']))
+        completed_tasks_query = project.tasks.filter(Task.status.in_(['approved', 'closed']))
+    else:
+        # Non-collaborators can only see public tasks
+        active_tasks_query = project.tasks.filter(
+            Task.status.in_(['open', 'in_progress', 'submitted', 'suggested']),
+            db.or_(Task.is_private == False, Task.is_private == None)
+        )
+        completed_tasks_query = project.tasks.filter(
+            Task.status.in_(['approved', 'closed']),
+            db.or_(Task.is_private == False, Task.is_private == None)
+        )
+    
+    active_tasks = active_tasks_query.all()
+    completed_tasks = completed_tasks_query.all()
     
     for task in active_tasks:
         if task.phase in tasks_by_phase:
             tasks_by_phase[task.phase].append(task)
-
-    all_completed_tasks = project.tasks.filter(Task.status.in_(['approved', 'closed'])).all()
-    completed_tasks = [task for task in all_completed_tasks if task.can_view(current_user)]
     
     # Determine tasks to show based on status filter
     status_filter = request.args.get('status')
@@ -676,7 +692,6 @@ def project_equity(project_id: int) -> Response | str:
     Display project cap table (equity distribution).
     Only visible to project creator and collaborators.
     """
-    from .services.equity_service import EquityService
     
     project = Project.query.options(
         joinedload(Project.creator)
@@ -790,9 +805,6 @@ def project_transparency(project_id: int) -> Response | str:
     PUBLIC transparency dashboard for a project.
     Accessible to everyone, no login required.
     """
-    from .services.reporting_service import ReportingService
-    from .services.share_service import ShareService
-    
     project = Project.query.get_or_404(project_id)
     
     # Auto-initialize shares system for commercial projects if missing
@@ -848,9 +860,6 @@ def api_project_transparency(project_id: int):
     Public API endpoint for transparency data.
     Returns JSON with all transparency information.
     """
-    from .services.reporting_service import ReportingService
-    from flask import jsonify
-    
     project = Project.query.get_or_404(project_id)
     
     # Get anonymization preference
@@ -872,9 +881,6 @@ def export_transparency(project_id: int):
     """
     Export transparency data as CSV or JSON.
     """
-    from .services.reporting_service import ReportingService
-    from flask import Response
-    
     project = Project.query.get_or_404(project_id)
     
     # Get format (default: json)

@@ -465,6 +465,13 @@ class Project(db.Model):
     private = db.Column(db.Boolean, default=False, nullable=False)  # --- NUOVO CAMPO per progetti privati ---
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), index=True)
     
+    # Add composite indexes for common query patterns
+    __table_args__ = (
+        db.Index('ix_project_private_created_at', 'private', 'created_at'),
+        db.Index('ix_project_category_private', 'category', 'private'),
+        db.Index('ix_project_type_private', 'project_type', 'private'),
+    )
+    
     creator = db.relationship('User', back_populates='projects')
     tasks = db.relationship('Task', back_populates='project', lazy='dynamic', cascade='all, delete-orphan', foreign_keys='Task.project_id')
     collaborators = db.relationship('Collaborator', back_populates='project', lazy='dynamic', cascade='all, delete-orphan')
@@ -770,10 +777,10 @@ class Task(db.Model):
     equity_reward = db.Column(db.Float, nullable=False)
     task_type = db.Column(db.String(50), nullable=False, default='implementation', index=True) # --- NUOVO CAMPO ---
     status = db.Column(db.String(50), nullable=False, default='open', index=True)
-    phase = db.Column(db.String(50))
+    phase = db.Column(db.String(50), index=True)  # Add index for frequent filtering by phase
     difficulty = db.Column(db.String(50))
     is_suggestion = db.Column(db.Boolean, default=False)
-    is_private = db.Column(db.Boolean, default=False)  # Nuovo campo per task privati
+    is_private = db.Column(db.Boolean, default=False, index=True)  # Add index for frequent filtering by visibility
     
     # Campi specifici per esperimenti di validazione
     hypothesis = db.Column(db.Text, nullable=True)  # Ipotesi da testare
@@ -783,6 +790,13 @@ class Task(db.Model):
     # GitHub Integration
     github_issue_number = db.Column(db.Integer, nullable=True)
     github_synced_at = db.Column(db.DateTime, nullable=True)
+    
+    # Add composite indexes for common query patterns
+    __table_args__ = (
+        db.Index('ix_task_project_status', 'project_id', 'status'),
+        db.Index('ix_task_project_is_private', 'project_id', 'is_private'),
+        db.Index('ix_task_project_status_is_private', 'project_id', 'status', 'is_private'),
+    )
     
     project = db.relationship('Project', back_populates='tasks', foreign_keys=[project_id])
     creator = db.relationship('User', back_populates='created_tasks', foreign_keys=[creator_id]) 
