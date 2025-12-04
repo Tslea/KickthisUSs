@@ -15,10 +15,10 @@ try:
     from github import Github
     
     print("\n🔍 Testando connessione con GitHub...")
-    g = Github(token)
+    github_client = Github(token)
     
     # Get current user
-    user = g.get_user()
+    user = github_client.get_user()
     print(f"✅ Token VALIDO!")
     print(f"   Username: {user.login}")
     print(f"   Name: {user.name}")
@@ -29,7 +29,7 @@ try:
     org_name = os.environ.get('GITHUB_ORG', 'kickthisuss-projects')
     print(f"\n🔍 Verifico accesso all'organizzazione '{org_name}'...")
     try:
-        org = g.get_organization(org_name)
+        org = github_client.get_organization(org_name)
         print(f"✅ Accesso all'organizzazione confermato!")
         print(f"   Nome: {org.name}")
         print(f"   Repos pubblici: {org.public_repos}")
