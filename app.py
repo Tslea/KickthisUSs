@@ -1,8 +1,28 @@
+"""
+DEPRECATED: This file is deprecated and kept only for backward compatibility.
+Please use the create_app() function from the app package instead:
+    from app import create_app
+    
+This simple app factory is no longer maintained.
+Use app/__init__.py for the current application factory.
+"""
 import os
+import warnings
 from flask import Flask
 from config.github_config import GITHUB_ENABLED
 
+warnings.warn(
+    "app.py is deprecated. Import create_app from 'app' package instead.",
+    DeprecationWarning,
+    stacklevel=2
+)
+
 def create_app():
+    """
+    DEPRECATED: Use app.create_app() instead.
+    
+    This is a legacy app factory kept for backward compatibility.
+    """
     app = Flask(__name__)
     
     # Configurazione dell'applicazione
