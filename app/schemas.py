@@ -190,11 +190,11 @@ class CommentCreateSchema(BaseSchema):
     
     @field_validator('content')
     @classmethod
-    def validate_content(cls, v: str) -> str:
+    def validate_content(cls, value: str) -> str:
         """Validate comment content."""
-        if not v or not v.strip():
+        if not value or not value.strip():
             raise ValueError("Comment cannot be empty")
-        return v.strip()
+        return value.strip()
 
 
 # ============================================
@@ -219,15 +219,15 @@ class UserRegistrationSchema(BaseSchema):
     
     @field_validator('password')
     @classmethod
-    def validate_password(cls, v: str) -> str:
+    def validate_password(cls, value: str) -> str:
         """Validate password strength."""
-        if len(v) < 8:
+        if len(value) < 8:
             raise ValueError("Password must be at least 8 characters")
-        if not re.search(r'[A-Za-z]', v):
+        if not re.search(r'[A-Za-z]', value):
             raise ValueError("Password must contain at least one letter")
-        if not re.search(r'\d', v):
+        if not re.search(r'\d', value):
             raise ValueError("Password must contain at least one number")
-        return v
+        return value
 
 
 class UserProfileUpdateSchema(BaseSchema):
