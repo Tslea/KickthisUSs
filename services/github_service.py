@@ -25,7 +25,7 @@ from utils.github_config_loader import (
 import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
-from app.utils.github_utils import sanitize_repo_name, generate_simple_pr_body
+from app.common_utils.github_utils import sanitize_repo_name, generate_simple_pr_body
 
 logger = logging.getLogger(__name__)
 

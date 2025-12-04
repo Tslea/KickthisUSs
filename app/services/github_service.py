@@ -18,7 +18,7 @@ from datetime import datetime
 from flask import current_app
 
 # Import common utilities
-from app.utils.github_utils import sanitize_repo_name, generate_pr_body
+from app.common_utils.github_utils import sanitize_repo_name, generate_pr_body
 
 try:
     from github import Github, GithubException, RateLimitExceededException

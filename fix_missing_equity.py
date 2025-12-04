@@ -6,7 +6,7 @@ from app import create_app
 from app.models import Project, ProjectEquity, EquityHistory
 from app.services.equity_service import EquityService
 from app.extensions import db
-from app.utils.db_utils import (
+from app.common_utils.db_utils import (
     create_app_context,
     find_projects_without_equity,
     print_project_equity_summary,

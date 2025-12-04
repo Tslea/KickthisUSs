@@ -1,6 +1,6 @@
 """
-App utilities package.
-Contains common utility functions used across the application.
+App common utilities package.
+Contains shared utility functions used across the application.
 """
 
 from .github_utils import (

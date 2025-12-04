@@ -1,7 +1,7 @@
 """Fix incorrect creator equity for all projects - use project.creator_equity"""
 from app import create_app
 from app.models import db, Project, ProjectEquity, EquityHistory
-from app.utils.db_utils import (
+from app.common_utils.db_utils import (
     create_app_context,
     get_project_equity_status,
     print_project_equity_summary
