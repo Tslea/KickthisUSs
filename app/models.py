@@ -164,8 +164,8 @@ class User(db.Model, UserMixin):
     endorsements = db.relationship('Endorsement', back_populates='user', lazy='dynamic', cascade='all, delete-orphan')
     votes = db.relationship('Vote', back_populates='user', lazy='dynamic', cascade='all, delete-orphan')
 
-    def set_password(self, p): self.password_hash = generate_password_hash(p)
-    def check_password(self, p): return check_password_hash(self.password_hash, p)
+    def set_password(self, password): self.password_hash = generate_password_hash(password)
+    def check_password(self, password): return check_password_hash(self.password_hash, password)
 
     def generate_email_verification_token(self):
         """Genera un token per la verifica email."""
