@@ -18,8 +18,12 @@ from .utils import calculate_project_equity, clean_plain_text_field, clean_rich_
 from .email_middleware import email_verification_required
 from .decorators import role_required
 from .services.managed_repo_service import ManagedRepoService
+from .services.share_service import ShareService
+from .services.equity_service import EquityService
+from .services.reporting_service import ReportingService
 from .workspace_utils import load_history_entries, list_session_metadata, synced_repo_dir
 from .cache import cache
+from app.ai_services import analyze_with_ai, generate_project_details_from_pitch, AI_SERVICE_AVAILABLE
 
 import requests
 import shutil
@@ -180,9 +184,8 @@ def create_project_form() -> Response | str:
         # 🤖 GENERA NOME, REWRITTEN_PITCH E DESCRIZIONE CON AI
         project_name = None
         rewritten_pitch = None
-        try:
-            from app.ai_services import generate_project_details_from_pitch, AI_SERVICE_AVAILABLE
-            if AI_SERVICE_AVAILABLE:
+        if AI_SERVICE_AVAILABLE:
+            try:
                 details = generate_project_details_from_pitch(cleaned_pitch, category, project_type)
                 project_name = details.get('name', 'Nuovo Progetto')
                 rewritten_pitch = details.get('rewritten_pitch', cleaned_pitch)
@@ -219,7 +222,6 @@ def create_project_form() -> Response | str:
         # 🎯 INITIALIZE PHANTOM SHARES SYSTEM (NEW - for new projects)
         # New projects use shares system, old projects keep using equity (backward compatibility)
         try:
-            from app.services.share_service import ShareService
             share_service = ShareService()
             share_service.initialize_project_shares(new_project)
             current_app.logger.info(f'Initialized phantom shares system for project {new_project.id} - User {current_user.id}')
@@ -227,7 +229,6 @@ def create_project_form() -> Response | str:
             current_app.logger.error(f'Failed to initialize shares system for project {new_project.id}: {str(e)}')
             # Fallback: use old equity system
             try:
-                from app.services.equity_service import EquityService
                 equity_service = EquityService()
                 equity_service.initialize_creator_equity(new_project)
                 current_app.logger.info(f'Fallback: Initialized creator equity (old system) for project {new_project.id}')
@@ -237,8 +238,6 @@ def create_project_form() -> Response | str:
         
         # 🤖 GENERAZIONE AUTOMATICA GUIDE AI
         try:
-            from app.ai_services import analyze_with_ai
-            from datetime import datetime, timezone
             
             # Prepara informazioni del progetto per AI
             project_info = f"""
@@ -438,7 +437,6 @@ def project_detail(project_id: int) -> Response | str:
     # Auto-initialize shares system for commercial projects if missing
     if project.is_commercial and not project.uses_shares_system():
         try:
-            from .services.share_service import ShareService
             share_service = ShareService()
             share_service.initialize_project_shares(project)
             db.session.commit()
@@ -450,7 +448,6 @@ def project_detail(project_id: int) -> Response | str:
     # Get transparency data for public section
     transparency_data = None
     try:
-        from .services.reporting_service import ReportingService
         reporting_service = ReportingService()
         transparency_data = reporting_service.get_transparency_data(project, anonymize_holders=False)
     except Exception as e:
@@ -695,7 +692,6 @@ def project_equity(project_id: int) -> Response | str:
     Display project cap table (equity distribution).
     Only visible to project creator and collaborators.
     """
-    from .services.equity_service import EquityService
     
     project = Project.query.options(
         joinedload(Project.creator)
@@ -809,11 +805,6 @@ def project_transparency(project_id: int) -> Response | str:
     PUBLIC transparency dashboard for a project.
     Accessible to everyone, no login required.
     """
-    from .services.reporting_service import ReportingService
-    from .services.share_service import ShareService
-    
-    project = Project.query.get_or_404(project_id)
-    
     # Auto-initialize shares system for commercial projects if missing
     if project.is_commercial and not project.uses_shares_system():
         try:
@@ -868,9 +859,6 @@ def api_project_transparency(project_id: int):
     Returns JSON with all transparency information.
     """
     from .services.reporting_service import ReportingService
-    from flask import jsonify
-    
-    project = Project.query.get_or_404(project_id)
     
     # Get anonymization preference
     anonymize = request.args.get('anonymize', 'false').lower() == 'true'
@@ -893,9 +881,6 @@ def export_transparency(project_id: int):
     """
     from .services.reporting_service import ReportingService
     from flask import Response
-    
-    project = Project.query.get_or_404(project_id)
-    
     # Get format (default: json)
     export_format = request.args.get('format', 'json').lower()
     anonymize = request.args.get('anonymize', 'false').lower() == 'true'
