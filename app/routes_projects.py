@@ -48,7 +48,7 @@ def home() -> Response | str:
             ProjectVote.user_id == current_user.id
         ).all()
         
-        user_votes = {project_id for (project_id,) in voted_project_ids}
+        user_votes = {project_id: True for (project_id,) in voted_project_ids}
     
     # Calculate metrics with caching (expensive to calculate)
     cached_metrics = cache.get('home_metrics')
@@ -134,7 +134,7 @@ def projects_list() -> Response | str:
             ProjectVote.user_id == current_user.id
         ).all()
         
-        user_votes = {project_id for (project_id,) in voted_project_ids}
+        user_votes = {project_id: True for (project_id,) in voted_project_ids}
     
     return render_template('projects.html',
                            projects=projects_pagination.items,
@@ -805,6 +805,8 @@ def project_transparency(project_id: int) -> Response | str:
     PUBLIC transparency dashboard for a project.
     Accessible to everyone, no login required.
     """
+    project = Project.query.get_or_404(project_id)
+    
     # Auto-initialize shares system for commercial projects if missing
     if project.is_commercial and not project.uses_shares_system():
         try:
@@ -858,7 +860,7 @@ def api_project_transparency(project_id: int):
     Public API endpoint for transparency data.
     Returns JSON with all transparency information.
     """
-    from .services.reporting_service import ReportingService
+    project = Project.query.get_or_404(project_id)
     
     # Get anonymization preference
     anonymize = request.args.get('anonymize', 'false').lower() == 'true'
@@ -879,8 +881,8 @@ def export_transparency(project_id: int):
     """
     Export transparency data as CSV or JSON.
     """
-    from .services.reporting_service import ReportingService
-    from flask import Response
+    project = Project.query.get_or_404(project_id)
+    
     # Get format (default: json)
     export_format = request.args.get('format', 'json').lower()
     anonymize = request.args.get('anonymize', 'false').lower() == 'true'
