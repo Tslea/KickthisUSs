@@ -770,10 +770,10 @@ class Task(db.Model):
     equity_reward = db.Column(db.Float, nullable=False)
     task_type = db.Column(db.String(50), nullable=False, default='implementation', index=True) # --- NUOVO CAMPO ---
     status = db.Column(db.String(50), nullable=False, default='open', index=True)
-    phase = db.Column(db.String(50))
+    phase = db.Column(db.String(50), index=True)  # Add index for frequent filtering by phase
     difficulty = db.Column(db.String(50))
     is_suggestion = db.Column(db.Boolean, default=False)
-    is_private = db.Column(db.Boolean, default=False)  # Nuovo campo per task privati
+    is_private = db.Column(db.Boolean, default=False, index=True)  # Add index for frequent filtering by visibility
     
     # Campi specifici per esperimenti di validazione
     hypothesis = db.Column(db.Text, nullable=True)  # Ipotesi da testare
