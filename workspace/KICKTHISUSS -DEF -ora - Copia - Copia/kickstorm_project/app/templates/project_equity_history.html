@@ -1,0 +1,212 @@
+{% extends "base.html" %}
+
+{% block title %}{{ term.history_title }} - {{ project.name }}{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8 max-w-7xl">
+    <!-- Header -->
+    <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+        <div class="flex items-center justify-between mb-4">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900 mb-2">
+                    📊 {{ term.history_title }} & Audit Log
+                </h1>
+                <p class="text-gray-600">
+                    <a href="{{ url_for('projects.project_detail', project_id=project.id) }}" class="text-mclaren-orange hover:underline">
+                        {{ project.name }}
+                    </a>
+                </p>
+            </div>
+            <div class="flex gap-3">
+                <a href="{{ url_for('projects.project_equity', project_id=project.id) }}" 
+                   class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                    </svg>
+                    Cap Table
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Summary Stats -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        <!-- Total Grants -->
+        <div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg p-6 text-white">
+            <div class="flex items-center justify-between mb-2">
+                <span class="text-blue-100 font-medium">Total {{ term.shares }} Grants</span>
+                <svg class="w-8 h-8 text-blue-100" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"></path>
+                </svg>
+            </div>
+            <div class="text-3xl font-bold">{{ total_grants }}</div>
+            <div class="text-sm text-blue-100 mt-2">Total events recorded</div>
+        </div>
+
+        <!-- Total Equity Granted -->
+        <div class="bg-gradient-to-br from-green-500 to-green-600 rounded-xl shadow-lg p-6 text-white">
+            <div class="flex items-center justify-between mb-2">
+                <span class="text-green-100 font-medium">{{ term.shares }} Distribuiti</span>
+                <svg class="w-8 h-8 text-green-100" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+            </div>
+            <div class="text-3xl font-bold">{{ "%.2f"|format(total_equity_granted) }}%</div>
+            <div class="text-sm text-green-100 mt-2">Cumulative {{ term.shares_lower }} granted</div>
+        </div>
+    </div>
+
+    <!-- History Timeline -->
+    <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+        <div class="bg-gradient-to-r from-mclaren-orange to-orange-600 px-6 py-4">
+            <h2 class="text-2xl font-bold text-white">Timeline</h2>
+            <p class="text-orange-100 text-sm mt-1">Complete audit trail of all {{ term.shares_lower }} changes</p>
+        </div>
+
+        <div class="p-6">
+            {% if history_pagination.items %}
+                <div class="space-y-4">
+                    {% for entry in history_pagination.items %}
+                    <div class="border-l-4 
+                                {% if entry.action == 'grant' %}border-green-500{% endif %}
+                                {% if entry.action == 'initial' %}border-purple-500{% endif %}
+                                {% if entry.action == 'revoke' %}border-red-500{% endif %}
+                                {% if entry.action == 'adjust' %}border-yellow-500{% endif %}
+                                {% if entry.action == 'correction' %}border-blue-500{% endif %}
+                                bg-gray-50 rounded-r-lg p-4 hover:shadow-md transition-shadow">
+                        
+                        <div class="flex items-start justify-between">
+                            <div class="flex-1">
+                                <!-- Action Badge -->
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                             {% if entry.action == 'grant' %}bg-green-100 text-green-800{% endif %}
+                                             {% if entry.action == 'initial' %}bg-purple-100 text-purple-800{% endif %}
+                                             {% if entry.action == 'revoke' %}bg-red-100 text-red-800{% endif %}
+                                             {% if entry.action == 'adjust' %}bg-yellow-100 text-yellow-800{% endif %}
+                                             {% if entry.action == 'correction' %}bg-blue-100 text-blue-800{% endif %}">
+                                    {% if entry.action == 'grant' %}✓ GRANTED{% endif %}
+                                    {% if entry.action == 'initial' %}🚀 INITIAL{% endif %}
+                                    {% if entry.action == 'revoke' %}✗ REVOKED{% endif %}
+                                    {% if entry.action == 'adjust' %}⚙️ ADJUSTED{% endif %}
+                                    {% if entry.action == 'correction' %}🔧 CORRECTED{% endif %}
+                                </span>
+
+                                <!-- User Info -->
+                                <div class="mt-2">
+                                    <a href="{{ url_for('users.user_profile', username=entry.user.username) }}" 
+                                       class="font-bold text-gray-900 hover:text-mclaren-orange">
+                                        {{ entry.user.username }}
+                                    </a>
+                                    <span class="text-gray-600">
+                                        {% if entry.equity_change > 0 %}gained{% else %}lost{% endif %}
+                                    </span>
+                                    <span class="font-bold 
+                                                 {% if entry.equity_change > 0 %}text-green-600{% else %}text-red-600{% endif %}">
+                                        {{ "%.2f"|format(entry.equity_change|abs) }}% {{ term.shares_lower }}
+                                    </span>
+                                </div>
+
+                                <!-- Reason -->
+                                <p class="text-sm text-gray-700 mt-2">
+                                    {{ entry.reason }}
+                                </p>
+
+                                <!-- Source Badge -->
+                                <div class="mt-2 flex items-center gap-2">
+                                    <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-gray-200 text-gray-700">
+                                        📍 {{ entry.source_type }}
+                                    </span>
+                                    {% if entry.source_id %}
+                                        <span class="text-xs text-gray-500">ID: {{ entry.source_id }}</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <!-- Equity Change Card -->
+                            <div class="ml-6 text-right">
+                                <div class="bg-white border-2 
+                                            {% if entry.equity_change > 0 %}border-green-200{% else %}border-red-200{% endif %}
+                                            rounded-lg p-3 min-w-[120px]">
+                                    <div class="text-xs text-gray-500 mb-1">{{ term.shares }} Change</div>
+                                    <div class="text-sm text-gray-600">
+                                        {{ "%.2f"|format(entry.equity_before) }}% → {{ "%.2f"|format(entry.equity_after) }}%
+                                    </div>
+                                    <div class="text-lg font-bold mt-1
+                                                {% if entry.equity_change > 0 %}text-green-600{% else %}text-red-600{% endif %}">
+                                        {% if entry.equity_change > 0 %}+{% endif %}{{ "%.2f"|format(entry.equity_change) }}%
+                                    </div>
+                                </div>
+                                
+                                <!-- Timestamp -->
+                                <div class="text-xs text-gray-400 mt-2">
+                                    {{ entry.created_at.strftime('%Y-%m-%d %H:%M:%S') }}
+                                </div>
+
+                                <!-- Changed By (if manual) -->
+                                {% if entry.changed_by %}
+                                    <div class="text-xs text-gray-500 mt-1">
+                                        by {{ entry.changed_by.username }}
+                                    </div>
+                                {% else %}
+                                    <div class="text-xs text-gray-400 mt-1">
+                                        🤖 Automatic
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Pagination -->
+                {% if history_pagination.pages > 1 %}
+                <div class="mt-6 flex justify-center">
+                    <nav class="inline-flex rounded-md shadow-sm">
+                        {% if history_pagination.has_prev %}
+                            <a href="{{ url_for('projects.project_equity_history', project_id=project.id, page=history_pagination.prev_num) }}"
+                               class="px-4 py-2 border border-gray-300 rounded-l-md bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
+                                Previous
+                            </a>
+                        {% endif %}
+                        
+                        <span class="px-4 py-2 border-t border-b border-gray-300 bg-gray-50 text-sm text-gray-700">
+                            Page {{ history_pagination.page }} of {{ history_pagination.pages }}
+                        </span>
+                        
+                        {% if history_pagination.has_next %}
+                            <a href="{{ url_for('projects.project_equity_history', project_id=project.id, page=history_pagination.next_num) }}"
+                               class="px-4 py-2 border border-gray-300 rounded-r-md bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
+                                Next
+                            </a>
+                        {% endif %}
+                    </nav>
+                </div>
+                {% endif %}
+
+            {% else %}
+                <!-- Empty State -->
+                <div class="text-center py-16">
+                    <div class="w-24 h-24 bg-gray-100 rounded-3xl flex items-center justify-center mx-auto mb-6">
+                        <svg class="w-12 h-12 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-700 mb-2">Nessuno storico {{ term.shares }} ancora</h3>
+                    <p class="text-gray-500">Le modifiche ai {{ term.shares }} appariranno qui quando i task saranno completati</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Back Button -->
+    <div class="mt-6">
+        <a href="{{ url_for('projects.project_detail', project_id=project.id) }}" 
+           class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+            </svg>
+            Back to Project
+        </a>
+    </div>
+</div>
+{% endblock %}

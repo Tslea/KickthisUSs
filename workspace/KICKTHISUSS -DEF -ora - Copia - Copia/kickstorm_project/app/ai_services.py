@@ -1,0 +1,474 @@
+# app/ai_services.py
+import os
+import json
+import httpx
+from openai import OpenAI, APITimeoutError, APIConnectionError, RateLimitError, APIStatusError
+from dotenv import load_dotenv
+from flask import current_app
+from datetime import datetime, timezone
+from .config import Config
+
+# Carica le variabili dal file .env
+load_dotenv()
+
+client = None
+AI_SERVICE_AVAILABLE = False
+CURRENT_PROVIDER = None
+CURRENT_MODEL = None
+
+def init_ai_service(app=None):
+    """Inizializza il servizio AI basato sulla configurazione"""
+    global client, AI_SERVICE_AVAILABLE, CURRENT_PROVIDER, CURRENT_MODEL
+    
+    # Se chiamato senza app context (es. script standalone), usa os.environ o Config default
+    provider = os.environ.get('AI_PROVIDER', 'deepseek')
+    if app:
+        provider = app.config.get('AI_PROVIDER', 'deepseek')
+    
+    api_key = None
+    base_url = None
+    model = None
+    
+    if provider == 'grok':
+        api_key = os.environ.get('GROK_API_KEY')
+        base_url = "https://api.x.ai/v1"
+        model = os.environ.get('GROK_MODEL', 'grok-4-fast')  # ← CAMBIO: default a grok-4-fast
+        print(f"--- Configurazione AI: Provider=GROK, Model={model} ---")
+    else:
+        # Default to DeepSeek
+        provider = 'deepseek'
+        api_key = os.environ.get('DEEPSEEK_API_KEY')
+        base_url = "https://api.deepseek.com/v1"
+        model = os.environ.get('DEEPSEEK_MODEL', 'deepseek-chat')
+        print(f"--- Configurazione AI: Provider=DEEPSEEK, Model={model} ---")
+        
+    if api_key:
+        try:
+            client = OpenAI(
+                api_key=api_key,
+                base_url=base_url,
+                http_client=httpx.Client(proxies={})
+            )
+            AI_SERVICE_AVAILABLE = True
+            CURRENT_PROVIDER = provider
+            CURRENT_MODEL = model
+            print(f"--- Servizio AI ({provider.upper()}) inizializzato correttamente ---")
+        except Exception as e:
+            print(f"ERRORE: Inizializzazione client AI ({provider}) fallita: {e}")
+            AI_SERVICE_AVAILABLE = False
+    else:
+        print(f"--- AVVISO: API KEY per {provider} non trovata. Servizio AI non disponibile. ---")
+        AI_SERVICE_AVAILABLE = False
+
+# Inizializzazione immediata (per retrocompatibilità)
+init_ai_service()
+
+def analyze_with_ai(prompt: str, max_tokens: int = 1000, temperature: float = 0.7) -> str:
+    """Funzione generica per analisi con AI"""
+    if not AI_SERVICE_AVAILABLE or client is None:
+        if current_app:
+            current_app.logger.warning("AI Service not available for analysis")
+        return ""
+
+    try:
+        chat_completion = client.chat.completions.create(
+            model=CURRENT_MODEL,
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=max_tokens,
+            temperature=temperature
+        )
+        return chat_completion.choices[0].message.content.strip()
+    except (APITimeoutError, APIConnectionError, RateLimitError, APIStatusError) as api_err:
+        if current_app:
+            current_app.logger.error(f"Errore API AI ({CURRENT_PROVIDER}): {api_err}", exc_info=True)
+        return ""
+    except Exception as e:
+        if current_app:
+            current_app.logger.error(f"Errore imprevisto chiamata AI ({CURRENT_PROVIDER}): {e}", exc_info=True)
+        return ""
+
+def generate_project_details_from_pitch(pitch: str, category: str, project_type: str = None) -> dict:
+    if not AI_SERVICE_AVAILABLE or client is None:
+        raise ConnectionError(f"{CURRENT_PROVIDER} AI Service non disponibile o non configurato.")
+
+    if project_type == "scientific":
+        system_prompt = (
+            "Sei un assistente esperto nella redazione di progetti di ricerca scientifica. "
+            "Data un'idea (pitch) e una categoria, genera:\n"
+            "1. Un titolo scientifico chiaro e preciso (max 15 parole).\n"
+            "2. Una descrizione dettagliata in stile accademico: obiettivi, background scientifico, stato dell’arte, ipotesi, metodologia, potenziale impatto, collaborazioni.\n"
+            "3. Un abstract breve (max 100 parole) adatto a una pubblicazione scientifica.\n"
+            "Rispondi SOLO in JSON valido con le chiavi 'name', 'description', 'rewritten_pitch'."
+        )
+    else:
+        system_prompt = (
+            "Sei un assistente esperto nell'analisi di idee di progetto. Data un'idea (pitch) e una categoria, genera:\n"
+            "1.  Un nome accattivante e conciso per il progetto (massimo 10-15 parole).\n"
+            "2.  Una descrizione dettagliata del progetto (2-3 paragrafi) che espanda l'idea originale, evidenziando potenzialità e obiettivi.\n"
+            "3.  Un 'pitch riscritto' che sia una versione migliorata, più chiara e coinvolgente dell'idea originale (massimo 100 parole).\n"
+            "Rispondi ESCLUSIVAMENTE in formato JSON valido con le chiavi 'name', 'description', 'rewritten_pitch'. Non aggiungere spiegazioni o testo prima o dopo il JSON."
+        )
+
+    user_prompt = f'''Pitch: "{pitch}"
+Categoria: "{category}"'''
+
+    try:
+        chat_completion = client.chat.completions.create(
+            model=CURRENT_MODEL,
+            messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": user_prompt}],
+            max_tokens=2000,
+            temperature=0.7
+        )
+        response_content = chat_completion.choices[0].message.content
+        
+        # Pulizia eventuale markdown code blocks
+        if "```json" in response_content:
+            response_content = response_content.split("```json")[1].split("```")[0].strip()
+        elif "```" in response_content:
+            response_content = response_content.split("```")[0].strip()
+
+        # Controllo se la risposta è vuota o non valida
+        if not response_content or not response_content.strip():
+            if current_app:
+                current_app.logger.error(f"Risposta {CURRENT_PROVIDER} vuota")
+            # Restituisce un fallback con dati di base
+            return {
+                "name": "Nuovo Progetto",
+                "description": pitch,
+                "rewritten_pitch": pitch
+            }
+        
+        return json.loads(response_content)
+    except json.JSONDecodeError as json_err:
+        current_app.logger.error(f"Errore parsing JSON DeepSeek: {json_err}. Risposta: {response_content[:200]}...")
+        # Fallback in caso di JSON non valido
+        return {
+            "title": "Nuovo Progetto",
+            "description": pitch,
+            "requirements": ["Definire requisiti specifici"],
+            "timeline": "Da definire",
+            "budget_estimate": "Da valutare"
+        }
+    except (APITimeoutError, APIConnectionError, RateLimitError, APIStatusError) as api_err:
+        current_app.logger.error(f"Errore API DeepSeek (dettagli): {api_err}", exc_info=True)
+        raise ConnectionError(f"Errore API DeepSeek: {api_err}")
+    except Exception as e:
+        current_app.logger.error(f"Errore imprevisto chiamata DeepSeek (dettagli): {e}", exc_info=True)
+        raise Exception(f"Errore imprevisto durante l'analisi AI: {e}")
+
+def generate_suggested_tasks(pitch: str, category: str, description: str, existing_tasks: list = None, hub_context: str = None) -> list[dict]:
+    if not AI_SERVICE_AVAILABLE or client is None:
+        return []  # Restituisce lista vuota invece di dizionario
+
+    # Informazioni contestuali sui task esistenti
+    existing_context = ""
+    if existing_tasks:
+        existing_context = f"\n\nTask già esistenti nel progetto:\n"
+        for task in existing_tasks:
+            existing_context += f"- {task.get('title', 'N/A')} (Tipo: {task.get('task_type', 'N/A')}, Shares: {task.get('equity_reward', 'N/A')})\n"
+    
+    # ⭐ NEW: Add Hub Agent context if available
+    hub_context_section = ""
+    if hub_context:
+        hub_context_section = f"""
+
+=== CONTESTO DETTAGLIATO DAL PROGETTO ===
+{hub_context}
+=== FINE CONTESTO ===
+
+IMPORTANTE: Usa le informazioni dal contesto sopra per generare task specifici e pertinenti al progetto.
+I task devono essere coerenti con le decisioni strategiche, obiettivi e analisi già definiti nei documenti."""
+    
+    system_prompt = f"""Sei un esperto Product Manager e Business Analyst specializzato nella creazione di backlog di task per progetti innovativi.
+Il tuo obiettivo è definire task strategici, concreti e ben bilanciati per un progetto, considerando il contesto completo.{hub_context_section}
+
+CONTESTO PROGETTI SIMILI:
+- Progetti Tech: spesso richiedono task di architettura (50-80 shares), implementazione core (30-60 shares), testing (20-40 shares)
+- Progetti Social: focus su community building (40-70 shares), user research (30-50 shares), content strategy (20-40 shares)
+- Progetti Business: analisi di mercato (40-60 shares), business model validation (50-80 shares), prototyping (30-50 shares)
+
+REGOLE PER LE SHARES:
+- Task 'code' (sviluppo software): 30-80 shares (basato su complessità tecnica)
+- Task 'design' (UI/UX): 20-50 shares (basato su complessità visiva)
+- Task 'content' (documentazione): 15-40 shares (basato su volume e importanza)
+- Task 'research' (analisi): 20-50 shares (basato su profondità richiesta)
+- Task 'media' (multimedia): 25-60 shares (basato su complessità produzione)
+- Task 'strategy' (business): 30-70 shares (basato su impatto strategico)
+- Task 'testing' (QA): 15-40 shares (basato su copertura richiesta)
+- Task 'marketing' (promozione): 20-50 shares (basato su reach e effort)
+- Task 'validation' (esperimenti): 25-60 shares (basato su importanza strategica)
+- Task critici per il successo del progetto: +10-20 shares bonus
+
+TIPI DI TASK (task_type):
+1. **'code'**: Sviluppo software, programmazione, implementazione tecnica, API, backend, frontend
+2. **'design'**: UI/UX design, wireframe, mockup, prototipazione visiva, interfacce
+3. **'content'**: Documentazione, copywriting, guide utente, articoli, testi
+4. **'research'**: Analisi dati, ricerche di mercato, user research, competitive analysis
+5. **'media'**: Video, audio, grafica, animazioni, asset multimediali
+6. **'strategy'**: Business strategy, pianificazione, definizione roadmap, business model
+7. **'testing'**: QA testing, test funzionali, bug hunting, quality assurance
+8. **'marketing'**: Promozione, social media, campagne, growth hacking, PR
+9. **'validation'**: Esperimenti di validazione, test ipotesi, MVP testing, raccolta feedback
+
+Genera 4-6 task fondamentali e complementari che:
+- Coprano diverse aree del progetto con un mix di tipologie
+- Abbiano almeno 2-3 tipologie diverse tra quelle elencate
+- Evitino sovrapposizioni con task esistenti
+- Abbiano shares rewards realistici e proporzionati
+
+Per ogni task, fornisci:
+1. **title**: Titolo chiaro e azionabile (max 80 caratteri)
+2. **description**: Descrizione dettagliata con deliverable specifici (2-3 frasi)
+3. **task_type**: 'proposal', 'implementation', o 'validation'
+4. **phase**: Fase di sviluppo tra: Planning, Research, Design, Development, Testing, Marketing
+5. **difficulty**: Tra Very Easy, Easy, Medium, Hard, Very Hard
+6. **equity_reward**: Valore float tra 5.0 e 100.0 (proporzionato a difficoltà, importanza, tipo)
+7. **hypothesis** (solo per validation): Ipotesi testabile formulata come "Crediamo che..."
+8. **test_method** (solo per validation): Metodo concreto per testare l'ipotesi
+
+Rispondi ESCLUSIVAMENTE in formato JSON valido con chiave "tasks" contenente array di task.{existing_context}
+"""
+
+    user_prompt = f'''Pitch: "{pitch}"
+Categoria: "{category}"
+Descrizione: "{description}"'''
+
+    try:
+        chat_completion = client.chat.completions.create(
+            model=CURRENT_MODEL,  # ← CAMBIO: Usa il modello configurato (Grok o DeepSeek)
+            messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": user_prompt}],
+            max_tokens=1200,
+            temperature=0.7,
+            response_format={"type": "json_object"}
+        )
+        response_content = chat_completion.choices[0].message.content
+        parsed_response = json.loads(response_content)
+        tasks = parsed_response.get('tasks', [])
+        
+        # Validazione e correzione dei task generati
+        validated_tasks = []
+        for task in tasks:
+            # Assicurati che tutti i campi richiesti siano presenti
+            if not all(key in task for key in ['title', 'description', 'task_type', 'phase', 'difficulty', 'equity_reward']):
+                continue
+            
+            # Valida e correggi l'equity reward
+            equity = task.get('equity_reward', 2.0)
+            if isinstance(equity, str):
+                try:
+                    equity = float(equity)
+                except ValueError:
+                    equity = 2.0
+            
+            # Limita l'equity a range accettabile
+            equity = max(0.5, min(10.0, equity))
+            task['equity_reward'] = equity
+            
+            # Valida il task_type
+            valid_types = ['code', 'design', 'content', 'research', 'media', 'strategy', 'testing', 'marketing', 'validation']
+            if task.get('task_type') not in valid_types:
+                task['task_type'] = 'code'
+            
+            # Aggiungi campi per validation se mancanti
+            if task.get('task_type') == 'validation':
+                if 'hypothesis' not in task or not task['hypothesis']:
+                    task['hypothesis'] = f"Crediamo che {task['title'].lower()} sia una priorità per i nostri utenti target"
+                if 'test_method' not in task or not task['test_method']:
+                    task['test_method'] = "Creare un prototipo semplice e raccogliere feedback da 10-15 utenti potenziali"
+            
+            validated_tasks.append(task)
+        
+        return validated_tasks
+        
+    except (APITimeoutError, APIConnectionError, RateLimitError, APIStatusError) as api_err:
+        current_app.logger.error(f"Errore API DeepSeek (tasks): {api_err}", exc_info=True)
+        raise ConnectionError(f"Errore API DeepSeek: {api_err}")
+    except json.JSONDecodeError as json_err:
+        current_app.logger.error(f"Errore parsing JSON risposta AI (tasks): {json_err}", exc_info=True)
+        return []  # Restituisce lista vuota in caso di errore parsing
+    except Exception as e:
+        current_app.logger.error(f"Errore imprevisto chiamata DeepSeek (tasks): {e}", exc_info=True)
+        return []  # Restituisce lista vuota invece di sollevare eccezione
+
+def generate_validation_experiment(project_pitch: str, project_category: str, project_description: str, focus_area: str = None) -> dict:
+    """Genera un esperimento di validazione specifico per il progetto"""
+    if not AI_SERVICE_AVAILABLE or client is None:
+        return {"error": "AI Service not available"}
+
+    system_prompt = """Sei un esperto in metodologia Lean Startup specializzato nella creazione di esperimenti di validazione.
+Il tuo compito è creare un esperimento di validazione per testare un'ipotesi chiave del progetto.
+
+Genera un esperimento di validazione che includa:
+1.  **title**: Un titolo chiaro per l'esperimento.
+2.  **description**: Una descrizione dell'esperimento e del suo obiettivo.
+3.  **hypothesis**: Un'ipotesi specifica, misurabile e testabile (formulata come "Crediamo che...").
+4.  **test_method**: Un metodo concreto, pratico e a basso costo per testare l'ipotesi.
+5.  **success_criteria**: Criteri specifici per determinare se l'ipotesi è confermata o confutata.
+6.  **estimated_duration**: Durata stimata dell'esperimento (es. "1 settimana", "2 settimane").
+7.  **estimated_cost**: Costo stimato dell'esperimento (es. "50€", "100€", "Solo tempo").
+
+L'esperimento deve essere:
+- Realizzabile con risorse limitate
+- Focalizzato su un'assunzione critica del business
+- Misurabile con metriche concrete
+- Completabile in massimo 2-3 settimane
+
+Rispondi ESCLUSIVAMENTE in formato JSON valido."""
+    
+    focus_text = f"\nFocus specifico: {focus_area}" if focus_area else ""
+    
+    user_prompt = f'''Progetto: "{project_pitch}"
+Categoria: "{project_category}"
+Descrizione: "{project_description}"{focus_text}'''
+
+    try:
+        chat_completion = client.chat.completions.create(
+            model=CURRENT_MODEL,  # ← CAMBIO: Usa Grok o DeepSeek
+            messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": user_prompt}],
+            max_tokens=600,
+            temperature=0.7,
+            response_format={"type": "json_object"}
+        )
+        response_content = chat_completion.choices[0].message.content
+        return json.loads(response_content)
+    except (APITimeoutError, APIConnectionError, RateLimitError, APIStatusError) as api_err:
+        current_app.logger.error(f"Errore API DeepSeek (validation experiment): {api_err}", exc_info=True)
+        raise ConnectionError(f"Errore API DeepSeek: {api_err}")
+    except Exception as e:
+        current_app.logger.error(f"Errore imprevisto chiamata DeepSeek (validation experiment): {e}", exc_info=True)
+        raise Exception(f"Errore imprevisto generazione esperimento validazione: {e}")
+
+
+def analyze_solution_content(task_title: str, task_description: str, solution_content: str) -> dict:
+    if not AI_SERVICE_AVAILABLE or client is None:
+        return {"error": "AI Service not available"}
+
+    system_prompt = """Sei un esperto revisore di soluzioni per task di progetto.
+Dati un titolo di task, una descrizione del task e il contenuto di una soluzione proposta, valuta la soluzione su due metriche:
+1.  Coerenza: Quanto la soluzione è pertinente e allineata con i requisiti e gli obiettivi del task? (Punteggio da 0.0 a 1.0).
+2.  Completezza: Quanto la soluzione sembra completa e indirizza tutti gli aspetti principali del task? (Punteggio da 0.0 a 1.0).
+Fornisci una breve motivazione per ogni punteggio.
+Rispondi ESCLUSIVAMENTE in formato JSON valido con le chiavi "coherence_score", "coherence_motivation", "completeness_score", "completeness_motivation".
+"""
+    user_prompt = f'''Titolo Task: "{task_title}"
+Descrizione Task:
+"""{task_description}"""
+
+Contenuto Soluzione Proposta:
+"""{solution_content}"""'''
+    
+    try:
+        chat_completion = client.chat.completions.create(
+            model=CURRENT_MODEL,  # ← CAMBIO: Usa Grok o DeepSeek
+            messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": user_prompt}],
+            max_tokens=400,
+            temperature=0.5,
+            response_format={"type": "json_object"}
+        )
+        response_content = chat_completion.choices[0].message.content
+        return json.loads(response_content)
+    except (APITimeoutError, APIConnectionError, RateLimitError, APIStatusError) as api_err:
+        current_app.logger.error(f"Errore API DeepSeek (analisi soluzione): {api_err}", exc_info=True)
+        return {"error": f"Errore API DeepSeek: {api_err}"}
+    except Exception as e:
+        current_app.logger.error(f"Errore imprevisto chiamata DeepSeek (analisi soluzione): {e}", exc_info=True)
+        return {"error": f"Errore imprevisto durante l'analisi AI della soluzione: {e}"}
+
+def get_ai_contextual_help(context: str) -> str:
+    """
+    Fornisce aiuto contestuale personalizzato tramite AI per guidare gli utenti
+    attraverso flussi di lavoro complessi in KICKStorm.
+    """
+    if not AI_SERVICE_AVAILABLE or client is None:
+        return ""
+
+    # Definizione dei prompt per contesti specifici
+    context_prompts = {
+        'github_workflow': {
+            'system': """Sei un tutor esperto di GitHub e workflow di sviluppo open source. 
+Il tuo compito è spiegare in modo chiaro e passo-passo come contribuire a un progetto software tramite GitHub.""",
+            'user': """Spiegami come funziona il flusso di lavoro GitHub per contribuire a un progetto software:
+
+1. Cosa significa "Fork" e come si fa
+2. Come creare un "Branch" per il mio lavoro
+3. Come aprire un "Pull Request"
+4. Dove trovare l'URL del Pull Request per sottometterlo su KICKStorm
+
+Usa un linguaggio semplice e fornisci esempi pratici. Massimo 300 parole."""
+        },
+        
+        'hardware_submission': {
+            'system': """Sei un tutor esperto di design hardware e prototipazione. 
+Il tuo compito è guidare gli utenti nella sottomissione corretta di file di design hardware.""",
+            'user': """Spiegami come sottomettere correttamente i file per un progetto hardware:
+
+1. Che differenza c'è tra file "sorgente" e file "per prototipazione"
+2. Quali formati usare (STEP vs STL, DWG vs GCODE)
+3. Come documentare il mio lavoro per aumentare le possibilità di approvazione
+4. Che tipo di prove visive includere
+
+Usa un linguaggio tecnico ma accessibile. Massimo 350 parole."""
+        },
+        
+        'task_creation': {
+            'system': """Sei un esperto Project Manager specializzato nella creazione di task efficaci.""",
+            'user': """Spiegami come creare un task ben strutturato su KICKStorm:
+
+1. Come scegliere il tipo di task giusto (Proposta, Implementazione, Validazione)
+2. Come definire un equity reward appropriato
+3. Come scrivere una descrizione chiara e azionabile
+4. Esempi di good practice per task diversi
+
+Massimo 300 parole, linguaggio professionale ma chiaro."""
+        },
+        
+        'project_collaboration': {
+            'system': """Sei un esperto di collaborazione digitale e gestione progetti open source.""",
+            'user': """Spiegami come collaborare efficacemente su un progetto KICKStorm:
+
+1. Come funziona la Wiki del progetto
+2. Come comunicare con altri collaboratori
+3. Come seguire i progressi del progetto
+4. Best practice per una collaborazione produttiva
+
+Massimo 280 parole, tono amichevole e pratico."""
+        },
+        
+        'solution_submission': {
+            'system': """Sei un tutor esperto nell'aiutare gli utenti a sottomettere soluzioni di qualità.""",
+            'user': """Spiegami come sottomettere una soluzione vincente:
+
+1. Come strutturare la descrizione della soluzione
+2. Cosa includere per dimostrare la qualità del lavoro
+3. Come aumentare le possibilità di approvazione
+4. Errori comuni da evitare
+
+Massimo 320 parole, tono incoraggiante e pratico."""
+        }
+    }
+    
+    if context not in context_prompts:
+        return "Contesto di aiuto non riconosciuto."
+    
+    prompt_config = context_prompts[context]
+    
+    try:
+        chat_completion = client.chat.completions.create(
+            model=CURRENT_MODEL,  # ← CAMBIO: Usa Grok o DeepSeek
+            messages=[
+                {"role": "system", "content": prompt_config['system']},
+                {"role": "user", "content": prompt_config['user']}
+            ],
+            max_tokens=400,
+            temperature=0.7
+        )
+        
+        response_content = chat_completion.choices[0].message.content.strip()
+        return response_content
+        
+    except (APITimeoutError, APIConnectionError, RateLimitError, APIStatusError) as api_err:
+        current_app.logger.error(f"Errore API DeepSeek (aiuto contestuale): {api_err}", exc_info=True)
+        return "Servizio temporaneamente non disponibile. Riprova più tardi."
+    except Exception as e:
+        current_app.logger.error(f"Errore imprevisto chiamata DeepSeek (aiuto contestuale): {e}", exc_info=True)
+        return "Si è verificato un errore. Riprova più tardi."

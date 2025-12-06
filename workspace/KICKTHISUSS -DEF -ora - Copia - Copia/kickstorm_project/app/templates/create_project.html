@@ -1,0 +1,339 @@
+{# app/templates/create_project.html #}
+{% extends 'base.html' %}
+
+{% block title %}Crea Nuovo Progetto - KickThisUss{% endblock %}
+
+{% block content %}
+<main class="bg-black min-h-screen py-12 px-4">
+    <div class="max-w-3xl mx-auto">
+
+        <div class="mb-12 text-center">
+            <h1 class="text-4xl md:text-6xl font-bold text-white font-display mb-4">
+                Lancia la tua idea
+            </h1>
+            <p class="text-xl text-gray-500">
+                L'IA ti aiuterà a strutturarla. Inizia ora.
+            </p>
+        </div>
+
+        <div class="bg-gray-900 border border-gray-800 rounded-2xl p-8 md:p-12 shadow-2xl">
+            
+            <!-- Warning se email non verificata -->
+            {% if current_user.is_authenticated and not current_user.email_verified %}
+            <div class="mb-8 p-4 bg-yellow-900/20 border border-yellow-700 rounded-lg flex gap-4">
+                <span class="material-icons text-yellow-500">info</span>
+                <div>
+                    <p class="text-sm font-bold text-yellow-500">Verifica Email Richiesta</p>
+                    <p class="text-xs text-yellow-600 mt-1">
+                        Verifica la tua email per sbloccare tutte le funzionalità.
+                        <a href="{{ url_for('auth.resend_verification') }}" class="underline hover:text-yellow-400">Invia verifica</a>
+                    </p>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- TIPO PROGETTO -->
+            <div class="mb-10">
+                <label class="block text-sm font-bold text-gray-400 mb-4 uppercase tracking-wider">Cosa vuoi creare?</label>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    
+                    <!-- Startup -->
+                    <button type="button" id="commercial-btn" onclick="selectProjectType('commercial')" 
+                            class="group relative p-6 rounded-xl border border-gray-700 bg-black hover:border-green-500 transition-all duration-300 text-left">
+                        <div class="flex items-start gap-4">
+                            <div class="w-12 h-12 bg-green-900/30 rounded-lg flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
+                                ☀️
+                            </div>
+                            <div>
+                                <h3 class="text-lg font-bold text-white group-hover:text-green-400 transition-colors">Startup</h3>
+                                <p class="text-sm text-gray-500 mt-2 leading-relaxed">Idea business con sistema shares automatico e investimenti.</p>
+                            </div>
+                        </div>
+                        <div id="commercial-selected" class="hidden absolute top-4 right-4 text-green-500">
+                            <span class="material-icons">check_circle</span>
+                        </div>
+                    </button>
+
+                    <!-- Ricerca -->
+                    <button type="button" id="scientific-btn" onclick="selectProjectType('scientific')" 
+                            class="group relative p-6 rounded-xl border border-gray-700 bg-black hover:border-blue-500 transition-all duration-300 text-left">
+                        <div class="flex items-start gap-4">
+                            <div class="w-12 h-12 bg-blue-900/30 rounded-lg flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
+                                🔬
+                            </div>
+                            <div>
+                                <h3 class="text-lg font-bold text-white group-hover:text-blue-400 transition-colors">Ricerca</h3>
+                                <p class="text-sm text-gray-500 mt-2 leading-relaxed">Ricerca scientifica open source per il progresso comune.</p>
+                            </div>
+                        </div>
+                        <div id="scientific-selected" class="hidden absolute top-4 right-4 text-blue-500">
+                            <span class="material-icons">check_circle</span>
+                        </div>
+                    </button>
+                </div>
+            </div>
+
+            <form method="POST" action="{{ url_for('projects.create_project_form') }}" class="space-y-8">
+                {{ form.hidden_tag() }}
+                
+                <!-- Hidden input per il tipo -->
+                <input type="hidden" id="project_type_input" name="project_type" value="commercial">
+
+                <!-- Pitch -->
+                <div>
+                    {{ form.pitch.label(class="block text-sm font-bold text-gray-400 mb-2 uppercase tracking-wider") }}
+                    {{ form.pitch(class="w-full bg-black border border-gray-800 rounded-lg px-4 py-3 text-white placeholder-gray-600 focus:border-accent focus:ring-1 focus:ring-accent transition-colors min-h-[120px]", placeholder="Descrivi la tua idea in poche frasi...") }}
+                    <p class="mt-2 text-xs text-gray-500">L'IA userà questa descrizione per generare il piano iniziale.</p>
+                    {% if form.pitch.errors %}
+                        {% for error in form.pitch.errors %}
+                            <p class="mt-1 text-xs text-red-500 font-bold">{{ error }}</p>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+
+                <!-- Categoria -->
+                <div>
+                    {{ form.category.label(class="block text-sm font-bold text-gray-400 mb-2 uppercase tracking-wider") }}
+                    {{ form.category(class="w-full bg-black border border-gray-800 rounded-lg px-4 py-3 text-white focus:border-accent focus:ring-1 focus:ring-accent transition-colors") }}
+                </div>
+
+                <!-- Cover Image -->
+                <div>
+                    <label class="block text-sm font-bold text-gray-400 mb-2 uppercase tracking-wider">
+                        Immagine di Copertina
+                        <span class="text-gray-500 font-normal text-xs ml-2 normal-case">(Opzionale)</span>
+                    </label>
+                    <p class="text-xs text-gray-500 mb-3">1200x630px • Max 5MB</p>
+                    
+                    <input type="hidden" id="cover_image_url" name="cover_image_url" value="" />
+                    
+                    <div id="drop-area" class="border-2 border-dashed border-gray-700 rounded-xl p-8 text-center cursor-pointer hover:border-accent transition-all bg-gray-800 hover:bg-gray-750">
+                        <div id="drop-message" class="flex flex-col items-center">
+                            <span class="material-icons text-5xl text-gray-600 mb-3">image</span>
+                            <p class="text-sm font-medium text-white mb-1">
+                                Clicca o trascina un'immagine
+                            </p>
+                            <p class="text-xs text-gray-500">PNG, JPG, GIF, WEBP</p>
+                        </div>
+                        
+                        <div id="preview-container" class="hidden">
+                            <div class="relative inline-block">
+                                <img id="preview-image" src="" alt="Preview" class="max-h-64 mx-auto rounded-lg border-2 border-gray-700 object-cover">
+                                <button type="button" id="remove-image-btn" class="absolute top-2 right-2 p-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors shadow-lg">
+                                    <span class="material-icons text-sm">close</span>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <input id="file-input" type="file" class="hidden" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp">
+                    </div>
+                    
+                    <div id="upload-progress" class="mt-3 hidden">
+                        <div class="flex items-center justify-between mb-1">
+                            <span class="text-xs text-gray-400">Caricamento...</span>
+                            <span id="progress-percent" class="text-xs font-bold text-accent">0%</span>
+                        </div>
+                        <div class="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
+                            <div id="progress-bar" class="h-full bg-accent rounded-full transition-all" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Checkbox -->
+                <div class="flex items-center gap-3 p-4 bg-black border border-gray-800 rounded-lg">
+                    {{ form.private(class="w-5 h-5 text-accent bg-gray-900 border-gray-700 rounded focus:ring-accent focus:ring-offset-gray-900") }}
+                    <div>
+                        {{ form.private.label(class="block text-sm font-bold text-white") }}
+                        <p class="text-xs text-gray-500">Solo gli invitati potranno vedere il progetto.</p>
+                    </div>
+                </div>
+
+                <div class="pt-6 border-t border-gray-800">
+                    <button type="submit" id="submit-btn" class="w-full bg-white text-black font-bold py-4 rounded-xl hover:bg-gray-200 transition-colors text-lg shadow-glow disabled:opacity-50 disabled:cursor-not-allowed">
+                        <span id="submit-text">Lancia Progetto 🚀</span>
+                        <span id="submit-loading" class="hidden flex items-center justify-center gap-2">
+                            <span class="material-icons animate-spin">hourglass_empty</span>
+                            Creazione in corso...
+                        </span>
+                    </button>
+                </div>
+            </form>
+
+        </div>
+    </div>
+</main>
+
+<script>
+function selectProjectType(type) {
+    document.getElementById('project_type_input').value = type;
+    
+    // Reset styles
+    document.getElementById('commercial-btn').classList.remove('border-green-500', 'ring-1', 'ring-green-500');
+    document.getElementById('scientific-btn').classList.remove('border-blue-500', 'ring-1', 'ring-blue-500');
+    document.getElementById('commercial-selected').classList.add('hidden');
+    document.getElementById('scientific-selected').classList.add('hidden');
+
+    // Apply active style
+    if (type === 'commercial') {
+        const btn = document.getElementById('commercial-btn');
+        btn.classList.add('border-green-500', 'ring-1', 'ring-green-500');
+        document.getElementById('commercial-selected').classList.remove('hidden');
+    } else {
+        const btn = document.getElementById('scientific-btn');
+        btn.classList.add('border-blue-500', 'ring-1', 'ring-blue-500');
+        document.getElementById('scientific-selected').classList.remove('hidden');
+    }
+}
+
+// Init default
+document.addEventListener('DOMContentLoaded', () => {
+    selectProjectType('commercial');
+    
+    // Cover Image Upload
+    const dropArea = document.getElementById('drop-area');
+    const fileInput = document.getElementById('file-input');
+    const coverImageUrlInput = document.getElementById('cover_image_url');
+    const previewContainer = document.getElementById('preview-container');
+    const previewImage = document.getElementById('preview-image');
+    const dropMessage = document.getElementById('drop-message');
+    const progressContainer = document.getElementById('upload-progress');
+    const progressBar = document.getElementById('progress-bar');
+    const progressPercent = document.getElementById('progress-percent');
+    const removeImageBtn = document.getElementById('remove-image-btn');
+    
+    const MAX_FILE_SIZE = 5 * 1024 * 1024;
+    const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    
+    function resetUploadState() {
+        coverImageUrlInput.value = '';
+        previewContainer.classList.add('hidden');
+        dropMessage.classList.remove('hidden');
+        progressContainer.classList.add('hidden');
+    }
+    
+    if (removeImageBtn) {
+        removeImageBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            resetUploadState();
+        });
+    }
+    
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        dropArea.addEventListener(eventName, e => {
+            e.preventDefault();
+            e.stopPropagation();
+        }, false);
+    });
+    
+    ['dragenter', 'dragover'].forEach(eventName => {
+        dropArea.addEventListener(eventName, () => {
+            dropArea.classList.add('border-accent');
+        }, false);
+    });
+    
+    ['dragleave', 'drop'].forEach(eventName => {
+        dropArea.addEventListener(eventName, () => {
+            dropArea.classList.remove('border-accent');
+        }, false);
+    });
+    
+    dropArea.addEventListener('drop', e => {
+        const files = e.dataTransfer.files;
+        handleFiles(files);
+    }, false);
+    
+    dropArea.addEventListener('click', () => {
+        fileInput.click();
+    });
+    
+    fileInput.addEventListener('change', function() {
+        if (this.files && this.files.length > 0) {
+            handleFiles(this.files);
+        }
+    });
+    
+    function handleFiles(files) {
+        if (files.length === 0) return;
+        
+        const file = files[0];
+        
+        if (!ALLOWED_TYPES.includes(file.type)) {
+            alert('Tipo di file non supportato. Usa: PNG, JPG, GIF, WEBP');
+            return;
+        }
+        
+        if (file.size > MAX_FILE_SIZE) {
+            alert('File troppo grande. Massimo 5MB');
+            return;
+        }
+        
+        uploadFile(file);
+    }
+    
+    function uploadFile(file) {
+        const formData = new FormData();
+        formData.append('file', file);
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+        
+        progressContainer.classList.remove('hidden');
+        dropMessage.classList.add('hidden');
+        
+        const xhr = new XMLHttpRequest();
+        
+        xhr.upload.addEventListener('progress', e => {
+            if (e.lengthComputable) {
+                const percent = Math.round((e.loaded / e.total) * 100);
+                progressBar.style.width = percent + '%';
+                progressPercent.textContent = percent + '%';
+            }
+        });
+        
+        xhr.addEventListener('load', () => {
+            if (xhr.status === 200) {
+                try {
+                    const response = JSON.parse(xhr.responseText);
+                    if (response.success && response.file && response.file.url) {
+                        coverImageUrlInput.value = response.file.url;
+                        previewImage.src = response.file.url;
+                        previewContainer.classList.remove('hidden');
+                        progressContainer.classList.add('hidden');
+                    } else {
+                        alert('Errore nel caricamento: ' + (response.error || 'Unknown error'));
+                        resetUploadState();
+                    }
+                } catch (e) {
+                    alert('Errore nel parsing della risposta');
+                    resetUploadState();
+                }
+            } else {
+                alert('Errore nel caricamento (HTTP ' + xhr.status + ')');
+                resetUploadState();
+            }
+        });
+        
+        xhr.addEventListener('error', () => {
+            alert('Errore di rete durante il caricamento');
+            resetUploadState();
+        });
+        
+        xhr.open('POST', '{{ url_for("api_uploads.upload_image") }}', true);
+        xhr.setRequestHeader('X-CSRF-Token', csrfToken);
+        xhr.send(formData);
+    }
+    
+    // Form submission loading state
+    const form = document.querySelector('form');
+    const submitBtn = document.getElementById('submit-btn');
+    const submitText = document.getElementById('submit-text');
+    const submitLoading = document.getElementById('submit-loading');
+    
+    if (form && submitBtn) {
+        form.addEventListener('submit', function() {
+            submitBtn.disabled = true;
+            submitText.classList.add('hidden');
+            submitLoading.classList.remove('hidden');
+        });
+    }
+});
+</script>
+{% endblock %}

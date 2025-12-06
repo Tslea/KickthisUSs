@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block title %}Configura 2FA - KickThisUss{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto bg-white rounded-xl shadow-md overflow-hidden mt-8">
+    <div class="p-8">
+        <div class="uppercase tracking-wide text-sm text-indigo-500 font-semibold">Sicurezza Account</div>
+        <h1 class="text-2xl font-bold text-gray-900 mb-6">Configura Autenticazione a Due Fattori</h1>
+        
+        <div class="mb-8">
+            <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <i class="material-icons text-yellow-600">info</i>
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-sm text-yellow-700">
+                            Aggiungi un ulteriore livello di sicurezza al tuo account utilizzando un'app di autenticazione come Google Authenticator, Authy o Microsoft Authenticator.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-8">
+                <!-- QR Code Section -->
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">1. Scansiona il QR Code</h3>
+                    <div class="bg-white p-4 border-2 border-gray-200 rounded-lg text-center">
+                        <img src="data:image/png;base64,{{ qr_code }}" alt="QR Code 2FA" class="mx-auto mb-4">
+                        <p class="text-xs text-gray-600">Scansiona con la tua app di autenticazione</p>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <h4 class="text-sm font-medium text-gray-700 mb-2">Oppure inserisci manualmente:</h4>
+                        <div class="bg-gray-50 p-3 rounded border text-center">
+                            <code class="text-sm text-gray-800 font-mono break-all">{{ secret }}</code>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Verification Section -->
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">2. Verifica il Codice</h3>
+                    
+                    <form method="POST">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="mb-4">
+                            <label for="{{ form.token.id }}" class="block text-sm font-medium text-gray-700 mb-2">
+                                {{ form.token.label.text }}
+                            </label>
+                            {% set setup_token_help_id = form.token.id ~ '-help' %}
+                            {% set setup_token_error_id = form.token.id ~ '-error' %}
+                            {% set setup_token_describedby = setup_token_help_id %}
+                            {% if form.token.errors %}
+                                {% set setup_token_describedby = setup_token_describedby ~ ' ' ~ setup_token_error_id %}
+                            {% endif %}
+                            <p id="{{ setup_token_help_id }}" class="sr-only">Inserisci il codice temporaneo generato dalla tua app di autenticazione.</p>
+                            {{ form.token(class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 focus-visible:outline-none", placeholder="123456", inputmode="numeric", **{'aria-describedby': setup_token_describedby}) }}
+                            {% if form.token.errors %}
+                                <div id="{{ setup_token_error_id }}" role="alert">
+                                {% for error in form.token.errors %}
+                                    <p class="mt-1 text-sm text-red-600">{{ error }}</p>
+                                {% endfor %}
+                                </div>
+                            {% endif %}
+                            <p class="mt-1 text-xs text-gray-500" id="{{ setup_token_help_id }}-hint">Inserisci il codice a 6 cifre dalla tua app</p>
+                        </div>
+
+                        {{ form.submit(class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus-ring transition duration-200") }}
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="border-t pt-6">
+            <div class="bg-gray-50 rounded-lg p-4">
+                <h4 class="text-sm font-semibold text-gray-800 mb-2">App di Autenticazione Consigliate:</h4>
+                <ul class="text-sm text-gray-600 space-y-1">
+                    <li>• Google Authenticator (iOS/Android)</li>
+                    <li>• Microsoft Authenticator (iOS/Android)</li>
+                    <li>• Authy (iOS/Android/Desktop)</li>
+                    <li>• 1Password (Premium)</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="mt-6 text-center">
+            <a href="{{ url_for('users.profile') }}" class="text-indigo-600 hover:text-indigo-800 text-sm">
+                Annulla e torna al profilo
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

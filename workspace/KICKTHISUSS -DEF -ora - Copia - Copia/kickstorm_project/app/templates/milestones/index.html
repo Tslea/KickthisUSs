@@ -1,0 +1,210 @@
+{% extends "base.html" %}
+
+{% block title %}Roadmap - {{ project.name }}{% endblock %}
+
+{% block content %}
+<main class="bg-black min-h-screen text-white py-8 md:py-12">
+    <div class="max-w-6xl mx-auto px-6">
+        
+        {# Breadcrumb #}
+        <nav class="mb-8">
+            <ol class="flex items-center gap-2 text-sm">
+                <li><a class="text-gray-500 hover:text-accent transition-colors" href="{{ url_for('projects.home') }}">Home</a></li>
+                <li><span class="text-gray-600">/</span></li>
+                <li><a class="text-gray-500 hover:text-accent transition-colors" href="{{ url_for('projects.project_detail', project_id=project.id) }}">{{ project.name }}</a></li>
+                <li><span class="text-gray-600">/</span></li>
+                <li><span class="text-white">Roadmap</span></li>
+            </ol>
+        </nav>
+
+        {# Header #}
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-10">
+            <div>
+                <h1 class="text-5xl md:text-6xl font-bold font-display mb-4">Roadmap & Milestone</h1>
+                <p class="text-xl text-gray-400">{{ project.name }}</p>
+            </div>
+            <div class="flex flex-wrap gap-3">
+                {% if can_edit %}
+                <a href="{{ url_for('milestones.create_milestone', project_id=project.id) }}" 
+                   class="px-6 py-3 bg-accent text-white font-bold rounded-xl hover:bg-red-700 transition-colors flex items-center gap-2 shadow-glow">
+                    <span class="material-icons text-sm">add</span>
+                    Nuova Milestone
+                </a>
+                {% endif %}
+                <a href="{{ url_for('projects.project_detail', project_id=project.id) }}" 
+                   class="px-6 py-3 bg-gray-800 border border-gray-700 text-white rounded-xl hover:border-gray-600 transition-colors font-medium">
+                    ← Torna al Progetto
+                </a>
+            </div>
+        </div>
+
+        {# Roadmap Timeline #}
+        {% if milestones %}
+        <div class="bg-gray-900 border border-gray-800 rounded-2xl p-8 md:p-10">
+            <h2 class="text-3xl font-bold font-display mb-8">Timeline Milestone</h2>
+            
+            <div class="space-y-8">
+                {% for milestone in milestones %}
+                <div class="milestone-item relative pl-12 pb-8 {% if not loop.last %}border-l-2 border-gray-800{% endif %}">
+                    {# Milestone Marker #}
+                    <div class="absolute left-0 top-0 transform -translate-x-1/2">
+                        {% if milestone.completed %}
+                        <div class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center shadow-lg border-2 border-green-400">
+                            <span class="material-icons text-white text-sm">check</span>
+                        </div>
+                        {% elif milestone.is_overdue %}
+                        <div class="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center shadow-lg border-2 border-red-400">
+                            <span class="material-icons text-white text-sm">warning</span>
+                        </div>
+                        {% else %}
+                        <div class="w-8 h-8 bg-accent rounded-full flex items-center justify-center shadow-lg border-2 border-red-600">
+                            <div class="w-3 h-3 bg-white rounded-full"></div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    {# Milestone Content #}
+                    <div class="bg-gray-800 border border-gray-700 rounded-xl p-6 hover:border-gray-600 transition-colors">
+                        <div class="flex flex-col md:flex-row items-start justify-between gap-4">
+                            <div class="flex-1">
+                                <div class="flex flex-wrap items-center gap-3 mb-3">
+                                    <h3 class="text-xl font-bold text-white {% if milestone.completed %}line-through text-gray-500{% endif %}">
+                                        {{ milestone.title }}
+                                    </h3>
+                                    {% if milestone.completed %}
+                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-green-500/20 border border-green-500 text-green-400">
+                                        <span class="material-icons text-xs mr-1">check_circle</span>
+                                        Completata
+                                    </span>
+                                    {% elif milestone.is_overdue %}
+                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-red-500/20 border border-red-500 text-red-400">
+                                        <span class="material-icons text-xs mr-1">schedule</span>
+                                        In ritardo
+                                    </span>
+                                    {% else %}
+                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-gray-700 border border-gray-600 text-gray-400">
+                                        In corso
+                                    </span>
+                                    {% endif %}
+                                </div>
+                                
+                                {% if milestone.description %}
+                                <p class="text-gray-400 mb-4 leading-relaxed">{{ milestone.description }}</p>
+                                {% endif %}
+                                
+                                <div class="flex flex-wrap items-center gap-6 text-sm text-gray-500">
+                                    {% if milestone.target_date %}
+                                    <div class="flex items-center gap-2">
+                                        <span class="material-icons text-sm text-accent">event</span>
+                                        <span class="font-medium">Target: <span class="text-white">{{ milestone.target_date.strftime('%d/%m/%Y') }}</span></span>
+                                        {% if milestone.days_until_target is not none %}
+                                            {% if milestone.days_until_target < 0 %}
+                                                <span class="text-red-400 font-bold">({{ -milestone.days_until_target }} giorni fa)</span>
+                                            {% elif milestone.days_until_target == 0 %}
+                                                <span class="text-accent font-bold">(Oggi!)</span>
+                                            {% else %}
+                                                <span class="text-gray-500">({{ milestone.days_until_target }} giorni rimanenti)</span>
+                                            {% endif %}
+                                        {% endif %}
+                                    </div>
+                                    {% endif %}
+                                    
+                                    {% if milestone.completed and milestone.completed_at %}
+                                    <div class="flex items-center gap-2">
+                                        <span class="material-icons text-sm text-green-400">done</span>
+                                        <span>Completata il <span class="text-white font-medium">{{ milestone.completed_at.strftime('%d/%m/%Y') }}</span></span>
+                                        {% if milestone.completer %}
+                                        <span>da <span class="text-white font-medium">{{ milestone.completer.username }}</span></span>
+                                        {% endif %}
+                                    </div>
+                                    {% endif %}
+                                    
+                                    <div class="flex items-center gap-2">
+                                        <span class="material-icons text-sm text-gray-600">person</span>
+                                        <span>Creata da <span class="text-white font-medium">{{ milestone.creator.username }}</span></span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            {% if can_edit %}
+                            <div class="flex items-center gap-2 flex-shrink-0">
+                                <button onclick="toggleMilestone({{ milestone.id }})" 
+                                        class="p-3 rounded-lg {% if milestone.completed %}bg-yellow-500/20 border border-yellow-500 text-yellow-400 hover:bg-yellow-500/30{% else %}bg-green-500/20 border border-green-500 text-green-400 hover:bg-green-500/30{% endif %} transition-colors"
+                                        title="{% if milestone.completed %}Segna come non completata{% else %}Segna come completata{% endif %}">
+                                    <span class="material-icons text-sm">
+                                        {% if milestone.completed %}undo{% else %}check{% endif %}
+                                    </span>
+                                </button>
+                                <a href="{{ url_for('milestones.edit_milestone', project_id=project.id, milestone_id=milestone.id) }}" 
+                                   class="p-3 rounded-lg bg-gray-700 border border-gray-600 text-white hover:bg-gray-600 transition-colors"
+                                   title="Modifica">
+                                    <span class="material-icons text-sm">edit</span>
+                                </a>
+                                <form action="{{ url_for('milestones.delete_milestone', project_id=project.id, milestone_id=milestone.id) }}" 
+                                      method="POST" 
+                                      class="inline"
+                                      onsubmit="return confirm('Sei sicuro di voler eliminare questa milestone?');">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                                    <button type="submit" 
+                                            class="p-3 rounded-lg bg-red-500/20 border border-red-500 text-red-400 hover:bg-red-500/30 transition-colors"
+                                            title="Elimina">
+                                        <span class="material-icons text-sm">delete</span>
+                                    </button>
+                                </form>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% else %}
+        <div class="bg-gray-900 border border-gray-800 rounded-2xl p-12 md:p-16 text-center">
+            <div class="w-24 h-24 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-6 border border-gray-700">
+                <span class="material-icons text-5xl text-gray-600">timeline</span>
+            </div>
+            <h3 class="text-3xl font-bold font-display mb-4">Nessuna milestone ancora</h3>
+            <p class="text-gray-400 mb-8 max-w-md mx-auto text-lg">
+                Crea la prima milestone per tracciare il progresso del progetto e definire gli obiettivi chiave.
+            </p>
+            {% if can_edit %}
+            <a href="{{ url_for('milestones.create_milestone', project_id=project.id) }}" 
+               class="inline-flex items-center gap-2 px-8 py-4 bg-accent hover:bg-red-700 text-white font-bold rounded-xl transition-colors shadow-glow">
+                <span class="material-icons">add</span>
+                Crea la Prima Milestone
+            </a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</main>
+
+{% if can_edit %}
+<script>
+function toggleMilestone(milestoneId) {
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+    
+    fetch(`/projects/{{ project.id }}/milestones/${milestoneId}/toggle`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert(data.message || 'Errore durante l\'operazione.');
+        }
+    })
+    .catch(error => {
+        console.error('Errore:', error);
+        alert('Errore durante l\'operazione. Riprova.');
+    });
+}
+</script>
+{% endif %}
+{% endblock %}

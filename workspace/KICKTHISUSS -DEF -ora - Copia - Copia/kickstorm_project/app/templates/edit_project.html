@@ -1,0 +1,397 @@
+{% extends 'base.html' %}
+
+{% block title %}Modifica Progetto - {{ project.name }}{% endblock %}
+
+{% block content %}
+<main class="bg-black min-h-screen text-white py-8 md:py-12">
+    <div class="max-w-4xl mx-auto px-6">
+
+        {# Breadcrumb #}
+        <nav class="mb-8">
+            <ol class="flex items-center gap-2 text-sm">
+                <li><a class="text-gray-500 hover:text-accent transition-colors" href="{{ url_for('projects.home') }}">Home</a></li>
+                <li><span class="text-gray-600">/</span></li>
+                <li><a class="text-gray-500 hover:text-accent transition-colors" href="{{ url_for('projects.project_detail', project_id=project.id) }}">{{ project.name }}</a></li>
+                <li><span class="text-gray-600">/</span></li>
+                <li><span class="text-white">Modifica</span></li>
+            </ol>
+        </nav>
+
+        {# Header #}
+        <div class="mb-8">
+            <h1 class="text-5xl md:text-6xl font-bold font-display mb-4">Modifica Progetto</h1>
+            <p class="text-xl text-gray-400">Aggiorna le informazioni del progetto</p>
+        </div>
+
+        {# Form #}
+        <div class="bg-gray-900 border border-gray-800 rounded-2xl p-8 md:p-10">
+            <form id="edit-project-form" method="POST" action="{{ url_for('projects.update_project', project_id=project.id) }}" novalidate>
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                <div class="hidden text-sm font-semibold text-red-400 mb-4" data-validation-summary></div>
+                
+                <div class="space-y-6">
+                    {# Nome Progetto #}
+                    <div>
+                        <label for="name" class="block text-sm font-bold text-white mb-2">
+                            Nome del Progetto <span class="text-accent">*</span>
+                        </label>
+                        <input type="text" id="name" name="name" value="{{ project.name }}" required
+                               class="w-full px-4 py-3 bg-black border border-gray-700 rounded-lg text-white focus:border-accent focus:ring-1 focus:ring-accent transition-colors" />
+                    </div>
+
+                    {# Pitch #}
+                    <div>
+                        <label for="pitch" class="block text-sm font-bold text-white mb-2">
+                            Pitch Breve <span class="text-accent">*</span>
+                        </label>
+                        <textarea id="pitch" name="pitch" rows="3" required
+                                  class="w-full px-4 py-3 bg-black border border-gray-700 rounded-lg text-white focus:border-accent focus:ring-1 focus:ring-accent transition-colors">{{ project.pitch }}</textarea>
+                    </div>
+
+                    {# Descrizione #}
+                    <div>
+                        <label for="description" class="block text-sm font-bold text-white mb-2">
+                            Descrizione Completa <span class="text-accent">*</span>
+                        </label>
+                        <textarea id="description" name="description" rows="6" required
+                                  class="w-full px-4 py-3 bg-black border border-gray-700 rounded-lg text-white focus:border-accent focus:ring-1 focus:ring-accent transition-colors">{{ project.description }}</textarea>
+                    </div>
+
+                    {# Categoria e Repository #}
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="category" class="block text-sm font-bold text-white mb-2">
+                                Categoria <span class="text-accent">*</span>
+                            </label>
+                            <select id="category" name="category" required
+                                    class="w-full px-4 py-3 bg-black border border-gray-700 rounded-lg text-white focus:border-accent focus:ring-1 focus:ring-accent transition-colors">
+                                {% if allowed_categories and allowed_categories is mapping %}
+                                    {% for cat_key, cat_display in allowed_categories.items() %}
+                                    <option value="{{ cat_key }}" {% if project.category == cat_key %}selected{% endif %}>{{ cat_display }}</option>
+                                    {% endfor %}
+                                {% endif %}
+                            </select>
+                        </div>
+
+                        <div>
+                            <label for="repository_url" class="block text-sm font-bold text-white mb-2">
+                                Repository URL <span class="text-gray-500">(Opzionale)</span>
+                            </label>
+                            <input type="url" id="repository_url" name="repository_url" value="{{ project.repository_url or '' }}"
+                                   class="w-full px-4 py-3 bg-black border border-gray-700 rounded-lg text-white focus:border-accent focus:ring-1 focus:ring-accent transition-colors"
+                                   placeholder="https://github.com/user/repo" />
+                        </div>
+                    </div>
+
+                    {# Progetto Privato #}
+                    <div class="flex items-start gap-3 p-4 bg-black border border-gray-800 rounded-lg">
+                        <input type="checkbox" id="private" name="private" class="mt-1 w-5 h-5 bg-gray-800 border-gray-700 text-accent rounded focus:ring-accent" {% if project.private %}checked{% endif %}>
+                        <div>
+                            <label for="private" class="block text-sm font-bold text-white cursor-pointer">
+                                Progetto Privato
+                            </label>
+                            <p class="text-xs text-gray-500 mt-1">Visibile solo a te e ai collaboratori invitati</p>
+                        </div>
+                    </div>
+
+                    {# Cover Image #}
+                    <div>
+                        <label class="block text-sm font-bold text-white mb-2">
+                            Immagine di Copertina
+                            <span class="text-gray-500 font-normal text-xs ml-2">(Opzionale)</span>
+                        </label>
+                        <p class="text-xs text-gray-400 mb-3">1200x630px • Max 5MB</p>
+                        
+                        <input type="hidden" id="cover_image_url" name="cover_image_url" value="{{ project.cover_image_url or '' }}" />
+                        <input type="hidden" id="remove_cover_image" name="remove_cover_image" value="false" />
+                        
+                        <div id="drop-area" class="border-2 border-dashed border-gray-700 rounded-xl p-8 text-center cursor-pointer hover:border-accent transition-all bg-gray-800 hover:bg-gray-750">
+                            <div id="drop-message" class="flex flex-col items-center {% if project.cover_image_url %}hidden{% endif %}">
+                                <span class="material-icons text-5xl text-gray-600 mb-3">image</span>
+                                <p class="text-sm font-medium text-white mb-1">
+                                    Clicca o trascina un'immagine
+                                </p>
+                                <p class="text-xs text-gray-500">PNG, JPG, GIF, WEBP</p>
+                            </div>
+                            
+                            <div id="preview-container" class="{% if not project.cover_image_url %}hidden{% endif %}">
+                                <div class="relative inline-block">
+                                    <img id="preview-image" src="{{ project.cover_image_url or '' }}" alt="Preview" class="max-h-64 mx-auto rounded-lg border-2 border-gray-700 object-cover">
+                                    <button type="button" id="remove-image-btn" class="absolute top-2 right-2 p-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors shadow-lg">
+                                        <span class="material-icons text-sm">close</span>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <input id="file-input" type="file" class="hidden" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp">
+                        </div>
+                        
+                        <div id="upload-progress" class="mt-3 hidden">
+                            <div class="flex items-center justify-between mb-1">
+                                <span class="text-xs text-gray-400">Caricamento...</span>
+                                <span id="progress-percent" class="text-xs font-bold text-accent">0%</span>
+                            </div>
+                            <div class="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
+                                <div id="progress-bar" class="h-full bg-accent rounded-full transition-all" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {# Actions #}
+                <div class="mt-8 pt-6 border-t border-gray-800 flex flex-col sm:flex-row justify-end gap-3">
+                    <a href="{{ url_for('projects.project_detail', project_id=project.id) }}"
+                       class="px-6 py-3 bg-gray-800 border border-gray-700 text-white rounded-lg hover:bg-gray-700 transition-colors text-center font-medium">
+                       Annulla
+                    </a>
+                    <button type="submit"
+                            class="px-6 py-3 bg-accent text-white rounded-lg hover:bg-red-700 transition-colors font-bold">
+                        Salva Modifiche
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        {# Sezione Eliminazione Progetto - Solo per il creatore #}
+        {% if current_user.is_authenticated and project.creator_id == current_user.id %}
+        <div class="mt-10 bg-red-500/10 border-2 border-red-500/50 rounded-2xl p-8 md:p-10">
+            <div class="flex items-start gap-4 mb-6">
+                <div class="w-12 h-12 bg-red-500/20 rounded-full flex items-center justify-center flex-shrink-0">
+                    <span class="material-icons text-red-400 text-2xl">warning</span>
+                </div>
+                <div class="flex-1">
+                    <h2 class="text-2xl font-bold text-white mb-2">Zona Pericolosa</h2>
+                    <p class="text-red-300 font-medium mb-1">Eliminazione Definitiva del Progetto</p>
+                    <p class="text-gray-400 text-sm">
+                        L'eliminazione è <span class="text-red-400 font-bold">IRREVERSIBILE</span>. Verranno eliminati definitivamente:
+                    </p>
+                    <ul class="text-gray-400 text-sm mt-3 space-y-1 list-disc list-inside">
+                        <li>Tutti i task e le soluzioni associate</li>
+                        <li>Tutti i collaboratori e le loro equity</li>
+                        <li>Tutte le milestone e la roadmap</li>
+                        <li>Tutti i dati del progetto</li>
+                    </ul>
+                </div>
+            </div>
+
+            <form method="POST" action="{{ url_for('projects.delete_project', project_id=project.id) }}" 
+                  id="delete-project-form" 
+                  class="space-y-4"
+                  onsubmit="return confirmDelete(event)">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                
+                <div class="bg-black border border-red-500/50 rounded-lg p-4 space-y-4">
+                    <div>
+                        <label for="confirmation" class="block text-sm font-bold text-white mb-2">
+                            Scrivi <span class="text-red-400 font-mono">ELIMINA</span> per confermare:
+                        </label>
+                        <input type="text" 
+                               id="confirmation" 
+                               name="confirmation" 
+                               required
+                               class="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-600 focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-colors font-mono"
+                               placeholder="ELIMINA"
+                               autocomplete="off">
+                    </div>
+                    
+                    <div>
+                        <label for="project_name" class="block text-sm font-bold text-white mb-2">
+                            Scrivi il nome esatto del progetto: <span class="text-red-400 font-mono">{{ project.name }}</span>
+                        </label>
+                        <input type="text" 
+                               id="project_name" 
+                               name="project_name" 
+                               required
+                               class="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-600 focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-colors"
+                               placeholder="{{ project.name }}"
+                               autocomplete="off">
+                    </div>
+                </div>
+
+                <button type="submit" 
+                        class="w-full px-6 py-4 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg transition-colors flex items-center justify-center gap-2 border-2 border-red-500 shadow-lg">
+                    <span class="material-icons">delete_forever</span>
+                    Elimina Progetto Definitivamente
+                </button>
+            </form>
+        </div>
+        {% endif %}
+    </div>
+</main>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const dropArea = document.getElementById('drop-area');
+    const fileInput = document.getElementById('file-input');
+    const coverImageUrlInput = document.getElementById('cover_image_url');
+    const previewContainer = document.getElementById('preview-container');
+    const previewImage = document.getElementById('preview-image');
+    const dropMessage = document.getElementById('drop-message');
+    const progressContainer = document.getElementById('upload-progress');
+    const progressBar = document.getElementById('progress-bar');
+    const progressPercent = document.getElementById('progress-percent');
+    const removeImageBtn = document.getElementById('remove-image-btn');
+    const removeImageField = document.getElementById('remove_cover_image');
+    
+    const MAX_FILE_SIZE = 5 * 1024 * 1024;
+    const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    
+    function resetUploadState() {
+        coverImageUrlInput.value = '';
+        removeImageField.value = 'true';
+        previewContainer.classList.add('hidden');
+        dropMessage.classList.remove('hidden');
+        progressContainer.classList.add('hidden');
+    }
+    
+    if (removeImageBtn) {
+        removeImageBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            resetUploadState();
+        });
+    }
+    
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        dropArea.addEventListener(eventName, e => {
+            e.preventDefault();
+            e.stopPropagation();
+        }, false);
+    });
+    
+    ['dragenter', 'dragover'].forEach(eventName => {
+        dropArea.addEventListener(eventName, () => {
+            dropArea.classList.add('border-accent');
+        }, false);
+    });
+    
+    ['dragleave', 'drop'].forEach(eventName => {
+        dropArea.addEventListener(eventName, () => {
+            dropArea.classList.remove('border-accent');
+        }, false);
+    });
+    
+    dropArea.addEventListener('drop', e => {
+        const files = e.dataTransfer.files;
+        handleFiles(files);
+    }, false);
+    
+    dropArea.addEventListener('click', () => {
+        fileInput.click();
+    });
+    
+    fileInput.addEventListener('change', function() {
+        if (this.files && this.files.length > 0) {
+            handleFiles(this.files);
+        }
+    });
+    
+    function handleFiles(files) {
+        if (files.length === 0) return;
+        
+        const file = files[0];
+        
+        if (!ALLOWED_TYPES.includes(file.type)) {
+            alert('Tipo di file non supportato. Usa: PNG, JPG, GIF, WEBP');
+            return;
+        }
+        
+        if (file.size > MAX_FILE_SIZE) {
+            alert('File troppo grande. Massimo 5MB');
+            return;
+        }
+        
+        uploadFile(file);
+    }
+    
+    function uploadFile(file) {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('csrf_token', '{{ csrf_token() }}');
+        
+        progressContainer.classList.remove('hidden');
+        dropMessage.classList.add('hidden');
+        
+        const xhr = new XMLHttpRequest();
+        
+        xhr.upload.addEventListener('progress', e => {
+            if (e.lengthComputable) {
+                const percent = Math.round((e.loaded / e.total) * 100);
+                progressBar.style.width = percent + '%';
+                progressPercent.textContent = percent + '%';
+            }
+        });
+        
+        xhr.addEventListener('load', () => {
+            if (xhr.status === 200) {
+                try {
+                    const response = JSON.parse(xhr.responseText);
+                    if (response.success && response.file && response.file.url) {
+                        coverImageUrlInput.value = response.file.url;
+                        removeImageField.value = 'false';
+                        previewImage.src = response.file.url;
+                        previewContainer.classList.remove('hidden');
+                        progressContainer.classList.add('hidden');
+                    } else {
+                        alert('Errore nel caricamento: ' + (response.error || 'Unknown error'));
+                        resetUploadState();
+                    }
+                } catch (e) {
+                    alert('Errore nel parsing della risposta');
+                    resetUploadState();
+                }
+            } else {
+                alert('Errore nel caricamento (HTTP ' + xhr.status + ')');
+                resetUploadState();
+            }
+        });
+        
+        xhr.addEventListener('error', () => {
+            alert('Errore di rete durante il caricamento');
+            resetUploadState();
+        });
+        
+        xhr.open('POST', '{{ url_for("api_uploads.upload_image") }}', true);
+        xhr.send(formData);
+    }
+});
+
+// Conferma eliminazione progetto
+function confirmDelete(event) {
+    const confirmation = document.getElementById('confirmation').value.trim();
+    const projectName = document.getElementById('project_name').value.trim();
+    const expectedName = '{{ project.name }}';
+    
+    if (confirmation !== 'ELIMINA') {
+        event.preventDefault();
+        alert('Devi scrivere esattamente "ELIMINA" per confermare.');
+        return false;
+    }
+    
+    if (projectName !== expectedName) {
+        event.preventDefault();
+        alert('Il nome del progetto non corrisponde. Devi scrivere esattamente: ' + expectedName);
+        return false;
+    }
+    
+    const finalConfirm = confirm(
+        '⚠️ ATTENZIONE: Stai per eliminare definitivamente il progetto "' + expectedName + '".\n\n' +
+        'Questa azione è IRREVERSIBILE e cancellerà:\n' +
+        '• Tutti i task e le soluzioni\n' +
+        '• Tutti i collaboratori\n' +
+        '• Tutte le milestone\n' +
+        '• Tutti i dati del progetto\n\n' +
+        'Sei ASSOLUTAMENTE SICURO di voler procedere?'
+    );
+    
+    if (!finalConfirm) {
+        event.preventDefault();
+        return false;
+    }
+    
+    return true;
+}
+</script>
+{% endblock %}

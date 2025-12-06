@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+
+{% block title %}Delete Account - KickthisUSs{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8 max-w-2xl">
+    <!-- Warning Banner -->
+    <div class="bg-red-50 border-l-4 border-red-600 p-6 mb-6 rounded-r-lg">
+        <div class="flex items-start">
+            <svg class="w-8 h-8 text-red-600 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+            </svg>
+            <div>
+                <h3 class="text-lg font-bold text-red-800 mb-2">⚠️ Attenzione: Azione Irreversibile</h3>
+                <p class="text-red-700 text-sm">
+                    Stai per eliminare definitivamente il tuo account. Questa azione <strong>NON PUÒ</strong> essere annullata.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Card -->
+    <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+        <div class="bg-gradient-to-r from-red-600 to-red-700 px-6 py-4">
+            <h1 class="text-2xl font-bold text-white">🗑️ Elimina Account</h1>
+            <p class="text-red-100 text-sm mt-1">Richiesta di cancellazione dati GDPR</p>
+        </div>
+
+        <div class="p-6">
+            <!-- Info Section -->
+            <div class="mb-6 space-y-4">
+                <h2 class="text-lg font-bold text-gray-900">Cosa Verrà Eliminato:</h2>
+                <ul class="space-y-2 text-gray-700">
+                    <li class="flex items-start">
+                        <svg class="w-5 h-5 text-red-500 mr-2 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+                        </svg>
+                        <span><strong>Profilo utente</strong> - username, email, password, immagine profilo</span>
+                    </li>
+                    <li class="flex items-start">
+                        <svg class="w-5 h-5 text-red-500 mr-2 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+                        </svg>
+                        <span><strong>Soluzioni inviate</strong> - tutte le tue proposte di soluzione</span>
+                    </li>
+                    <li class="flex items-start">
+                        <svg class="w-5 h-5 text-red-500 mr-2 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+                        </svg>
+                        <span><strong>Voti e valutazioni</strong> - tutti i voti che hai espresso</span>
+                    </li>
+                    <li class="flex items-start">
+                        <svg class="w-5 h-5 text-red-500 mr-2 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+                        </svg>
+                        <span><strong>Collaborazioni</strong> - i tuoi ruoli come collaboratore</span>
+                    </li>
+                    <li class="flex items-start">
+                        <svg class="w-5 h-5 text-red-500 mr-2 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+                        </svg>
+                        <span><strong>{{ term.shares }} personali</strong> - tutte le tue allocazioni di {{ term.shares_lower }}</span>
+                    </li>
+                    <li class="flex items-start">
+                        <svg class="w-5 h-5 text-red-500 mr-2 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+                        </svg>
+                        <span><strong>Notifiche</strong> - tutte le tue notifiche</span>
+                    </li>
+                    <li class="flex items-start">
+                        <svg class="w-5 h-5 text-red-500 mr-2 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+                        </svg>
+                        <span><strong>Progetti creati</strong> - I tuoi progetti senza collaboratori verranno eliminati. I progetti con collaboratori verranno riassegnati al primo collaboratore.</span>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="bg-blue-50 border-l-4 border-blue-500 p-4 mb-6">
+                <p class="text-sm text-blue-700">
+                    <strong>ℹ️ Nota:</strong> Questa è una richiesta conforme al GDPR (Regolamento Generale sulla Protezione dei Dati). 
+                    Hai il diritto di richiedere la cancellazione dei tuoi dati personali.
+                </p>
+            </div>
+
+            <!-- Confirmation Form -->
+            <form method="POST" class="space-y-6">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                <!-- Username Confirmation -->
+                <div>
+                    <label for="username_check" class="block text-sm font-medium text-gray-700 mb-2">
+                        Conferma il tuo username: <span class="text-red-600">{{ current_user.username }}</span>
+                    </label>
+                    <input type="text" 
+                           id="username_check" 
+                           name="username_check" 
+                           required
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                           placeholder="Inserisci il tuo username">
+                </div>
+
+                <!-- Delete Confirmation -->
+                <div>
+                    <label for="confirmation" class="block text-sm font-medium text-gray-700 mb-2">
+                        Digita <strong class="text-red-600">DELETE</strong> per confermare (maiuscolo)
+                    </label>
+                    <input type="text" 
+                           id="confirmation" 
+                           name="confirmation" 
+                           required
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                           placeholder="DELETE">
+                </div>
+
+                <!-- Buttons -->
+                <div class="flex gap-4 pt-4">
+                    <button type="submit" 
+                            class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-lg transition-colors shadow-lg">
+                        🗑️ Elimina Account Definitivamente
+                    </button>
+                    <a href="{{ url_for('users.user_profile', username=current_user.username) }}" 
+                       class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-3 px-6 rounded-lg text-center transition-colors">
+                        ← Annulla
+                    </a>
+                </div>
+            </form>
+
+            <!-- Help Text -->
+            <div class="mt-6 text-center">
+                <p class="text-sm text-gray-500">
+                    Hai bisogno di aiuto? <a href="mailto:kickthisuss@gmail.com" class="text-mclaren-orange hover:underline">Contatta il supporto</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
