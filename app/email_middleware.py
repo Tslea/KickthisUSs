@@ -7,19 +7,19 @@ from flask import request, redirect, url_for, flash, current_app
 from flask_login import current_user
 from functools import wraps
 
-def email_verification_required(f):
+def email_verification_required(func):
     """
     Decorator per richiede che l'utente abbia verificato l'email.
     Da usare su route che richiedono email verificata.
     """
-    @wraps(f)
+    @wraps(func)
     def decorated_function(*args, **kwargs):
         if current_user.is_authenticated:
             # Se l'utente è loggato ma non ha verificato l'email
             if not current_user.email_verified:
                 flash('Devi verificare la tua email prima di accedere a questa funzionalità. Controlla la tua casella di posta!', 'warning')
                 return redirect(url_for('projects.home'))
-        return f(*args, **kwargs)
+        return func(*args, **kwargs)
     return decorated_function
 
 def init_email_middleware(app):

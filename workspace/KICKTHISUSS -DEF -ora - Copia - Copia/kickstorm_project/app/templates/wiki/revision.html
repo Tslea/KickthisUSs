@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block title %}Revisione {{ revision.id }} - {{ wiki_page.title }}{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <!-- Header -->
+    <div class="flex justify-between items-center mb-8">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900">Revisione {{ revision.id }}</h1>
+            <p class="text-gray-600 mt-2">{{ wiki_page.title }}</p>
+        </div>
+        <div class="flex space-x-4">
+            <a href="{{ url_for('wiki.view_wiki_page', project_id=project.id, slug=wiki_page.slug) }}" 
+               class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition-colors">
+                ← Torna alla Pagina
+            </a>
+            <a href="{{ url_for('wiki.wiki_history', project_id=project.id, slug=wiki_page.slug) }}" 
+               class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors">
+                Cronologia
+            </a>
+        </div>
+    </div>
+
+    <!-- Informazioni sulla revisione -->
+    <div class="max-w-4xl mx-auto mb-8">
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <div class="flex-shrink-0">
+                        <div class="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center">
+                            <span class="text-white font-semibold">
+                                {{ revision.editor.username[0].upper() }}
+                            </span>
+                        </div>
+                    </div>
+                    <div>
+                        <h3 class="font-medium text-gray-900">{{ revision.editor.username }}</h3>
+                        <p class="text-sm text-gray-600">{{ revision.created_at.strftime('%d/%m/%Y %H:%M') }}</p>
+                    </div>
+                </div>
+                <div class="text-right">
+                    {% if revision.edit_summary %}
+                    <p class="text-sm text-gray-700 font-medium">{{ revision.edit_summary }}</p>
+                    {% else %}
+                    <p class="text-sm text-gray-500 italic">Nessun riassunto delle modifiche</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contenuto della revisione -->
+    <div class="max-w-4xl mx-auto">
+        <div class="bg-white rounded-lg shadow-md">
+            <div class="p-6">
+                <div class="prose max-w-none">
+                    {{ revision.content | safe }}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

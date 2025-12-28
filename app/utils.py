@@ -35,12 +35,20 @@ ALLOWED_HTML_ATTRIBUTES = {
 _nl_re = re.compile(r'(\r\n|\n|\r)')
 
 def calculate_project_equity(project):
-    """Calcola l'equity totale distribuita per un progetto."""
+    """
+    Calculate total equity distributed for a project.
+    Optimized to use database aggregation instead of loading all tasks.
+    """
     if not project:
         return 0.0
-    approved_tasks = project.tasks.filter_by(status='approved').all()
-    distributed_equity = sum(task.equity_reward for task in approved_tasks)
-    return distributed_equity
+    # Use database aggregation for better performance
+    total = db.session.query(
+        db.func.coalesce(db.func.sum(Task.equity_reward), 0)
+    ).filter(
+        Task.project_id == project.id,
+        Task.status == 'approved'
+    ).scalar()
+    return float(total) if total else 0.0
 
 def register_helpers(app):
     """Registra funzioni helper e filtri per i template Jinja2."""
@@ -65,11 +73,11 @@ def register_helpers(app):
         return value.strftime(format)
 
     @app.template_filter('nl2br')
-    def nl2br_filter(s):
-        if not s: return ""
-        escaped_s = escape(s)
+    def nl2br_filter(text):
+        if not text: return ""
+        escaped_text = escape(text)
         # Correzione: Sostituito il newline letterale con la sua sequenza di escape
-        return Markup(_nl_re.sub('<br>\n', escaped_s))
+        return Markup(_nl_re.sub('<br>\n', escaped_text))
 
     @app.template_filter('humanize_datetime')
     def humanize_datetime_filter(dt):

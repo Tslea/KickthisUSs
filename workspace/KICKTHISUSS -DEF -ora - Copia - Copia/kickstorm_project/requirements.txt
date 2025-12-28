@@ -1,0 +1,80 @@
+# --- Framework Principale e Utility ---
+Flask==3.0.3
+python-dotenv==1.0.1
+
+# --- Database ---
+Flask-SQLAlchemy==3.1.1
+Flask-Migrate==4.0.7
+SQLAlchemy==2.0.30
+
+# --- Autenticazione Utenti ---
+Flask-Login==0.6.3
+
+# --- Email ---
+Flask-Mail==0.9.1
+
+# --- 2FA ---
+pyotp==2.9.0
+qrcode==7.4.2
+
+# --- Gestione Form ---
+Flask-WTF==1.2.1
+WTForms==3.1.2
+Email-validator==2.2.0
+
+# --- Gestione Immagini ---
+Pillow==10.3.0
+
+# --- Formattazione Markdown ---
+markdown==3.6
+
+# --- Servizi Esterni (AI) ---
+# Specifichiamo sia openai che il suo client http per la massima compatibilità
+openai==1.35.3
+httpx==0.27.0
+
+# --- Sicurezza ---
+Werkzeug==3.0.3
+Flask-Limiter==3.5.0  # Rate limiting per API e autenticazione
+
+# --- File Upload Validation ---
+python-magic==0.4.27  # MIME type detection
+python-magic-bin==0.4.14; sys_platform == 'win32'  # Binary for Windows
+
+humanize==4.9.0
+
+# --- Server di Produzione ---
+gunicorn==22.0.0
+
+# --- GitHub Integration ---
+PyGithub==2.1.1
+
+# --- RAG & Vector DB ---
+chromadb==0.5.0
+sentence-transformers==2.7.0
+
+# --- Asynchronous Tasks ---
+celery==5.3.6
+redis==5.0.1
+
+# --- Caching ---
+Flask-Caching==2.1.0
+
+# --- Validazione Input ---
+pydantic==2.5.3
+
+# --- AI Frameworks Avanzati ---
+langchain==0.1.0
+langchain-openai==0.0.5
+langchain-community==0.0.13
+
+# --- Testing ---
+pytest==7.4.4
+pytest-cov==4.1.0
+pytest-flask==1.3.0
+
+# --- Monitoring & Error Tracking ---
+sentry-sdk[flask]==1.38.0
+
+# --- PostgreSQL Database (Production) ---
+psycopg2-binary==2.9.9

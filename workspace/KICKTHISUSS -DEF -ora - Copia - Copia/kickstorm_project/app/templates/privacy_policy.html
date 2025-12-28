@@ -1,0 +1,266 @@
+{% extends "base.html" %}
+
+{% block title %}Privacy Policy - KickthisUSs{% endblock %}
+
+{% block content %}
+<main class="flex-grow bg-gray-50">
+    <div class="container mx-auto px-6 py-12 max-w-4xl">
+        
+        {# Header #}
+        <div class="text-center mb-12">
+            <h1 class="text-4xl font-black text-gray-900 mb-4">Privacy Policy</h1>
+            <p class="text-gray-600">Ultimo aggiornamento: 6 dicembre 2025</p>
+            <p class="text-sm text-gray-500 mt-2">Conforme al GDPR (Regolamento UE 2016/679)</p>
+        </div>
+
+        {# Content #}
+        <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 md:p-12 max-w-none space-y-8">
+            
+            {# 1. Titolare #}
+            <section>
+                <h2 class="text-2xl font-bold text-gray-900 mb-4 flex items-center">
+                    <span class="w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-bold mr-3">1</span>
+                    Titolare del Trattamento
+                </h2>
+                <p class="text-gray-700 mb-4">
+                    Il Titolare del trattamento dei dati personali è:
+                </p>
+                <div class="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                    <p class="text-gray-700"><strong>KickthisUSs</strong></p>
+                    <p class="text-gray-600 text-sm">Email: <a href="mailto:kickthisuss@gmail.com" class="text-blue-600 hover:underline">kickthisuss@gmail.com</a></p>
+                </div>
+            </section>
+
+            {# 2. Dati Raccolti #}
+            <section>
+                <h2 class="text-2xl font-bold text-gray-900 mb-4 flex items-center">
+                    <span class="w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-bold mr-3">2</span>
+                    Dati Personali Raccolti
+                </h2>
+                
+                <h3 class="text-xl font-semibold text-gray-900 mb-3">2.1 Dati forniti direttamente dall'utente:</h3>
+                <ul class="text-gray-700 mb-4 list-disc pl-6 space-y-2">
+                    <li><strong>Dati di registrazione:</strong> Username, indirizzo email, password (criptata)</li>
+                    <li><strong>Dati del profilo:</strong> Foto profilo, biografia, competenze, link social (opzionali)</li>
+                    <li><strong>Contenuti generati:</strong> Progetti creati, task, soluzioni, commenti, messaggi</li>
+                    <li><strong>Comunicazioni:</strong> Messaggi inviati al supporto</li>
+                </ul>
+
+                <h3 class="text-xl font-semibold text-gray-900 mb-3">2.2 Dati raccolti automaticamente:</h3>
+                <ul class="text-gray-700 mb-4 list-disc pl-6 space-y-2">
+                    <li><strong>Dati tecnici:</strong> Indirizzo IP, tipo di browser, sistema operativo, dispositivo</li>
+                    <li><strong>Dati di utilizzo:</strong> Pagine visitate, funzionalità utilizzate, timestamp delle azioni</li>
+                    <li><strong>Cookie tecnici:</strong> Necessari per autenticazione e funzionamento del servizio</li>
+                </ul>
+
+                <h3 class="text-xl font-semibold text-gray-900 mb-3">2.3 Dati relativi ai TEMPLE:</h3>
+                <ul class="text-gray-700 mb-4 list-disc pl-6 space-y-2">
+                    <li>Numero di TEMPLE guadagnati per progetto</li>
+                    <li>Storico delle attività (task completati, approvazioni ricevute)</li>
+                    <li>Statistiche aggregate di contribuzione</li>
+                </ul>
+            </section>
+
+            {# 3. Finalità #}
+            <section>
+                <h2 class="text-2xl font-bold text-gray-900 mb-4 flex items-center">
+                    <span class="w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-bold mr-3">3</span>
+                    Finalità del Trattamento
+                </h2>
+                <p class="text-gray-700 mb-4">Trattiamo i tuoi dati per le seguenti finalità:</p>
+                
+                <div class="space-y-4">
+                    <div class="bg-green-50 border border-green-200 rounded-xl p-4">
+                        <h4 class="font-semibold text-green-800 mb-2">✅ Esecuzione del contratto (Art. 6.1.b GDPR)</h4>
+                        <ul class="text-green-700 text-sm list-disc pl-4 space-y-1">
+                            <li>Gestione dell'account e autenticazione</li>
+                            <li>Erogazione dei servizi della piattaforma</li>
+                            <li>Gestione dei TEMPLE e delle attività di collaborazione</li>
+                            <li>Comunicazioni relative al servizio</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                        <h4 class="font-semibold text-blue-800 mb-2">📊 Legittimo interesse (Art. 6.1.f GDPR)</h4>
+                        <ul class="text-blue-700 text-sm list-disc pl-4 space-y-1">
+                            <li>Miglioramento e ottimizzazione della piattaforma</li>
+                            <li>Prevenzione di frodi e abusi</li>
+                            <li>Analisi statistiche aggregate (anonimizzate)</li>
+                            <li>Sicurezza informatica</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="bg-purple-50 border border-purple-200 rounded-xl p-4">
+                        <h4 class="font-semibold text-purple-800 mb-2">📧 Consenso (Art. 6.1.a GDPR)</h4>
+                        <ul class="text-purple-700 text-sm list-disc pl-4 space-y-1">
+                            <li>Newsletter e comunicazioni promozionali (solo con consenso esplicito)</li>
+                            <li>Cookie di profilazione (se implementati in futuro)</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            {# 4. Condivisione #}
+            <section>
+                <h2 class="text-2xl font-bold text-gray-900 mb-4 flex items-center">
+                    <span class="w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-bold mr-3">4</span>
+                    Condivisione dei Dati
+                </h2>
+                <p class="text-gray-700 mb-4">
+                    <strong>Non vendiamo i tuoi dati personali.</strong> Potremmo condividerli solo nei seguenti casi:
+                </p>
+                <ul class="text-gray-700 mb-4 list-disc pl-6 space-y-2">
+                    <li><strong>Con altri utenti:</strong> Profilo pubblico, progetti, contributi (visibili sulla piattaforma)</li>
+                    <li><strong>Fornitori di servizi:</strong> Hosting, email transazionali (con DPA - Data Processing Agreement)</li>
+                    <li><strong>Obblighi legali:</strong> Se richiesto da autorità competenti</li>
+                </ul>
+                <div class="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                    <p class="text-gray-600 text-sm">
+                        <strong>Hosting:</strong> I tuoi dati sono conservati su <strong>Google Cloud Run</strong> con server situati in Europa (UE), 
+                        garantendo la conformità al GDPR senza trasferimenti extra-UE.
+                    </p>
+                </div>
+            </section>
+
+            {# 5. Conservazione #}
+            <section>
+                <h2 class="text-2xl font-bold text-gray-900 mb-4 flex items-center">
+                    <span class="w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-bold mr-3">5</span>
+                    Conservazione dei Dati
+                </h2>
+                <ul class="text-gray-700 mb-4 list-disc pl-6 space-y-2">
+                    <li><strong>Dati account:</strong> Conservati fino alla cancellazione dell'account + 30 giorni</li>
+                    <li><strong>Dati di contribuzione (TEMPLE):</strong> Conservati per la durata del progetto</li>
+                    <li><strong>Log tecnici:</strong> Massimo 12 mesi</li>
+                    <li><strong>Dati fiscali/legali:</strong> Secondo obblighi di legge (fino a 10 anni)</li>
+                </ul>
+            </section>
+
+            {# 6. Diritti #}
+            <section>
+                <h2 class="text-2xl font-bold text-gray-900 mb-4 flex items-center">
+                    <span class="w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-bold mr-3">6</span>
+                    I Tuoi Diritti (GDPR)
+                </h2>
+                <p class="text-gray-700 mb-4">Hai il diritto di:</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                        <span class="material-icons text-blue-500 mb-2">visibility</span>
+                        <h4 class="font-semibold text-gray-900">Accesso</h4>
+                        <p class="text-gray-600 text-sm">Ottenere copia dei tuoi dati personali</p>
+                    </div>
+                    <div class="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                        <span class="material-icons text-green-500 mb-2">edit</span>
+                        <h4 class="font-semibold text-gray-900">Rettifica</h4>
+                        <p class="text-gray-600 text-sm">Correggere dati inesatti o incompleti</p>
+                    </div>
+                    <div class="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                        <span class="material-icons text-red-500 mb-2">delete</span>
+                        <h4 class="font-semibold text-gray-900">Cancellazione</h4>
+                        <p class="text-gray-600 text-sm">Richiedere la cancellazione dei dati</p>
+                    </div>
+                    <div class="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                        <span class="material-icons text-orange-500 mb-2">block</span>
+                        <h4 class="font-semibold text-gray-900">Limitazione</h4>
+                        <p class="text-gray-600 text-sm">Limitare il trattamento in certi casi</p>
+                    </div>
+                    <div class="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                        <span class="material-icons text-purple-500 mb-2">download</span>
+                        <h4 class="font-semibold text-gray-900">Portabilità</h4>
+                        <p class="text-gray-600 text-sm">Richiedere i tuoi dati contattandoci via email</p>
+                    </div>
+                    <div class="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                        <span class="material-icons text-gray-500 mb-2">do_not_disturb</span>
+                        <h4 class="font-semibold text-gray-900">Opposizione</h4>
+                        <p class="text-gray-600 text-sm">Opporti al trattamento per marketing</p>
+                    </div>
+                </div>
+                <p class="text-gray-700 mt-4">
+                    Per esercitare questi diritti, contattaci a: 
+                    <a href="mailto:kickthisuss@gmail.com" class="text-blue-600 hover:underline">kickthisuss@gmail.com</a>
+                </p>
+                <p class="text-gray-600 text-sm mt-2">
+                    Hai anche il diritto di presentare reclamo al <strong>Garante per la Protezione dei Dati Personali</strong> 
+                    (<a href="https://www.garanteprivacy.it" target="_blank" class="text-blue-600 hover:underline">www.garanteprivacy.it</a>).
+                </p>
+            </section>
+
+            {# 7. Cookie #}
+            <section>
+                <h2 class="text-2xl font-bold text-gray-900 mb-4 flex items-center">
+                    <span class="w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-bold mr-3">7</span>
+                    Cookie
+                </h2>
+                <p class="text-gray-700 mb-4">
+                    Utilizziamo solo <strong>cookie tecnici essenziali</strong> per:
+                </p>
+                <ul class="text-gray-700 mb-4 list-disc pl-6 space-y-2">
+                    <li>Gestione della sessione di autenticazione</li>
+                    <li>Memorizzazione delle preferenze utente</li>
+                    <li>Sicurezza (token CSRF)</li>
+                </ul>
+                <p class="text-gray-700">
+                    <strong>Non utilizziamo</strong> cookie di profilazione o di terze parti per pubblicità.
+                </p>
+            </section>
+
+            {# 8. Sicurezza #}
+            <section>
+                <h2 class="text-2xl font-bold text-gray-900 mb-4 flex items-center">
+                    <span class="w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-bold mr-3">8</span>
+                    Sicurezza dei Dati
+                </h2>
+                <p class="text-gray-700 mb-4">
+                    Adottiamo misure tecniche e organizzative per proteggere i tuoi dati:
+                </p>
+                <ul class="text-gray-700 mb-4 list-disc pl-6 space-y-2">
+                    <li>Crittografia HTTPS per tutte le comunicazioni</li>
+                    <li>Password hashate con algoritmi sicuri (bcrypt)</li>
+                    <li>Accesso limitato ai dati solo al personale autorizzato</li>
+                    <li>Backup regolari e procedure di disaster recovery</li>
+                </ul>
+            </section>
+
+            {# 9. Modifiche #}
+            <section>
+                <h2 class="text-2xl font-bold text-gray-900 mb-4 flex items-center">
+                    <span class="w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-bold mr-3">9</span>
+                    Modifiche alla Privacy Policy
+                </h2>
+                <p class="text-gray-700">
+                    Potremmo aggiornare questa Privacy Policy. Le modifiche significative saranno comunicate 
+                    via email o tramite avviso sulla piattaforma almeno 30 giorni prima dell'entrata in vigore.
+                </p>
+            </section>
+
+            {# 10. Contatti #}
+            <section>
+                <h2 class="text-2xl font-bold text-gray-900 mb-4 flex items-center">
+                    <span class="w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-bold mr-3">10</span>
+                    Contatti
+                </h2>
+                <p class="text-gray-700 mb-4">
+                    Per qualsiasi domanda sulla privacy o per esercitare i tuoi diritti:
+                </p>
+                <div class="bg-blue-50 rounded-xl p-4 border border-blue-200">
+                    <p class="text-blue-800">
+                        <strong>Email:</strong> <a href="mailto:kickthisuss@gmail.com" class="hover:underline">kickthisuss@gmail.com</a>
+                    </p>
+                    <p class="text-blue-600 text-sm mt-2">
+                        Risponderemo entro 30 giorni dalla ricezione della richiesta.
+                    </p>
+                </div>
+            </section>
+
+        </div>
+
+        {# Back to home #}
+        <div class="text-center mt-8">
+            <a href="{{ url_for('projects.home') }}" class="inline-flex items-center text-orange-600 hover:text-orange-700 font-semibold">
+                <span class="material-icons mr-2">arrow_back</span>
+                Torna alla Home
+            </a>
+        </div>
+    </div>
+</main>
+{% endblock %}

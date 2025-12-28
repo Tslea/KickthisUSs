@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block title %}Errore Interno del Server{% endblock %}
+
+{% block content %}
+<main class="flex-grow flex flex-col items-center justify-center bg-slate-50 text-center">
+    <div class="p-8">
+        <h1 class="text-6xl font-bold text-red-600">500</h1>
+        <p class="text-2xl font-semibold text-gray-800 mt-4">Oops! Qualcosa è andato storto.</p>
+        <p class="text-gray-600 mt-2">Stiamo lavorando per risolvere il problema. Riprova più tardi.</p>
+        <div class="mt-8">
+            <a href="{{ url_for('projects.home') }}" class="bg-mclaren-orange text-white px-6 py-3 rounded-lg hover:bg-mclaren-orange-darker transition-colors font-semibold">
+                Torna alla Home
+            </a>
+        </div>
+    </div>
+</main>
+{% endblock %}

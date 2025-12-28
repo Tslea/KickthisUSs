@@ -48,25 +48,25 @@ class ProjectCreateSchema(BaseSchema):
     
     @field_validator('pitch')
     @classmethod
-    def validate_pitch(cls, v: str) -> str:
+    def validate_pitch(cls, value: str) -> str:
         """Validate pitch content."""
-        if not v or not v.strip():
+        if not value or not value.strip():
             raise ValueError("Pitch cannot be empty")
         # Remove excessive whitespace
-        v = ' '.join(v.split())
-        return v
+        value = ' '.join(value.split())
+        return value
     
     @field_validator('category')
     @classmethod
-    def validate_category(cls, v: str) -> str:
+    def validate_category(cls, value: str) -> str:
         """Validate category."""
         valid_categories = [
             'tech', 'social', 'environment', 'health', 'education',
             'finance', 'art', 'science', 'other'
         ]
-        v_lower = v.lower().strip()
+        value_lower = value.lower().strip()
         # Allow any category but normalize common ones
-        return v
+        return value
 
 
 class ProjectUpdateSchema(BaseSchema):
@@ -118,20 +118,20 @@ class TaskCreateSchema(BaseSchema):
     
     @field_validator('title')
     @classmethod
-    def validate_title(cls, v: str) -> str:
+    def validate_title(cls, value: str) -> str:
         """Validate and clean title."""
-        v = ' '.join(v.split())  # Normalize whitespace
-        return v
+        value = ' '.join(value.split())  # Normalize whitespace
+        return value
     
     @field_validator('equity_reward')
     @classmethod
-    def validate_equity(cls, v: float) -> float:
+    def validate_equity(cls, value: float) -> float:
         """Ensure equity is reasonable."""
-        if v <= 0:
+        if value <= 0:
             raise ValueError("Shares reward must be positive")
-        if v > 100:
+        if value > 100:
             raise ValueError("Shares reward cannot exceed 100")
-        return round(v, 2)
+        return round(value, 2)
 
 
 class TaskUpdateSchema(BaseSchema):
@@ -162,17 +162,17 @@ class SolutionSubmitSchema(BaseSchema):
     
     @field_validator('github_pr_url')
     @classmethod
-    def validate_github_url(cls, v: Optional[str]) -> Optional[str]:
+    def validate_github_url(cls, value: Optional[str]) -> Optional[str]:
         """Validate GitHub PR URL format."""
-        if v is None or not v.strip():
+        if value is None or not value.strip():
             return None
         
-        v = v.strip()
+        value = value.strip()
         # Basic GitHub PR URL pattern
         github_pattern = r'^https?://github\.com/[\w\-]+/[\w\-]+/pull/\d+/?.*$'
-        if not re.match(github_pattern, v, re.IGNORECASE):
+        if not re.match(github_pattern, value, re.IGNORECASE):
             raise ValueError("Invalid GitHub Pull Request URL format")
-        return v
+        return value
 
 
 # ============================================
@@ -190,11 +190,11 @@ class CommentCreateSchema(BaseSchema):
     
     @field_validator('content')
     @classmethod
-    def validate_content(cls, v: str) -> str:
+    def validate_content(cls, value: str) -> str:
         """Validate comment content."""
-        if not v or not v.strip():
+        if not value or not value.strip():
             raise ValueError("Comment cannot be empty")
-        return v.strip()
+        return value.strip()
 
 
 # ============================================
@@ -219,15 +219,15 @@ class UserRegistrationSchema(BaseSchema):
     
     @field_validator('password')
     @classmethod
-    def validate_password(cls, v: str) -> str:
+    def validate_password(cls, value: str) -> str:
         """Validate password strength."""
-        if len(v) < 8:
+        if len(value) < 8:
             raise ValueError("Password must be at least 8 characters")
-        if not re.search(r'[A-Za-z]', v):
+        if not re.search(r'[A-Za-z]', value):
             raise ValueError("Password must contain at least one letter")
-        if not re.search(r'\d', v):
+        if not re.search(r'\d', value):
             raise ValueError("Password must contain at least one number")
-        return v
+        return value
 
 
 class UserProfileUpdateSchema(BaseSchema):

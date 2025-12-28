@@ -79,17 +79,17 @@ def cached_project_data(timeout: int = 300):
         def get_project_stats(project_id):
             ...
     """
-    def decorator(f):
+    def decorator(func):
         from functools import wraps
         
-        @wraps(f)
+        @wraps(func)
         def decorated_function(*args, **kwargs):
             # Extract project_id from args or kwargs
             project_id = kwargs.get('project_id') or (args[0] if args else None)
             if project_id is None:
-                return f(*args, **kwargs)
+                return func(*args, **kwargs)
             
-            cache_key = f"project_data:{f.__name__}:{project_id}"
+            cache_key = f"project_data:{func.__name__}:{project_id}"
             
             # Try to get from cache
             cached_result = cache.get(cache_key)
@@ -97,7 +97,7 @@ def cached_project_data(timeout: int = 300):
                 return cached_result
             
             # Execute function and cache result
-            result = f(*args, **kwargs)
+            result = func(*args, **kwargs)
             cache.set(cache_key, result, timeout=timeout)
             return result
         

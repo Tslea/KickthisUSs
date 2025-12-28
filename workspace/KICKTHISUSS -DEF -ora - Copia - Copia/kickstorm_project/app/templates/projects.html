@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+
+{% block title %}Esplora Progetti - KickThisUss{% endblock %}
+
+{% block content %}
+<div class="bg-black min-h-screen text-white">
+    
+    {# 1. HERO SECTION #}
+    <section class="py-24 px-6 border-b border-gray-900">
+        <div class="max-w-7xl mx-auto text-center">
+            <h1 class="text-6xl md:text-8xl font-bold font-display mb-8">
+                Esplora
+            </h1>
+            <p class="text-xl text-gray-500 max-w-2xl mx-auto mb-12">
+                Scopri progetti innovativi. Unisciti ai team. Costruisci il futuro.
+            </p>
+            
+            {% if current_user.is_authenticated %}
+            <a href="{{ url_for('projects.create_project_form') }}" class="inline-block px-8 py-4 bg-accent text-white font-bold rounded-xl hover:bg-red-600 transition-colors shadow-glow">
+                + Crea Progetto
+            </a>
+            {% endif %}
+        </div>
+    </section>
+
+    {# 2. FILTERS & LIST #}
+    <section class="py-12 px-6">
+        <div class="max-w-7xl mx-auto">
+            
+            {# Filters #}
+            <div class="mb-12">
+                <form method="GET" action="{{ url_for('projects.projects_list') }}" class="flex flex-wrap gap-4 justify-center">
+                    <a href="{{ url_for('projects.projects_list') }}" 
+                       class="px-6 py-2 rounded-full border border-gray-800 hover:border-white transition-colors {{ 'bg-white text-black' if not current_category and not request.args.get('project_type') else 'text-gray-500' }}">
+                        Tutti
+                    </a>
+                    
+                    {% for category_code, category_label in categories.items() %}
+                    <button type="submit" name="category" value="{{ category_code }}"
+                            class="px-6 py-2 rounded-full border border-gray-800 hover:border-white transition-colors {{ 'bg-white text-black' if current_category == category_code else 'text-gray-500' }}">
+                        {{ category_label }}
+                    </button>
+                    {% endfor %}
+                </form>
+            </div>
+
+            {# Projects Grid #}
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {% for project in projects %}
+                <a href="{{ url_for('projects.project_detail', project_id=project.id) }}" class="group block bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden hover:border-gray-600 transition-all duration-300">
+                    
+                    {# Cover Image #}
+                    {% if project.cover_image_url %}
+                    <div class="w-full h-48 bg-gray-800 overflow-hidden relative">
+                        <img src="{{ project.cover_image_url }}" alt="{{ project.name }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                        {% if project.private %}
+                        <div class="absolute top-3 left-3">
+                            <span class="inline-flex items-center gap-1 px-3 py-1 bg-yellow-500/90 backdrop-blur-sm border border-yellow-400 rounded-full text-xs font-bold text-black">
+                                <span class="material-icons text-xs">lock</span>
+                                Privato
+                            </span>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% else %}
+                    <div class="w-full h-48 bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center relative">
+                        <span class="material-icons text-6xl text-gray-700">image</span>
+                        {% if project.private %}
+                        <div class="absolute top-3 left-3">
+                            <span class="inline-flex items-center gap-1 px-3 py-1 bg-yellow-500/90 backdrop-blur-sm border border-yellow-400 rounded-full text-xs font-bold text-black">
+                                <span class="material-icons text-xs">lock</span>
+                                Privato
+                            </span>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                    
+                    <div class="p-6 h-full flex flex-col">
+                        <div class="flex justify-between items-start mb-4">
+                            <span class="px-3 py-1 bg-black border border-gray-800 rounded-full text-xs font-bold text-gray-400 uppercase tracking-wider">
+                                {{ project.category | title }}
+                            </span>
+                            {% if project.is_scientific %}
+                            <span class="text-xl" title="Ricerca Scientifica">🔬</span>
+                            {% endif %}
+                        </div>
+
+                        <h3 class="text-xl font-bold text-white mb-3 font-display group-hover:text-accent transition-colors line-clamp-2">
+                            {{ project.name }}
+                        </h3>
+                        
+                        <p class="text-gray-500 mb-6 line-clamp-2 flex-grow text-sm">
+                            {{ project.description|striptags|truncate(150) if project.description else project.pitch }}
+                        </p>
+
+                        <div class="flex items-center justify-between pt-4 border-t border-gray-800">
+                            <div class="flex items-center gap-2">
+                                <div class="w-8 h-8 bg-gray-800 rounded-full flex items-center justify-center text-xs font-bold text-white">
+                                    {{ project.creator.username[:2].upper() }}
+                                </div>
+                                <span class="text-sm text-gray-400">{{ project.creator.username }}</span>
+                            </div>
+                            <span class="text-sm text-gray-600">
+                                {{ project.created_at | format_datetime('%d %b') }}
+                            </span>
+                        </div>
+                    </div>
+                </a>
+                {% else %}
+                <div class="col-span-full text-center py-24">
+                    <p class="text-2xl text-gray-500 font-display">Nessun progetto trovato.</p>
+                </div>
+                {% endfor %}
+            </div>
+
+            {# Pagination #}
+            {% if pagination and pagination.pages > 1 %}
+            <div class="mt-16 flex justify-center gap-2">
+                {% for page in pagination.iter_pages() %}
+                    {% if page %}
+                        {% if page != pagination.page %}
+                            {% set category_param = request.args.get('category') %}
+                            {% set project_type_param = request.args.get('project_type') %}
+                            {% if category_param and project_type_param %}
+                                <a href="{{ url_for('projects.projects_list', page=page, category=category_param, project_type=project_type_param) }}" class="w-10 h-10 flex items-center justify-center rounded-lg border border-gray-800 text-gray-500 hover:border-white hover:text-white transition-colors">
+                                    {{ page }}
+                                </a>
+                            {% elif category_param %}
+                                <a href="{{ url_for('projects.projects_list', page=page, category=category_param) }}" class="w-10 h-10 flex items-center justify-center rounded-lg border border-gray-800 text-gray-500 hover:border-white hover:text-white transition-colors">
+                                    {{ page }}
+                                </a>
+                            {% elif project_type_param %}
+                                <a href="{{ url_for('projects.projects_list', page=page, project_type=project_type_param) }}" class="w-10 h-10 flex items-center justify-center rounded-lg border border-gray-800 text-gray-500 hover:border-white hover:text-white transition-colors">
+                                    {{ page }}
+                                </a>
+                            {% else %}
+                                <a href="{{ url_for('projects.projects_list', page=page) }}" class="w-10 h-10 flex items-center justify-center rounded-lg border border-gray-800 text-gray-500 hover:border-white hover:text-white transition-colors">
+                                    {{ page }}
+                                </a>
+                            {% endif %}
+                        {% else %}
+                            <span class="w-10 h-10 flex items-center justify-center rounded-lg bg-white text-black font-bold">
+                                {{ page }}
+                            </span>
+                        {% endif %}
+                    {% else %}
+                        <span class="w-10 h-10 flex items-center justify-center text-gray-600">...</span>
+                    {% endif %}
+                {% endfor %}
+            </div>
+            {% endif %}
+
+        </div>
+    </section>
+</div>
+{% endblock %}

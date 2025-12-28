@@ -2,23 +2,23 @@
 Test Project - Simple Python Calculator
 """
 
-def add(a, b):
+def add(first_number, second_number):
     """Add two numbers"""
-    return a + b
+    return first_number + second_number
 
-def subtract(a, b):
+def subtract(first_number, second_number):
     """Subtract two numbers"""
-    return a - b
+    return first_number - second_number
 
-def multiply(a, b):
+def multiply(first_number, second_number):
     """Multiply two numbers"""
-    return a * b
+    return first_number * second_number
 
-def divide(a, b):
+def divide(dividend, divisor):
     """Divide two numbers"""
-    if b == 0:
+    if divisor == 0:
         raise ValueError("Cannot divide by zero")
-    return a / b
+    return dividend / divisor
 
 if __name__ == "__main__":
     print("Calculator Test")

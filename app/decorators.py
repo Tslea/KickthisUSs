@@ -5,11 +5,11 @@ from flask import abort, redirect, url_for, flash, request, jsonify
 from flask_login import current_user
 from .models import Collaborator, Project
 
-def email_verification_required(f):
+def email_verification_required(func):
     """
     Decoratore per richiedere che l'utente abbia verificato la sua email
     """
-    @wraps(f)
+    @wraps(func)
     def decorated_function(*args, **kwargs):
         if not current_user.is_authenticated:
             return redirect(url_for('auth.login'))
@@ -18,7 +18,7 @@ def email_verification_required(f):
             flash('Devi verificare la tua email prima di accedere a questa funzionalità.', 'warning')
             return redirect(url_for('auth.profile'))
         
-        return f(*args, **kwargs)
+        return func(*args, **kwargs)
     return decorated_function
 
 def role_required(project_id_arg, roles):
@@ -29,8 +29,8 @@ def role_required(project_id_arg, roles):
     :param project_id_arg: Il nome dell'argomento nella route che contiene il project_id.
     :param roles: Una lista di stringhe di ruoli richiesti (es. ['creator', 'admin']).
     """
-    def decorator(f):
-        @wraps(f)
+    def decorator(func):
+        @wraps(func)
         def decorated_function(*args, **kwargs):
             project_id = kwargs.get(project_id_arg)
             if not project_id:
@@ -51,16 +51,16 @@ def role_required(project_id_arg, roles):
                 # Se non c'è collaborazione o il ruolo non è corretto, neghiamo l'accesso.
                 abort(403, description="Non hai i permessi necessari per eseguire questa azione.")
             
-            return f(*args, **kwargs)
+            return func(*args, **kwargs)
         return decorated_function
     return decorator
 
-def project_member_required(f):
+def project_member_required(func):
     """
     Decoratore per Hub Agents: consente accesso solo a creatori e collaboratori del progetto.
     Il project_id può essere in kwargs o in request.json (per API POST).
     """
-    @wraps(f)
+    @wraps(func)
     def decorated_function(*args, **kwargs):
         # Helper per capire se è una API call
         is_api_call = (
@@ -104,7 +104,7 @@ def project_member_required(f):
         
         # Creatore ha sempre accesso
         if project.creator_id == current_user.id:
-            return f(*args, **kwargs)
+            return func(*args, **kwargs)
         
         # Controlla se è collaboratore
         collaboration = Collaborator.query.filter_by(
@@ -117,5 +117,5 @@ def project_member_required(f):
                 return jsonify({"error": "Non hai i permessi per accedere a questo progetto.", "content": ""}), 403
             abort(403, description="Non hai i permessi per accedere a questo progetto. Solo creatori e collaboratori possono usare Hub Agents.")
         
-        return f(*args, **kwargs)
+        return func(*args, **kwargs)
     return decorated_function

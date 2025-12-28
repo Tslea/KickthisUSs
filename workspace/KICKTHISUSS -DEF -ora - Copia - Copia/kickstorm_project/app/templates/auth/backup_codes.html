@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+
+{% block title %}Codici di Backup 2FA - KickThisUss{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto bg-white rounded-xl shadow-md overflow-hidden mt-8">
+    <div class="p-8">
+        <div class="uppercase tracking-wide text-sm text-green-500 font-semibold">2FA Attivato</div>
+        <h1 class="text-2xl font-bold text-gray-900 mb-6">Codici di Backup</h1>
+        
+        <div class="mb-8">
+            <div class="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <i class="material-icons text-green-600">check_circle</i>
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-sm text-green-700 font-medium">
+                            2FA è stato attivato con successo per il tuo account!
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <i class="material-icons text-red-600">warning</i>
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-sm text-red-700 font-medium mb-2">Importante: Salva questi codici di backup</p>
+                        <p class="text-sm text-red-600">
+                            Se perdi l'accesso alla tua app di autenticazione, puoi utilizzare questi codici una sola volta per accedere al tuo account.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4 text-center">I tuoi Codici di Backup</h3>
+                <div class="grid grid-cols-2 gap-4 font-mono text-center">
+                    {% for code in backup_codes %}
+                        <div class="bg-white px-4 py-2 border rounded-lg text-gray-800 font-semibold">
+                            {{ code }}
+                        </div>
+                    {% endfor %}
+                </div>
+                
+                <div class="mt-4 text-center">
+                    <button onclick="downloadBackupCodes()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition duration-200 focus-ring"
+                            aria-label="Scarica i codici di backup 2FA in un file di testo">
+                        <i class="material-icons text-sm mr-1">download</i>
+                        Scarica Codici
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="space-y-4 mb-8">
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <h4 class="text-sm font-semibold text-blue-800 mb-2">Come conservare i codici:</h4>
+                <ul class="text-sm text-blue-700 space-y-1">
+                    <li>• Stampali e conservali in un luogo sicuro</li>
+                    <li>• Salvali nel tuo password manager</li>
+                    <li>• NON conservarli sullo stesso dispositivo dell'app di autenticazione</li>
+                    <li>• Ogni codice può essere utilizzato una sola volta</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="text-center">
+            <a href="{{ url_for('users.profile') }}" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-lg focus-ring transition duration-200">
+                Torna al Profilo
+            </a>
+        </div>
+    </div>
+</div>
+
+<script>
+function downloadBackupCodes() {
+    const codes = [
+        {%- for code in backup_codes -%}
+            "{{ code }}"{%- if not loop.last -%},{%- endif -%}
+        {%- endfor -%}
+    ];
+    
+    const content = "KickThisUss - Codici di Backup 2FA\n" +
+                   "Generati il: " + new Date().toLocaleString() + "\n\n" +
+                   codes.map((code, index) => `${index + 1}. ${code}`).join('\n') +
+                   "\n\nATTENZIONE: Conserva questi codici in un luogo sicuro.\nOgni codice può essere utilizzato una sola volta.";
+    
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'kickthisuss-backup-codes.txt';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+}
+</script>
+{% endblock %}
